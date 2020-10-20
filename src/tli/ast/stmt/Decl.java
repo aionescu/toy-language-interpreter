@@ -5,7 +5,7 @@ import utils.collections.map.Map;
 import tli.ast.Ident;
 import tli.ast.prog.ProgState;
 import tli.ast.type.Type;
-import tli.ast.val.Undefined;
+import tli.ast.varstate.Undefined;
 import tli.exn.typeck.VariableAlreadyDeclaredException;
 
 public final class Decl implements Stmt {

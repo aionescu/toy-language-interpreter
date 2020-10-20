@@ -31,6 +31,7 @@ public final class CLIView implements View {
 
       case "typeck":
         _controller.typeCheck();
+        System.out.println("Type check succeeded.");
         break;
 
       case "show":
@@ -56,6 +57,11 @@ public final class CLIView implements View {
         System.out.println(_controller.state());
         break;
 
+      case "parse":
+        var ast_ = TLParser.parse(parts[1]);
+        _controller.setState(ProgState.empty.withToDo(List.singleton(ast_)));
+        break;
+
       case "exit":
         System.exit(0);
         break;
@@ -71,10 +77,10 @@ public final class CLIView implements View {
     var console = System.console();
 
     while (true) {
-      System.out.print("\ntli> ");
-      var line = console.readLine();
-
       try {
+        System.out.print("\ntli> ");
+        var line = console.readLine();
+
         _handleCommand(line);
       } catch (IOException e) {
         System.out.println("IO Error: " + e.getMessage());
@@ -84,6 +90,9 @@ public final class CLIView implements View {
         System.out.println("Type error: " + e.getMessage());
       } catch (EvalException e) {
         System.out.println("Evaluation error: " + e.getMessage());
+      } catch (Exception e) {
+        System.out.println("Something unexpected occurred:");
+        e.printStackTrace();
       }
     }
   }
