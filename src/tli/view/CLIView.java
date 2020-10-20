@@ -40,6 +40,7 @@ public final class CLIView implements View {
       case "run":
         var state = _controller.state();
 
+        _controller.typeCheck();
         _controller.allSteps();
         System.out.println(_controller.state().output());
 
