@@ -90,7 +90,7 @@ public final class CLIView implements View {
         System.out.println("Type error: " + e.getMessage());
       } catch (EvalException e) {
         System.out.println("Evaluation error: " + e.getMessage());
-      } catch (Exception e) {
+      } catch (Throwable e) {
         System.out.println("Something unexpected occurred:");
         e.printStackTrace();
       }
