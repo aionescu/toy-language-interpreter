@@ -56,6 +56,10 @@ public final class CLIView implements View {
         System.out.println(_controller.state());
         break;
 
+      case "exit":
+        System.exit(0);
+        break;
+
       default:
         System.out.println("Unrecognized command");
         break;
