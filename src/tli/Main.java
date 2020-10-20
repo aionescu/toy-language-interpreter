@@ -2,25 +2,16 @@ package tli;
 
 import java.util.Arrays;
 
-import tli.ast.Ident;
-import tli.ast.expr.Arith;
-import tli.ast.expr.Compare;
-import tli.ast.expr.Lit;
-import tli.ast.expr.Var;
-import tli.ast.expr.Arith.Op;
-import tli.ast.prog.ProgState;
-import tli.ast.stmt.Assign;
-import tli.ast.stmt.Comp;
-import tli.ast.stmt.Decl;
-import tli.ast.stmt.Print;
-import tli.ast.stmt.Stmt;
-import tli.ast.stmt.While;
-import tli.ast.type.Type;
-import tli.ast.val.Int;
-import tli.controller.Controller;
-import tli.repo.SingleStateRepository;
-import tli.view.CLIView;
 import utils.collections.list.List;
+import tli.ast.Ident;
+import tli.ast.type.Type;
+import tli.ast.val.*;
+import tli.ast.expr.*;
+import tli.ast.stmt.*;
+import tli.ast.prog.ProgState;
+import tli.repo.SingleStateRepository;
+import tli.controller.Controller;
+import tli.view.CLIView;
 
 public final class Main {
   public static void main(String[] args) {
