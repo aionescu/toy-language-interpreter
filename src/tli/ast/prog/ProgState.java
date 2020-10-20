@@ -33,7 +33,7 @@ public final class ProgState {
   }
 
   public String output() {
-    return out.reverse().foldl(String::concat, "");
+    return out.reverse().unlines();
   }
 
   @Override

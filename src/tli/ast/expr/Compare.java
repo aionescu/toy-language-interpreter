@@ -61,6 +61,10 @@ public final class Compare implements Expr {
   private final Expr _lhs, _rhs;
   private final Op _op;
 
+  public static Compare of(Expr lhs, Op op, Expr rhs) {
+    return new Compare(lhs, op, rhs);
+  }
+
   public Compare(Expr lhs, Op op, Expr rhs) {
     _lhs = lhs;
     _rhs = rhs;

@@ -12,6 +12,10 @@ public final class While implements Stmt {
   private final Expr _cond;
   private final Stmt _body;
 
+  public static While of(Expr cond, Stmt body) {
+    return new While(cond, body);
+  }
+
   public While(Expr cond, Stmt body) {
     _cond = cond;
     _body = body;
