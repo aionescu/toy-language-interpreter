@@ -8,7 +8,7 @@ import tli.ast.val.Bool;
 import tli.ast.val.Int;
 import tli.ast.val.Val;
 
-public final class Compare implements Expr {
+public final class Comp implements Expr {
   public static enum Op {
     LT,
     LTE,
@@ -61,11 +61,11 @@ public final class Compare implements Expr {
   private final Expr _lhs, _rhs;
   private final Op _op;
 
-  public static Compare of(Expr lhs, Op op, Expr rhs) {
-    return new Compare(lhs, op, rhs);
+  public static Comp of(Expr lhs, Op op, Expr rhs) {
+    return new Comp(lhs, op, rhs);
   }
 
-  public Compare(Expr lhs, Op op, Expr rhs) {
+  public Comp(Expr lhs, Op op, Expr rhs) {
     _lhs = lhs;
     _rhs = rhs;
     _op = op;

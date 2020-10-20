@@ -1,4 +1,4 @@
-Bool a;
+a : Bool;
 a <- True;
 
 if a and True or False {
@@ -7,19 +7,23 @@ if a and True or False {
   print 2
 };
 
-Int b;
-b <- 2;
+b : Int;
+b{-Nested {- multiline -}
+
+
+  comment -}<- 2;
 print b;
 
-# Single line comment
-Int c;
+-- Single line comment
+c : Int;
+c <- -1;
 print c;
 
-Int d;
-d <- 1 + 2 * 3; # Comment
+d : Int;
+d <- 1 + 2 * 3; -- Comment
 print d;
 
-# If with no else branch
+-- If with no else branch
 if True {
-  print False
+  print {- Multiline comment -} False
 }

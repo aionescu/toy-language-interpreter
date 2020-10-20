@@ -1,4 +1,4 @@
-Int i;
+i : Int;
 i <- 0;
 
 while i <= 5 {

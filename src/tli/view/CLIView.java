@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import tli.exn.ParserException;
 import tli.exn.eval.EvalException;
 import tli.exn.typeck.TypeCheckerException;
 import tli.ast.prog.ProgState;
 import tli.controller.*;
-import tli.parser.TLIParser;
+import tli.parser.TLParser;
 import utils.collections.list.List;
+import utils.uparsec.exn.UParsecException;
 
 public final class CLIView implements View {
   private final Controller _controller;
@@ -25,7 +25,7 @@ public final class CLIView implements View {
     switch (parts[0]) {
       case "load":
         var code = Files.readString(Path.of(parts[1]));
-        var ast = TLIParser.parse(code);
+        var ast = TLParser.parse(code);
         _controller.setState(ProgState.empty.withToDo(List.singleton(ast)));
         break;
 
@@ -78,7 +78,7 @@ public final class CLIView implements View {
         _handleCommand(line);
       } catch (IOException e) {
         System.out.println("IO Error: " + e.getMessage());
-      } catch (ParserException e) {
+      } catch (UParsecException e) {
         System.out.println("Parser error: " + e.getMessage());
       } catch (TypeCheckerException e) {
         System.out.println("Type error: " + e.getMessage());

@@ -8,13 +8,21 @@ import tli.ast.expr.*;
 import tli.ast.stmt.*;
 import tli.ast.type.Type;
 import tli.ast.val.*;
-import tli.exn.ParserException;
 import utils.collections.list.List;
 import utils.uparsec.Parser;
+import utils.uparsec.Unit;
 
-public final class TLIParser {
+public final class TLParser {
   private static Parser<Stmt> _mkParser() {
-    var comment = Parser.ch('#')._and(Parser.anyChar().manyTill(Parser.newline())).skip();
+    var multiLineFwdRef = Parser.<Unit>fwdRef();
+    var multiLine = multiLineFwdRef.fst;
+
+    var multiLine_ = Parser.string("{-")._and(multiLine.or(Parser.anyChar().skip()).manyTill(Parser.string("-}"))).skip();
+    multiLineFwdRef.snd.set(multiLine_);
+
+    var singleLine = Parser.string("--")._and(Parser.anyChar().manyTill(Parser.newline())).skip();
+
+    var comment = singleLine.or(multiLine);
     var ws = Parser.spaces()._and(comment._and(Parser.spaces()).many()).skip();
 
     Parser<Function<Integer, Integer>> sign = Parser.ch('-').map_(i -> -i);
@@ -49,12 +57,12 @@ public final class TLIParser {
     ).and_(ws);
 
     var opComp = Parser.<BinaryOperator<Expr>>choice(
-      Parser.string("<=").map_((a, b) -> Compare.of(a, Compare.Op.LTE, b)),
-      Parser.string(">=").map_((a, b) -> Compare.of(a, Compare.Op.GTE, b)),
-      Parser.string("<>").map_((a, b) -> Compare.of(a, Compare.Op.NEQ, b)),
-      Parser.ch('<').map_((a, b) -> Compare.of(a, Compare.Op.LT, b)),
-      Parser.ch('>').map_((a, b) -> Compare.of(a, Compare.Op.GT, b)),
-      Parser.ch('=').map_((a, b) -> Compare.of(a, Compare.Op.EQ, b))
+      Parser.string("<=").map_((a, b) -> Comp.of(a, Comp.Op.LTE, b)),
+      Parser.string(">=").map_((a, b) -> Comp.of(a, Comp.Op.GTE, b)),
+      Parser.string("<>").map_((a, b) -> Comp.of(a, Comp.Op.NEQ, b)),
+      Parser.ch('<').map_((a, b) -> Comp.of(a, Comp.Op.LT, b)),
+      Parser.ch('>').map_((a, b) -> Comp.of(a, Comp.Op.GT, b)),
+      Parser.ch('=').map_((a, b) -> Comp.of(a, Comp.Op.EQ, b))
     ).and_(ws);
 
     var opLogic = Parser.<BinaryOperator<Expr>>choice(
@@ -79,7 +87,9 @@ public final class TLIParser {
     exprFwdRef.snd.set(termFinal);
 
     Parser<Stmt> print = Parser.string("print").and_(ws)._and(expr).map(Print::of);
-    Parser<Stmt> decl = Parser.liftA2(Decl::of, type.and_(ws), ident);
+
+    var colon = ws._and(Parser.ch(':'))._and(ws);
+    Parser<Stmt> decl = Parser.liftA2(Decl::of, ident.and_(colon), type);
 
     var arrow = ws._and(Parser.string("<-"))._and(ws);
     Parser<Stmt> assign = Parser.liftA2(Assign::of, ident.and_(arrow), expr);
@@ -99,19 +109,16 @@ public final class TLIParser {
     Parser<Stmt> while_ = Parser.liftA2(While::of, whileCond, block);
 
     var stmt_ = Parser.choice(while_, if_, assign, decl, print).and_(ws);
-    var comp = stmt_.chainr1(Parser.ch(';').and_(ws).map_(Comp::of)).option(Nop.nop);
-    stmtFwdRef.snd.set(comp);
+    var compound = stmt_.chainr1(Parser.ch(';').and_(ws).map_(Compound::of)).option(Nop.nop);
+    stmtFwdRef.snd.set(compound);
 
-    var program = stmt.and_(Parser.eof());
+    var program = ws._and(stmt).and_(Parser.eof());
     return program;
   }
 
   private static final Parser<Stmt> _parser = _mkParser();
 
   public static Stmt parse(String code) {
-    return _parser.run(code).match(
-      () -> { throw new ParserException(); },
-      (r, s) -> r
-    );
+    return _parser.parse(code);
   }
 }

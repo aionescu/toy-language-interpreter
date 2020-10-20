@@ -1,2 +1,2 @@
-Int a;
+a : Int;
 a <- True

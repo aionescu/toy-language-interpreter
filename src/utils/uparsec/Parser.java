@@ -8,6 +8,9 @@ import java.util.function.Predicate;
 
 import utils.Pair;
 import utils.collections.list.List;
+import utils.uparsec.exn.FwdRefAlreadySetException;
+import utils.uparsec.exn.ParserStuckException;
+import utils.uparsec.exn.ParsingFailedException;
 
 @FunctionalInterface
 public interface Parser<A> {
@@ -16,13 +19,20 @@ public interface Parser<A> {
 
     public void set(Parser<A> p) {
       if (_p != null)
-        throw new IllegalStateException("Parser has already been assigned.");
+        throw new FwdRefAlreadySetException();
 
       _p = p;
     }
   }
 
-  Result<A> run(String source);
+  Result<A> run(String input);
+
+  public default A parse(String input) {
+    return this.run(input).match(
+      () -> { throw new ParsingFailedException(); },
+      (a, rest) -> a
+    );
+  }
 
   public static <A> Pair<Parser<A>, FwdRef<A>> fwdRef() {
     var fwdRef = new FwdRef<A>();
@@ -136,12 +146,24 @@ public interface Parser<A> {
     return pre._and(this).and_(post);
   }
 
+  private static <A> Parser<A> _ensureConsumes(Parser<A> p) {
+    return s -> p.run(s).match(
+      Result::fail,
+      (a, rest) -> {
+        if (rest.length() == s.length())
+          throw new ParserStuckException();
+
+        return Result.of(a, rest);
+      }
+    );
+  }
+
   private static <A> Parser<List<A>> _many(Parser<A> p, List<A> acc) {
     return s -> p.run(s).match(() -> Result.of(acc, s), (a, s2) -> _many(p, List.cons(a, acc)).run(s2));
   }
 
   public default Parser<List<A>> many() {
-    return _many(this, List.nil()).map(List::reverse);
+    return _many(_ensureConsumes(this), List.nil()).map(List::reverse);
   }
 
   private static <A> Parser<List<A>> _nonEmpty(Parser<List<A>> p) {
@@ -163,11 +185,11 @@ public interface Parser<A> {
   private static <A, End> Parser<List<A>> _manyTill(Parser<A> p, Parser<End> end, List<A> acc) {
     return s -> end.run(s).match(
       () -> p.run(s).match(() -> Result.of(acc, s), (a, s2) -> _manyTill(p, end, List.cons(a, acc)).run(s2)),
-      (a, _s) -> Result.of(acc, s));
+      (a, s2) -> Result.of(acc, s2));
   }
 
   public default <End> Parser<List<A>> manyTill(Parser<End> p) {
-    return _manyTill(this, p, List.nil()).map(List::reverse);
+    return _manyTill(_ensureConsumes(this), p, List.nil()).map(List::reverse);
   }
 
   public default <End> Parser<List<A>> many1Till(Parser<End> end) {

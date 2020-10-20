@@ -1,6 +1,6 @@
-package tli.exn;
+package utils.uparsec.exn;
 
-public final class ParserException extends TLIException {
+public final class ParsingFailedException extends UParsecException {
   private final static long serialVersionUID = 1;
 
   @Override
