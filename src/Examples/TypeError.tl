@@ -1,0 +1,2 @@
+Int a;
+a <- True
