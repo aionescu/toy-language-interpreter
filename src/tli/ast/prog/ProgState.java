@@ -5,9 +5,7 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.stmt.Stmt;
-import tli.ast.type.Type;
 import tli.ast.val.Val;
-import tli.exn.eval.EvaluationFinishedException;
 
 public final class ProgState {
   public final List<Stmt> toDo;
