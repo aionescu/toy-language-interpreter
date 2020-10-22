@@ -7,6 +7,7 @@ import qualified Data.HashMap.Strict as M
 import Data.HashMap.Strict(HashMap)
 
 import AST
+import Data.List(foldl')
 
 type SymValTable = HashMap Ident Val
 type ToDo = [Stmt]
@@ -71,16 +72,18 @@ evalExpr sym (Comp a op b) = do
     (VInt a', VInt b') -> pure $ VBool $ compOp op a' b'
     (VBool a', VBool b') -> pure $ VBool $ compOp op a' b'
 evalExpr sym (TupLit t) = VTup <$> traverse (evalExpr sym) t
-evalExpr sym (TupleMember lhs idx) = do
+evalExpr sym (TupMember lhs idx) = do
   v <- evalExpr sym lhs
   case v of
     VTup vs -> pure $ vs !! idx
-evalExpr sym (With lhs idx e) = do
+evalExpr sym (With lhs updates) = do
   v <- evalExpr sym lhs
   case v of
     VTup vs -> do
-      val <- evalExpr sym e
-      pure $ VTup $ setN idx val vs
+      vals <- traverse evalUpdate updates
+      pure $ VTup $  foldl' (flip $ uncurry setN) vs vals
+  where
+    evalUpdate (idx, expr) = (idx, ) <$> evalExpr sym expr
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
@@ -88,8 +91,8 @@ evalStmt progState (Decl _ _) = pure progState
 evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym expr
   pure $ ProgState {sym =  M.insert ident v sym, .. }
-evalStmt progState (Assign (TupleMember lhs idx) expr) =
-  evalStmt progState (Assign lhs (With lhs idx expr))
+evalStmt progState (Assign (TupMember lhs idx) expr) =
+  evalStmt progState (Assign lhs (With lhs [(idx, expr)]))
 evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (DeclAssign ident Nothing expr) =

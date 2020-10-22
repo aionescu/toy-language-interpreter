@@ -44,14 +44,16 @@ ident = liftA2 (:) fstChar (many sndChar)
 var :: Parser (Expr a)
 var = Var <$> ident
 
+parens :: Char -> Char -> Parser a -> Parser a
+parens begin end = between (char begin *> ws) (char end *> ws)
+
 tuple :: ([a] -> a) -> Parser a -> Parser a
-tuple ctor term = parens $ uncurry mkTup <$> elems
+tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
   where
     withTrailing = (, True) <$> many (term <* ws <* comma)
     noTrailing = (, False) <$> sepBy1 term comma
     elems = try withTrailing <|> noTrailing
 
-    parens = between (char '(' *> ws) (char ')' *> ws)
     mkTup [a] False = a
     mkTup l _ = ctor l
 
@@ -65,7 +67,7 @@ type' :: Parser Type
 type' = try ttup <|> primType
 
 tupMember :: Parser (Expr a) -> Parser (Expr a)
-tupMember lhs = liftA2 (foldl' TupleMember) lhs (many $ char '.' *> number <* ws)
+tupMember lhs = liftA2 (foldl' TupMember) lhs (many $ char '.' *> number <* ws)
 
 vtup :: Parser (Expr 'R)
 vtup = tuple TupLit expr
@@ -118,11 +120,12 @@ termMul =
   let
     expr' = choice [try vtup, Lit <$> try val, var] <* ws
     expr'' = try (tupMember expr') <|> expr'
-    with = liftA2 (,) (char '{' *> ws *> char '.' *> ws *> number <* ws <* char '=' <* ws) (expr <* ws <* char '}' <* ws)
+    update = liftA2 (,) (number <* arrow) (expr <* ws)
+    withBlock = parens '{' '}' $ sepBy update comma
     tryWith e Nothing = e
-    tryWith e (Just (idx, w)) = With e idx w
+    tryWith e (Just updates) = With e updates
   in
-    liftA2 tryWith expr'' (option Nothing $ Just <$> try with)
+    liftA2 tryWith expr'' (option Nothing $ Just <$> try withBlock)
 
 termAdd :: Parser (Expr 'R)
 termAdd = chainl1 termMul opMul

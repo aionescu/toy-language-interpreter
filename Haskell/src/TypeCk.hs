@@ -17,6 +17,7 @@ data TypeError
   | VarAlreadyDeclared Ident
   | UninitializedVar Ident
   | TupleTooShort Type Int
+  | ExpectedTupleFound Type
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -26,6 +27,7 @@ instance Show TypeError where
       go (VarAlreadyDeclared ident) = "Variable " ++ ident ++ " has already been declared"
       go (UninitializedVar ident) = "Variable " ++ ident ++ " is not guaranteed to be initialized before its first read"
       go (TupleTooShort t i) = "The tuple type " ++ show t ++ " does not have enough elements to be indexed by the index " ++ show i
+      go (ExpectedTupleFound found) = "Expected tuple type, but found " ++ show found
 
 type TypeCk a = Either TypeError a
 
@@ -76,25 +78,29 @@ typeCheckExpr sym (Comp a _ b) = do
   tb `mustBe` ta
   pure TBool
 typeCheckExpr sym (TupLit vs) = TTup <$> traverse (typeCheckExpr sym) vs
-typeCheckExpr sym (TupleMember lhs idx) = do
+typeCheckExpr sym (TupMember lhs idx) = do
   t <- typeCheckExpr sym lhs
   case t of
     TTup ts ->
       case ts !? idx of
         Nothing -> throw $ TupleTooShort t idx
         Just t' -> pure t'
-    _ -> throw $ ExpectedFound (TTup (replicate (idx + 1) (TTup []))) t
-typeCheckExpr sym (With lhs idx e) = do
+    _ -> throw $ ExpectedTupleFound t
+typeCheckExpr sym (With lhs updates) = do
   t <- typeCheckExpr sym lhs
-  tv <- typeCheckExpr sym e
   case t of
-    TTup ts ->
+    TTup ts -> do
+      tys <- traverse typeCheckUpdate updates
+      mapM_ (checkMember ts) tys
+      pure t
+    _ -> throw $ ExpectedTupleFound t
+  where
+    typeCheckUpdate (idx, expr) = (idx, ) <$> typeCheckExpr sym expr
+    checkMember :: [Type] -> (Int, Type) -> TypeCk ()
+    checkMember ts (idx, t) =
       case ts !? idx of
-        Nothing -> throw $ TupleTooShort t idx
-        Just t' -> do
-          tv `mustBe` t'
-          pure t
-    _ -> throw $ ExpectedFound (TTup (replicate (idx + 1) (TTup []))) t
+        Nothing -> throw $ TupleTooShort (TTup ts) idx
+        Just t' -> t `mustBe` t'
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b
@@ -112,8 +118,8 @@ typeCheckStmt sym (Assign (Var ident) expr) = do
   typ2 <- typeCheckExpr sym expr
   typ2 `mustBe` typ
   pure $ M.insert ident (typ, Init) sym
-typeCheckStmt sym (Assign (TupleMember lhs idx) expr) =
-  typeCheckStmt sym $ Assign lhs (With lhs idx expr)
+typeCheckStmt sym (Assign (TupMember lhs idx) expr) =
+  typeCheckStmt sym $ Assign lhs (With lhs [(idx, expr)])
 typeCheckStmt sym (DeclAssign ident (Just type') expr) = do
   sym2 <- typeCheckStmt sym (Decl ident type')
   typeCheckStmt sym2 (Assign (Var ident) expr)

@@ -98,8 +98,8 @@ data Expr :: ExprKind -> * where
   Logic :: Expr a -> LogicOp -> Expr b -> Expr 'R
   Comp :: Expr a -> CompOp -> Expr b -> Expr 'R
   TupLit :: [Expr a] -> Expr 'R
-  TupleMember :: Expr a -> Int -> Expr a
-  With :: Expr a -> Int -> Expr b -> Expr 'R
+  TupMember :: Expr a -> Int -> Expr a
+  With :: Expr a -> [(Int, Expr b)] -> Expr 'R
 
 instance Show (Expr a) where
   show (Lit v) = show v
@@ -108,8 +108,10 @@ instance Show (Expr a) where
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (TupLit es) = withParens "(" ")" (show <$> es)
-  show (TupleMember e i) = show e ++ "." ++ show i
-  show (With lhs idx e) = show lhs ++ " with " ++ show idx ++ " = " ++ show e
+  show (TupMember e i) = show e ++ "." ++ show i
+  show (With lhs updates) = show lhs ++ " " ++ withParens "{ " " }" (showUpdate <$> updates)
+    where
+      showUpdate (idx, expr) = show idx ++ " <- " ++ show expr
 
 data Stmt
   = Nop
