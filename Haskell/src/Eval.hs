@@ -43,11 +43,6 @@ instance Show EvalError where
 
 type Eval a = Either EvalError a
 
-setN :: [a] -> Int -> a -> [a]
-setN [] _ _ = []
-setN (_ : as) 0 v  = v : as
-setN (a : as) n v = a : setN as (pred n) v
-
 evalExpr :: SymValTable -> Expr a -> Eval Val
 evalExpr _ (Lit v) = pure v
 evalExpr sym (Var ident) = pure $ sym M.! ident
@@ -70,33 +65,33 @@ evalExpr sym (Comp a op b) = do
   case (va, vb) of
     (VInt a', VInt b') -> pure $ VBool $ compOp op a' b'
     (VBool a', VBool b') -> pure $ VBool $ compOp op a' b'
-evalExpr sym (TupLit t) = VTup <$> traverse (evalExpr sym) t
-evalExpr sym (RecordLit t) = VRecord <$> traverseM (evalExpr sym) t
-evalExpr sym (TupMember lhs idx) = do
+evalExpr sym (RecLit (FsRec fs)) = VRec . FsRec <$> traverse (evalExpr sym) fs
+evalExpr sym (RecLit (FsTup fs)) = VRec . FsTup <$> traverse (evalExpr sym) fs
+evalExpr sym (RecMember lhs f@(FRec _)) = do
   v <- evalExpr sym lhs
   case v of
-    VTup vs -> pure $ vs !! idx
-evalExpr sym (RecordMember lhs ident) = do
+    VRec (FsRec fs) -> pure $ fs M.! f
+evalExpr sym (RecMember lhs f@(FTup _)) = do
   v <- evalExpr sym lhs
   case v of
-    VRecord vs -> pure $ vs M.! ident
-evalExpr sym (TupWith lhs updates) = do
+    VRec (FsTup fs) -> pure $ fs M.! f
+evalExpr sym (RecWith lhs (FsRec us)) = do
   v <- evalExpr sym lhs
   case v of
-    VTup vs -> do
-      vals <- traverseM (evalExpr sym) updates
-      pure $ VTup $ M.foldlWithKey' setN vs vals
-evalExpr sym (RecordWith lhs updates) = do
+    VRec (FsRec fs) -> do
+      vals <- traverseM (evalExpr sym) us
+      pure $ VRec $ FsRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
+evalExpr sym (RecWith lhs (FsTup us)) = do
   v <- evalExpr sym lhs
   case v of
-    VRecord vs -> do
-      vals <- traverseM (evalExpr sym) updates
-      pure $ VRecord $ M.foldlWithKey' (\m k v' -> M.insert k v' m) vs vals
-evalExpr sym (RecordUnion a b) = do
+    VRec (FsTup fs) -> do
+      vals <- traverseM (evalExpr sym) us
+      pure $ VRec $ FsTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
+evalExpr sym (RecUnion a b) = do
   ra <- evalExpr sym a
   rb <- evalExpr sym b
   case (ra, rb) of
-    (VRecord a', VRecord b') -> pure $ VRecord $ M.union a' b'
+    (VRec (FsRec a'), VRec (FsRec b')) -> pure $ VRec $ FsRec $ M.union a' b'
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
@@ -104,10 +99,10 @@ evalStmt progState (Decl _ _) = pure progState
 evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym expr
   pure $ ProgState {sym =  M.insert ident v sym, .. }
-evalStmt progState (Assign (TupMember lhs idx) expr) =
-  evalStmt progState (Assign lhs (TupWith lhs $ M.singleton idx expr))
-evalStmt progState (Assign (RecordMember lhs ident) expr) =
-  evalStmt progState (Assign lhs (RecordWith lhs $ M.singleton ident expr))
+evalStmt progState (Assign (RecMember lhs f@(FRec _)) expr) =
+  evalStmt progState (Assign lhs (RecWith lhs $ FsRec $ M.singleton f expr))
+evalStmt progState (Assign (RecMember lhs f@(FTup _)) expr) =
+  evalStmt progState (Assign lhs (RecWith lhs $ FsTup $ M.singleton f expr))
 evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (DeclAssign ident Nothing expr) =

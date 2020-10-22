@@ -59,13 +59,13 @@ tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
     mkTup [a] False = a
     mkTup l _ = ctor l
 
-record :: Parser sep -> Parser a -> Parser (Map Ident a)
-record sep rhs = M.fromList <$> (unique =<< parens '{' '}' elems)
+record :: Parser sep -> Parser a -> Parser (Fields Ident a)
+record sep rhs = FsRec . M.fromList <$> (unique =<< parens '{' '}' elems)
   where
     withTrailing = many (term <* comma)
     noTrailing = sepBy1 term comma
     elems = try withTrailing <|> noTrailing
-    term = liftA2 (,) (ident <* ws <* sep <* ws) (rhs <* ws)
+    term = liftA2 (,) (FRec <$> ident <* ws <* sep <* ws) (rhs <* ws)
 
     unique es =
       let es' = fst <$> es
@@ -77,11 +77,14 @@ record sep rhs = M.fromList <$> (unique =<< parens '{' '}' elems)
 primType :: Parser Type
 primType = choice [string "Int" $> TInt, string "Bool" $> TBool]
 
+tupToRec :: [a] -> Fields Int a
+tupToRec = FsTup . M.fromList . zip (FTup <$> [0..])
+
 ttup :: Parser Type
-ttup = tuple TTup type'
+ttup = tuple (TRec . tupToRec) type'
 
 trec :: Parser Type
-trec = TRecord <$> record colon type'
+trec = TRec <$> record colon type'
 
 type' :: Parser Type
 type' = try trec <|> try ttup <|> primType
@@ -89,14 +92,14 @@ type' = try trec <|> try ttup <|> primType
 member :: Parser (Expr a) -> Parser (Expr a)
 member lhs = liftA2 (foldl' unroll) lhs (many $ char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
   where
-    unroll lhs' (Left idx) = TupMember lhs' idx
-    unroll lhs' (Right ident') = RecordMember lhs' ident'
+    unroll lhs' (Left idx) = RecMember lhs' (FTup idx)
+    unroll lhs' (Right ident') = RecMember lhs' (FRec ident')
 
 vtup :: Parser (Expr 'R)
-vtup = tuple TupLit expr
+vtup = tuple (RecLit . tupToRec) expr
 
 vrec :: Parser (Expr 'R)
-vrec = RecordLit <$> record arrow expr
+vrec = RecLit <$> record arrow expr
 
 lvalue :: Parser (Expr 'L)
 lvalue = try (member var) <|> var
@@ -110,7 +113,7 @@ opMul =
   [ char '*' $> flip Arith Multiply
   , char '/' $> flip Arith Divide
   , char '%' $> flip Arith Remainder
-  , char '|' $> RecordUnion
+  , char '|' $> RecUnion
   ]
   <* ws
 
@@ -165,8 +168,8 @@ withExpr ctor index = liftA2 ctor exprNoWith (withBlock index)
 exprNoOps :: Parser (Expr 'R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
   where
-    withRecord =  withExpr RecordWith ident
-    withTup = withExpr TupWith number
+    withRecord =  withExpr (\a -> RecWith a . FsRec) (FRec <$> ident)
+    withTup = withExpr (\a -> RecWith a . FsTup) (FTup <$> number)
 
 termAdd :: Parser (Expr 'R)
 termAdd = chainl1 exprNoOps opMul

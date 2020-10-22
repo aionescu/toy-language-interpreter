@@ -6,39 +6,63 @@ import Data.Map.Strict(Map)
 
 type Ident = String
 
-data Type
-  = TInt
-  | TBool
-  | TTup [Type]
-  | TRecord (Map Ident Type)
-  deriving stock Eq
+data Field :: * -> * where
+  FRec :: Ident -> Field Ident
+  FTup :: Int -> Field Int
+
+deriving instance Eq (Field a)
+deriving instance Ord (Field a)
+
+instance Show (Field a) where
+  show (FRec ident) = ident
+  show (FTup idx) = show idx
+
+data Fields :: * -> * -> * where
+  FsRec :: Map (Field Ident) a -> Fields Ident a
+  FsTup :: Map (Field Int) a -> Fields Int a
+
+deriving instance Eq a => Eq (Fields i a)
+
+data Type :: * where
+  TInt :: Type
+  TBool :: Type
+  TRec :: Fields a Type -> Type
+
+instance Eq Type where
+  TInt == TInt = True
+  TBool == TBool = True
+  TRec (FsRec as) == TRec (FsRec bs) = as == bs
+  TRec (FsTup as) == TRec (FsTup bs) = as == bs
+  _ == _ = False
 
 withParens :: String -> String -> [String] -> String
 withParens begin end l = begin ++ intercalate ", " l ++ end
 
+showField :: String -> (Field a, String) -> String
+showField sep (f, s) = show f ++ " " ++ sep ++ " " ++ s
+
+showFields :: Show v => Bool -> String -> Fields a v -> String
+showFields _ sep (FsRec m) = withParens "{ " " }" (showField sep <$> M.toList (show <$> m))
+showFields True sep (FsTup m) = withParens "{ " " }" (showField sep <$> M.toList (show <$> m))
+showFields False _ (FsTup m) =
+  case snd <$> M.toList m of
+    [a] -> "(" ++ show a ++ ",)"
+    l -> withParens "(" ")" (show <$> l)
+
 instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
-  show (TTup [t]) = "(" ++ show t ++ ",)"
-  show (TTup ts) = withParens "(" ")" (show <$> ts)
-  show (TRecord fs) = withParens "{ " " }" (showField <$> M.toList fs)
-    where
-      showField (ident, type') = ident ++ " : " ++ show type'
+  show (TRec fs) = showFields False ":" fs
 
-data Val
-  = VBool Bool
-  | VInt Int
-  | VTup [Val]
-  | VRecord (Map Ident Val)
+data Val :: * where
+  VInt :: Int -> Val
+  VBool :: Bool -> Val
+  VRec :: Fields a Val -> Val
 
 instance Show Val where
   show (VBool b) = show b
   show (VInt i) = show i
-  show (VTup [v]) = "(" ++ show v ++ ",)"
-  show (VTup vs) = withParens "(" ")" (show <$> vs)
-  show (VRecord fs) = withParens "{ " " }" (showField <$> M.toList fs)
-    where
-      showField (ident, val) = ident ++ " <- " ++ show val
+  show (VRec fs) = showFields False "<-" fs
 
 data ArithOp
   = Add
@@ -107,13 +131,11 @@ data Expr :: ExprKind -> * where
   Arith :: Expr a -> ArithOp -> Expr b -> Expr 'R
   Logic :: Expr a -> LogicOp -> Expr b -> Expr 'R
   Comp :: Expr a -> CompOp -> Expr b -> Expr 'R
-  TupLit :: [Expr a] -> Expr 'R
-  RecordLit :: Map Ident (Expr a) -> Expr 'R
-  TupMember :: Expr a -> Int -> Expr a
-  RecordMember :: Expr a -> Ident -> Expr a
-  TupWith :: Expr a -> Map Int (Expr b) -> Expr 'R
-  RecordWith :: Expr a -> Map Ident (Expr b) -> Expr 'R
-  RecordUnion :: Expr a -> Expr b -> Expr 'R
+  RecLit :: Fields f (Expr a) -> Expr 'R
+  RecMember :: Expr a -> Field f -> Expr a
+  -- RecWith :: Expr a -> Fields f (forall b. Expr b) -> Expr 'R -- When ImpredicativeTypes lands in GHC
+  RecWith :: Expr a -> Fields f (Expr b) -> Expr 'R
+  RecUnion :: Expr a -> Expr b -> Expr 'R
 
 instance Show (Expr a) where
   show (Lit v) = show v
@@ -121,19 +143,10 @@ instance Show (Expr a) where
   show (Arith a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
-  show (TupLit es) = withParens "(" ")" (show <$> es)
-  show (RecordLit fs) = withParens "{ " " }" (showField <$> M.toList fs)
-    where
-      showField (ident, expr) = ident ++ " <- " ++ show expr
-  show (TupMember e i) = show e ++ "." ++ show i
-  show (RecordMember e i) = show e ++ "." ++ i
-  show (TupWith lhs updates) = show lhs ++ " " ++ withParens "{ " " }" (showTupUpdate <$> M.toList updates)
-    where
-      showTupUpdate (idx, expr) = show idx ++ " <- " ++ show expr
-  show (RecordWith lhs updates) = show lhs ++ " " ++ withParens "{ " " }" (showRecordUpdate <$> M.toList updates)
-    where
-      showRecordUpdate (ident, expr) = ident ++ " <- " ++ show expr
-  show (RecordUnion a b) = show a ++ " | " ++ show b
+  show (RecLit fs) = showFields False "<-" fs
+  show (RecMember e f) = show e ++ show f
+  show (RecWith lhs updates) = show lhs ++ " " ++ showFields True "<-" updates
+  show (RecUnion a b) = show a ++ " | " ++ show b
 
 data Stmt
   = Nop
