@@ -16,6 +16,7 @@ withParens begin end l = begin ++ intercalate ", " l ++ end
 instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
+  show (TTup [t]) = "(" ++ show t ++ ",)"
   show (TTup ts) = withParens "(" ")" (show <$> ts)
 
 data Val
@@ -26,6 +27,7 @@ data Val
 instance Show Val where
   show (VBool b) = show b
   show (VInt i) = show i
+  show (VTup [v]) = "(" ++ show v ++ ",)"
   show (VTup vs) = withParens "(" ")" (show <$> vs)
 
 data ArithOp
