@@ -28,6 +28,6 @@ f : { b : Bool, a : Int } <- e;
 print e;
 print f;
 
--- Actually, there are 2 union types :D (Empty record)
+-- Actually, there are 2 Unit types :D (Empty record)
 g : { } <- { };
 print g
