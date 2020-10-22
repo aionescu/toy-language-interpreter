@@ -5,7 +5,6 @@ module Eval(allSteps, eval, ProgState(..), showSteps, showOut) where
 
 import qualified Data.HashMap.Strict as M
 import Data.HashMap.Strict(HashMap)
-import Data.List(intercalate)
 
 import AST
 
@@ -23,7 +22,7 @@ data ProgState =
 instance Show ProgState where
   show ProgState{..} = unlines ["toDo = " ++ show toDo, "sym = " ++ sym', "out = " ++ show out]
     where
-      sym' = "{ " ++ intercalate ", " (showVar <$> M.toList sym) ++ " }"
+      sym' = withParens "{ " " }" (showVar <$> M.toList sym)
       showVar (ident, var) = ident ++ " <- " ++ show var
 
 mkProgState :: Stmt -> ProgState
@@ -44,7 +43,12 @@ instance Show EvalError where
 
 type Eval a = Either EvalError a
 
-evalExpr :: SymValTable -> Expr -> Eval Val
+setN :: Int -> a -> [a] -> [a]
+setN _ _ [] = []
+setN 0 v (_ : as) = v : as
+setN n v (a : as) = a : setN (pred n) v as
+
+evalExpr :: SymValTable -> Expr a -> Eval Val
 evalExpr _ (Lit v) = pure v
 evalExpr sym (Var ident) = pure $ sym M.! ident
 evalExpr sym (Arith a op b) = do
@@ -66,15 +70,28 @@ evalExpr sym (Comp a op b) = do
   case (va, vb) of
     (VInt a', VInt b') -> pure $ VBool $ compOp op a' b'
     (VBool a', VBool b') -> pure $ VBool $ compOp op a' b'
+evalExpr sym (TupLit t) = VTup <$> traverse (evalExpr sym) t
+evalExpr sym (TupleMember lhs idx) = do
+  v <- evalExpr sym lhs
+  case v of
+    VTup vs -> pure $ vs !! idx
+evalExpr sym (With lhs idx e) = do
+  v <- evalExpr sym lhs
+  case v of
+    VTup vs -> do
+      val <- evalExpr sym e
+      pure $ VTup $ setN idx val vs
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
 evalStmt progState (Decl _ _) = pure progState
-evalStmt ProgState{..} (Assign ident expr) = do
+evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym expr
   pure $ ProgState {sym =  M.insert ident v sym, .. }
+evalStmt progState (Assign (TupleMember lhs idx) expr) =
+  evalStmt progState (Assign lhs (With lhs idx expr))
 evalStmt ProgState{..} (DeclAssign ident type' expr) =
-  pure $ ProgState { toDo = Decl ident type' : Assign ident expr : toDo, .. }
+  pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (Print expr) = do
   v <- evalExpr sym expr
   pure $ ProgState { out = show v : out, .. }

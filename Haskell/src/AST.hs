@@ -1,23 +1,32 @@
 module AST where
 
+import Data.List (intercalate)
+
 type Ident = String
 
 data Type
   = TInt
   | TBool
+  | TTup [Type]
   deriving stock Eq
+
+withParens :: String -> String -> [String] -> String
+withParens begin end l = begin ++ intercalate ", " l ++ end
 
 instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
+  show (TTup ts) = withParens "(" ")" (show <$> ts)
 
 data Val
   = VBool Bool
   | VInt Int
+  | VTup [Val]
 
 instance Show Val where
   show (VBool b) = show b
   show (VInt i) = show i
+  show (VTup vs) = withParens "(" ")" (show <$> vs)
 
 data ArithOp
   = Add
@@ -77,34 +86,43 @@ compOp LtEq = (<=)
 compOp Eq = (==)
 compOp NEq = (/=)
 
-data Expr
-  = Lit Val
-  | Var Ident
-  | Arith Expr ArithOp Expr
-  | Logic Expr LogicOp Expr
-  | Comp Expr CompOp Expr
+-- `Expr L` are lvalue-expressions, `Expr R` are rvalue-expression
+data ExprKind = L | R
 
-instance Show Expr where
+data Expr :: ExprKind -> * where
+  Lit :: Val -> Expr 'R
+  Var :: Ident -> Expr a
+  Arith :: Expr 'R -> ArithOp -> Expr 'R -> Expr 'R
+  Logic :: Expr 'R -> LogicOp -> Expr 'R -> Expr 'R
+  Comp :: Expr 'R -> CompOp -> Expr 'R -> Expr 'R
+  TupLit :: [Expr 'R] -> Expr 'R
+  TupleMember :: Expr a -> Int -> Expr a
+  With :: Expr a -> Int -> Expr 'R -> Expr 'R
+
+instance Show (Expr a) where
   show (Lit v) = show v
   show (Var ident) = ident
   show (Arith a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
+  show (TupLit es) = withParens "(" ")" (show <$> es)
+  show (TupleMember e i) = show e ++ "." ++ show i
+  show (With lhs idx e) = show lhs ++ " with " ++ show idx ++ " = " ++ show e
 
 data Stmt
   = Nop
   | Decl Ident Type
-  | Assign Ident Expr
-  | DeclAssign Ident Type Expr
-  | Print Expr
-  | If Expr Stmt Stmt
-  | While Expr Stmt
+  | Assign (Expr 'L) (Expr 'R)
+  | DeclAssign Ident Type (Expr 'R)
+  | Print (Expr 'R)
+  | If (Expr 'R) Stmt Stmt
+  | While (Expr 'R) Stmt
   | Compound Stmt Stmt
 
 instance Show Stmt where
   show Nop = ""
   show (Decl ident type') = ident ++ " : " ++ show type'
-  show (Assign ident expr) = ident ++ " <- " ++ show expr
+  show (Assign ident expr) = show ident ++ " <- " ++ show expr
   show (DeclAssign ident type' expr) = ident ++ " : " ++ show type' ++ " <- " ++ show expr
   show (Print expr) = "print " ++ show expr
   show (If cond then' Nop) = "if " ++ show cond ++ " { " ++ show then' ++ " }"

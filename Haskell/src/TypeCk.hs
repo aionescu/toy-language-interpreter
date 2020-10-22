@@ -16,6 +16,7 @@ data TypeError
   | UndeclaredVar Ident
   | VarAlreadyDeclared Ident
   | UninitializedVar Ident
+  | TupleTooShort Type Int
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -24,6 +25,7 @@ instance Show TypeError where
       go (UndeclaredVar ident) = "Variable " ++ ident ++ " was not declared"
       go (VarAlreadyDeclared ident) = "Variable " ++ ident ++ " has already been declared"
       go (UninitializedVar ident) = "Variable " ++ ident ++ " is not guaranteed to be initialized before its first read"
+      go (TupleTooShort t i) = "The tuple type " ++ show t ++ " does not have enough elements to be indexed by the index " ++ show i
 
 type TypeCk a = Either TypeError a
 
@@ -35,11 +37,21 @@ mustBe found expected
 valType :: Val -> Type
 valType (VBool _) = TBool
 valType (VInt _) = TInt
+valType (VTup vs) = TTup $ valType <$> vs
 
 lookupVar :: Ident -> SymTypeTable -> TypeCk VarInfo
 lookupVar var sym = maybe (throw $ UndeclaredVar var) pure $ M.lookup var sym
 
-typeCheckExpr :: SymTypeTable -> Expr -> TypeCk Type
+-- foldM :: (b -> a -> m b) -> b -> [a] -> m b
+-- foldM _ b [] = pure b
+-- foldM f b (a : as) = f b a >>= flip (foldM f) as
+
+(!?) :: [a] -> Int -> Maybe a
+(a : _) !? 0 = Just a
+(_ : as) !? n = as !? (n - 1)
+_ !? _ = Nothing
+
+typeCheckExpr :: SymTypeTable -> Expr a -> TypeCk Type
 typeCheckExpr _ (Lit v) = pure $ valType v
 typeCheckExpr sym (Var ident) = do
   (type', state) <- lookupVar ident sym
@@ -63,7 +75,26 @@ typeCheckExpr sym (Comp a _ b) = do
   tb <- typeCheckExpr sym b
   tb `mustBe` ta
   pure TBool
-
+typeCheckExpr sym (TupLit vs) = TTup <$> traverse (typeCheckExpr sym) vs
+typeCheckExpr sym (TupleMember lhs idx) = do
+  t <- typeCheckExpr sym lhs
+  case t of
+    TTup ts ->
+      case ts !? idx of
+        Nothing -> throw $ TupleTooShort t idx
+        Just t' -> pure t'
+    _ -> throw $ ExpectedFound (TTup (replicate idx (TTup []) ++ [t])) t
+typeCheckExpr sym (With lhs idx e) = do
+  t <- typeCheckExpr sym lhs
+  tv <- typeCheckExpr sym e
+  case t of
+    TTup ts ->
+      case ts !? idx of
+        Nothing -> throw $ TupleTooShort t idx
+        Just t' -> do
+          tv `mustBe` t'
+          pure t
+    _ -> throw $ ExpectedFound (TTup (replicate idx (TTup []) ++ [t])) t
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b
@@ -76,14 +107,16 @@ typeCheckStmt sym (Decl ident type') =
   case M.lookup ident sym of
     Just _ -> throw $ VarAlreadyDeclared ident
     Nothing -> pure $ M.insert ident (type', Uninit) sym
-typeCheckStmt sym (Assign ident expr) = do
+typeCheckStmt sym (Assign (Var ident) expr) = do
   (typ, _) <- lookupVar ident sym
   typ2 <- typeCheckExpr sym expr
   typ2 `mustBe` typ
   pure $ M.insert ident (typ, Init) sym
+typeCheckStmt sym (Assign (TupleMember lhs idx) expr) =
+  typeCheckStmt sym $ Assign lhs (With lhs idx expr)
 typeCheckStmt sym (DeclAssign ident type' expr) = do
   sym2 <- typeCheckStmt sym (Decl ident type')
-  typeCheckStmt sym2 (Assign ident expr)
+  typeCheckStmt sym2 (Assign (Var ident) expr)
 typeCheckStmt sym (Print e) = sym <$ typeCheckExpr sym e
 typeCheckStmt sym (If cond then' else') = do
   tc <- typeCheckExpr sym cond

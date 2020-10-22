@@ -5,6 +5,7 @@ import Control.Applicative(liftA2)
 import Text.Parsec hiding (parse)
 
 import AST
+import Data.List (foldl')
 
 type Parser = Parsec String ()
 
@@ -20,11 +21,13 @@ comment = singleLine <|> multiLine
 ws :: Parser ()
 ws = spaces *> skipMany (comment *> spaces)
 
+number :: Parser Int
+number = read <$> many1 digit
+
 int :: Parser Val
 int = VInt <$> (sign <*> number)
   where
     sign = option id (char '-' $> negate)
-    number = read <$> many1 digit
 
 bool :: Parser Val
 bool = VBool <$> choice [string "True" $> True, string "False" $> False]
@@ -38,13 +41,38 @@ ident = liftA2 (:) fstChar (many sndChar)
     fstChar = choice [letter, char '_']
     sndChar = choice [fstChar, digit, char '\'']
 
+var :: Parser (Expr a)
+var = Var <$> ident
+
+tuple :: ([a] -> a) -> Parser a -> Parser a
+tuple ctor term = parens $ uncurry mkTup <$> (liftA2 (,) (sepBy1 term comma) (option False (comma $> True)))
+  where
+    parens = between (char '(' *> ws) (char ')' *> ws)
+    mkTup [a] False = a
+    mkTup l _ = ctor l
+
+primType :: Parser Type
+primType = choice [string "Int" $> TInt, string "Bool" $> TBool]
+
+ttup :: Parser Type
+ttup = tuple TTup type'
+
 type' :: Parser Type
-type' = choice [string "Int" $> TInt, string "Bool" $> TBool]
+type' = try ttup <|> primType
 
-parens :: Parser a -> Parser a
-parens = between (char '(' <* ws) (char ')' <* ws)
+tupMember :: Parser (Expr a) -> Parser (Expr a)
+tupMember lhs = liftA2 (foldl' TupleMember) lhs (many $ char '.' *> number)
 
-opMul :: Parser (Expr -> Expr -> Expr)
+vtup :: Parser (Expr 'R)
+vtup = tuple TupLit expr
+
+lvalue :: Parser (Expr 'L)
+lvalue = try (tupMember var) <|> var
+
+comma :: Parser ()
+comma = char ',' *> ws
+
+opMul :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
 opMul =
   choice
   [ char '*' $> flip Arith Multiply
@@ -53,7 +81,7 @@ opMul =
   ]
   <* ws
 
-opAdd :: Parser (Expr -> Expr -> Expr)
+opAdd :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
 opAdd =
   choice
   [ char '+' $> flip Arith Add
@@ -61,7 +89,7 @@ opAdd =
   ]
   <* ws
 
-opComp :: Parser (Expr -> Expr -> Expr)
+opComp :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
 opComp =
   choice
   [ try $ string "<=" $> flip Comp LtEq
@@ -73,7 +101,7 @@ opComp =
   ]
   <* ws
 
-opLogic :: Parser (Expr -> Expr -> Expr)
+opLogic :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
 opLogic =
   choice
   [ string "and" $> flip Logic And
@@ -81,19 +109,27 @@ opLogic =
   ]
   <* ws
 
-termMul :: Parser Expr
-termMul = choice [try $ parens expr, Lit <$> try val, Var <$> ident] <* ws
+termMul :: Parser (Expr 'R)
+termMul =
+  let
+    expr' = choice [try vtup, Lit <$> try val, var] <* ws
+    expr'' = try (tupMember expr') <|> expr'
+    with = liftA2 (,) (string "with" *> ws *> number <* ws <* char '=' <* ws) expr
+    tryWith e Nothing = e
+    tryWith e (Just (idx, w)) = With e idx w
+  in
+    liftA2 tryWith expr'' (option Nothing $ Just <$> with)
 
-termAdd :: Parser Expr
+termAdd :: Parser (Expr 'R)
 termAdd = chainl1 termMul opMul
 
-termComp :: Parser Expr
+termComp :: Parser (Expr 'R)
 termComp = chainl1 termAdd opAdd
 
-termLogic :: Parser Expr
+termLogic :: Parser (Expr 'R)
 termLogic = chainl1 termComp opComp
 
-expr :: Parser Expr
+expr :: Parser (Expr 'R)
 expr = chainl1 termLogic opLogic
 
 print' :: Parser Stmt
@@ -109,7 +145,7 @@ decl :: Parser Stmt
 decl = liftA2 Decl (ident <* colon) type'
 
 assign :: Parser Stmt
-assign = liftA2 Assign (ident <* arrow) expr
+assign = liftA2 Assign (lvalue <* arrow) expr
 
 declAssign :: Parser Stmt
 declAssign = DeclAssign <$> (ident <* colon) <*> (type' <* arrow) <*> expr
