@@ -94,12 +94,12 @@ data ExprKind = L | R
 data Expr :: ExprKind -> * where
   Lit :: Val -> Expr 'R
   Var :: Ident -> Expr a
-  Arith :: Expr 'R -> ArithOp -> Expr 'R -> Expr 'R
-  Logic :: Expr 'R -> LogicOp -> Expr 'R -> Expr 'R
-  Comp :: Expr 'R -> CompOp -> Expr 'R -> Expr 'R
-  TupLit :: [Expr 'R] -> Expr 'R
+  Arith :: Expr a -> ArithOp -> Expr b -> Expr 'R
+  Logic :: Expr a -> LogicOp -> Expr b -> Expr 'R
+  Comp :: Expr a -> CompOp -> Expr b -> Expr 'R
+  TupLit :: [Expr a] -> Expr 'R
   TupleMember :: Expr a -> Int -> Expr a
-  With :: Expr a -> Int -> Expr 'R -> Expr 'R
+  With :: Expr a -> Int -> Expr b -> Expr 'R
 
 instance Show (Expr a) where
   show (Lit v) = show v
