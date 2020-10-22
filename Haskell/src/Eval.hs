@@ -49,11 +49,12 @@ evalExpr sym (Var ident) = pure $ sym M.! ident
 evalExpr sym (Arith a op b) = do
   a' <- evalExpr sym a
   b' <- evalExpr sym b
-  case (a', b') of
-    (VInt va, VInt vb) ->
-      if vb == 0 && (op == Divide || op == Remainder)
-        then throw $ DivisionByZero
-        else pure $ VInt $ arithOp op va vb
+  case (b', op) of
+    (VInt 0, Divide) -> throw DivisionByZero
+    (VInt 0, Remainder) -> throw DivisionByZero
+    (VInt vb, _) ->
+      case a' of
+        VInt va -> pure $ VInt $ arithOp op va vb
 evalExpr sym (Logic a op b) = do
   a' <- evalExpr sym a
   case (a', op) of

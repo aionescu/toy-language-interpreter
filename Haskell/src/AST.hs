@@ -21,8 +21,6 @@ data Fields :: * -> * -> * where
   FsRec :: Map (Field Ident) a -> Fields Ident a
   FsTup :: Map (Field Int) a -> Fields Int a
 
-deriving instance Eq a => Eq (Fields i a)
-
 data Type :: * where
   TInt :: Type
   TBool :: Type
@@ -70,7 +68,6 @@ data ArithOp
   | Multiply
   | Divide
   | Remainder
-  deriving Eq
 
 instance Show ArithOp where
   show Add = "+"
