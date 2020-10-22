@@ -114,9 +114,12 @@ typeCheckStmt sym (Assign (Var ident) expr) = do
   pure $ M.insert ident (typ, Init) sym
 typeCheckStmt sym (Assign (TupleMember lhs idx) expr) =
   typeCheckStmt sym $ Assign lhs (With lhs idx expr)
-typeCheckStmt sym (DeclAssign ident type' expr) = do
+typeCheckStmt sym (DeclAssign ident (Just type') expr) = do
   sym2 <- typeCheckStmt sym (Decl ident type')
   typeCheckStmt sym2 (Assign (Var ident) expr)
+typeCheckStmt sym (DeclAssign ident Nothing expr) = do
+  t <- typeCheckExpr sym expr
+  typeCheckStmt sym $ DeclAssign ident (Just t) expr
 typeCheckStmt sym (Print e) = sym <$ typeCheckExpr sym e
 typeCheckStmt sym (If cond then' else') = do
   tc <- typeCheckExpr sym cond

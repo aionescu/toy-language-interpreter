@@ -90,8 +90,10 @@ evalStmt ProgState{..} (Assign (Var ident) expr) = do
   pure $ ProgState {sym =  M.insert ident v sym, .. }
 evalStmt progState (Assign (TupleMember lhs idx) expr) =
   evalStmt progState (Assign lhs (With lhs idx expr))
-evalStmt ProgState{..} (DeclAssign ident type' expr) =
+evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
+evalStmt ProgState{..} (DeclAssign ident Nothing expr) =
+  pure $ ProgState { toDo = Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (Print expr) = do
   v <- evalExpr sym expr
   pure $ ProgState { out = show v : out, .. }

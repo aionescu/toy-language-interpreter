@@ -115,7 +115,7 @@ data Stmt
   = Nop
   | Decl Ident Type
   | Assign (Expr 'L) (Expr 'R)
-  | DeclAssign Ident Type (Expr 'R)
+  | DeclAssign Ident (Maybe Type) (Expr 'R)
   | Print (Expr 'R)
   | If (Expr 'R) Stmt Stmt
   | While (Expr 'R) Stmt
@@ -125,7 +125,8 @@ instance Show Stmt where
   show Nop = ""
   show (Decl ident type') = ident ++ " : " ++ show type'
   show (Assign ident expr) = show ident ++ " <- " ++ show expr
-  show (DeclAssign ident type' expr) = ident ++ " : " ++ show type' ++ " <- " ++ show expr
+  show (DeclAssign ident Nothing expr) = ident ++ " : _ <- " ++ show expr
+  show (DeclAssign ident (Just type') expr) = ident ++ " : " ++ show type' ++ " <- " ++ show expr
   show (Print expr) = "print " ++ show expr
   show (If cond then' Nop) = "if " ++ show cond ++ " { " ++ show then' ++ " }"
   show (If cond then' else') =

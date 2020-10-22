@@ -152,7 +152,7 @@ assign :: Parser Stmt
 assign = liftA2 Assign (lvalue <* arrow) expr
 
 declAssign :: Parser Stmt
-declAssign = DeclAssign <$> (ident <* colon) <*> (type' <* arrow) <*> expr
+declAssign = DeclAssign <$> (ident <* colon) <*> ((char '_' $> Nothing <|> Just <$> type') <* arrow) <*> expr
 
 block :: Parser Stmt
 block =
