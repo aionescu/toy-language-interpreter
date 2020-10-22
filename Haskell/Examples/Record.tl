@@ -26,4 +26,8 @@ print d;
 e : { a : Int, b : Bool } <- { a <- 0, b <- False };
 f : { b : Bool, a : Int } <- e;
 print e;
-print f
+print f;
+
+-- Actually, there are 2 union types :D (Empty record)
+g : { } <- { };
+print g
