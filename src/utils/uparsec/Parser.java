@@ -58,7 +58,11 @@ public interface Parser<A> {
   }
 
   public static <A, B, C> Parser<C> liftA2(BiFunction<A, B, C> f, Parser<A> pa, Parser<B> pb) {
-    return pa.and(pb).map(pr -> pr.match(f));
+    return pa.and(pb).map(Pair.match(f));
+  }
+
+  public static <A, B, C, D> Parser<D> liftA3(TriFunction<A, B, C, D> f, Parser<A> pa, Parser<B> pb, Parser<C> pc) {
+    return ap(ap(pa.map(f.curried()), pb), pc);
   }
 
   public static <A, B> Parser<B> ap(Parser<Function<A, B>> pf, Parser<A> pa) {
@@ -69,40 +73,25 @@ public interface Parser<A> {
     return s -> this.run(s).match(Result::fail, (a, s2) -> f.apply(a).run(s2));
   }
 
-  public static Parser<Character> anyChar() {
-    return s -> s.isEmpty() ? Result.fail() : Result.of(s.charAt(0), s.substring(1));
-  }
+  public static final Parser<Character> anyChar =
+    s -> s.isEmpty() ? Result.fail() : Result.of(s.charAt(0), s.substring(1));
 
   public static Parser<Character> satisfy(Predicate<Character> p) {
-    return anyChar().bind(c -> p.test(c) ? pure(c) : fail());
+    return anyChar.bind(c -> p.test(c) ? pure(c) : fail());
   }
+
+  public static final Parser<Character> digit = satisfy(Character::isDigit);
+  public static final Parser<Character> letter = satisfy(Character::isLetter);
+  public static final Parser<Character> newline = satisfy(c -> c == '\n' || c == '\r');
+  public static final Parser<Unit> spaces = s -> Result.of(Unit.UNIT, s.replaceFirst("^\\s+", ""));
+  public static final Parser<Unit> eof = s -> s.isEmpty() ? Result.of(Unit.UNIT, s) : Result.fail();
 
   public static Parser<Character> ch(char c) {
     return satisfy(c2 -> c == c2);
   }
 
-  public static Parser<Character> digit() {
-    return satisfy(Character::isDigit);
-  }
-
-  public static Parser<Character> letter() {
-    return satisfy(Character::isLetter);
-  }
-
-  public static Parser<Character> newline() {
-    return satisfy(c -> c == '\n' || c == '\r');
-  }
-
-  public static Parser<Unit> spaces() {
-    return s -> Result.of(Unit.UNIT, s.replaceFirst("^\\s+", ""));
-  }
-
   public static Parser<String> string(String string) {
     return s -> s.startsWith(string) ? Result.of(string, s.substring(string.length())) : Result.fail();
-  }
-
-  public static Parser<Unit> eof() {
-    return s -> s.isEmpty() ? Result.of(Unit.UNIT, s) : Result.fail();
   }
 
   public default Parser<A> option(A a) {
@@ -122,11 +111,11 @@ public interface Parser<A> {
   }
 
   public default <B> Parser<A> and_(Parser<B> pb) {
-    return this.and(pb).map(Pair::fstF);
+    return this.and(pb).map(Pair::fst_);
   }
 
   public default <B> Parser<B> _and(Parser<B> pb) {
-    return this.and(pb).map(Pair::sndF);
+    return this.and(pb).map(Pair::snd_);
   }
 
   public default Parser<A> or(Parser<A> p) {
@@ -175,7 +164,7 @@ public interface Parser<A> {
   }
 
   public default <Sep> Parser<List<A>> sepBy(Parser<Sep> sep) {
-    return this.and(sep._and(this).many()).map(r -> r.match(List::cons));
+    return this.and(sep._and(this).many()).map(Pair.match(List::cons));
   }
 
   public default <Sep> Parser<List<A>> sepBy1(Parser<Sep> sep) {
@@ -197,10 +186,10 @@ public interface Parser<A> {
   }
 
   public default Parser<A> chainl1(Parser<BinaryOperator<A>> op) {
-    return liftA2((a, l) -> l.foldl((s, p) -> p.match((f, b) -> f.apply(s, b)), a), this, op.and(this).many());
+    return liftA2((a, l) -> l.foldl((s, p) -> p.fst.apply(s, p.snd), a), this, op.and(this).many());
   }
 
   public default Parser<A> chainr1(Parser<BinaryOperator<A>> op) {
-    return liftA2((l, a) -> l.foldr((p, s) -> p.match((b, f) -> f.apply(b, s)), a), this.and(op).many(), this);
+    return liftA2((l, a) -> l.foldr((p, s) -> p.snd.apply(p.fst, s), a), this.and(op).many(), this);
   }
 }
