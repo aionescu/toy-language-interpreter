@@ -18,7 +18,7 @@ print d.0.a.0.b;
 print d;
 
 -- Mixed record/tuple update
-d <- d { 0 <- d.0 { a <- d.0.a { 0 <- d.0.a.0 { b <- False } } } };
+d <- d with { 0 <- d.0 with { a <- d.0.a with { 0 <- d.0.a.0 with { b <- False } } } };
 print d;
 
 -- Field order doesn't matter
@@ -30,4 +30,8 @@ print f;
 
 -- Actually, there are 2 Unit types :D (Empty record)
 g : { } <- { };
-print g
+print g;
+
+print f;
+f <- f with { }; -- Empty record update (works with tuples too)
+print f

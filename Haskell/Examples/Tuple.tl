@@ -12,7 +12,7 @@ print c;
 d : (Int, Int);
 d <- (c.0, 2);
 -- Functional update
-d <- c { 1 <- 2 }; -- same as above statement
+d <- c with { 1 <- 2 }; -- same as above statement
 print d;
 
 -- Proper unit type, unlike Java ;)
@@ -30,9 +30,9 @@ g.0.0.0.0 <- 1;
 print g;
 
 -- You can also do it the long way
-g <- g { 0 <- g.0 { 0 <- g.0.0 { 0 <- g.0.0.0 { 0 <- 1 } } } };
+g <- g with { 0 <- g.0 with { 0 <- g.0.0 with { 0 <- g.0.0.0 with { 0 <- 1 } } } };
 print g;
 
 -- Multiple updates at once
 h : _ <- (0, 0, 0, 0);
-print h { 1 <- 1, 2 <- 2, 3 <- 1 + 2 }
+print h with { 1 <- 1, 2 <- 2, 3 <- 1 + 2 }

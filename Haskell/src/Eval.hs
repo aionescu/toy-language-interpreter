@@ -56,9 +56,13 @@ evalExpr sym (Arith a op b) = do
         else pure $ VInt $ arithOp op va vb
 evalExpr sym (Logic a op b) = do
   a' <- evalExpr sym a
-  b' <- evalExpr sym b
-  case (a', b') of
-    (VBool va, VBool vb) -> pure $ VBool $ logicOp op va vb
+  case (a', op) of
+    (VBool True, Or) -> pure a'
+    (VBool False, And) -> pure a'
+    (VBool va, _) -> do
+      b' <- evalExpr sym b
+      case b' of
+        VBool vb -> pure $ VBool $ logicOp op va vb
 evalExpr sym (Comp a op b) = do
   va <- evalExpr sym a
   vb <- evalExpr sym b

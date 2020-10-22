@@ -163,7 +163,7 @@ exprNoWith :: Parser (Expr 'R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember
 
 withExpr :: Ord a => (Expr 'R -> Map a (Expr 'R) -> Expr 'R) -> Parser a -> Parser (Expr 'R)
-withExpr ctor index = liftA2 ctor exprNoWith (withBlock index)
+withExpr ctor index = liftA2 ctor (exprNoWith <* ws <* string "with" <* ws) (withBlock index)
 
 exprNoOps :: Parser (Expr 'R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
@@ -181,7 +181,7 @@ termLogic :: Parser (Expr 'R)
 termLogic = chainl1 termComp opComp
 
 expr :: Parser (Expr 'R)
-expr = chainl1 termLogic opLogic
+expr = chainr1 termLogic opLogic
 
 print' :: Parser Stmt
 print' = Print <$> (string "print" <* ws *> expr)

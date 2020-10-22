@@ -144,8 +144,8 @@ instance Show (Expr a) where
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (RecLit fs) = showFields False "<-" fs
-  show (RecMember e f) = show e ++ show f
-  show (RecWith lhs updates) = show lhs ++ " " ++ showFields True "<-" updates
+  show (RecMember e f) = show e ++ "." ++ show f
+  show (RecWith lhs updates) = show lhs ++ " with " ++ showFields True "<-" updates
   show (RecUnion a b) = show a ++ " | " ++ show b
 
 data Stmt
