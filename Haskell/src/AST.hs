@@ -1,6 +1,8 @@
 module AST where
 
 import Data.List (intercalate)
+import qualified Data.Map.Strict as M
+import Data.Map.Strict(Map)
 
 type Ident = String
 
@@ -8,6 +10,7 @@ data Type
   = TInt
   | TBool
   | TTup [Type]
+  | TRecord (Map Ident Type)
   deriving stock Eq
 
 withParens :: String -> String -> [String] -> String
@@ -18,17 +21,24 @@ instance Show Type where
   show TBool = "Bool"
   show (TTup [t]) = "(" ++ show t ++ ",)"
   show (TTup ts) = withParens "(" ")" (show <$> ts)
+  show (TRecord fs) = withParens "{ " " }" (showField <$> M.toList fs)
+    where
+      showField (ident, type') = ident ++ " : " ++ show type'
 
 data Val
   = VBool Bool
   | VInt Int
   | VTup [Val]
+  | VRecord (Map Ident Val)
 
 instance Show Val where
   show (VBool b) = show b
   show (VInt i) = show i
   show (VTup [v]) = "(" ++ show v ++ ",)"
   show (VTup vs) = withParens "(" ")" (show <$> vs)
+  show (VRecord fs) = withParens "{ " " }" (showField <$> M.toList fs)
+    where
+      showField (ident, val) = ident ++ " <- " ++ show val
 
 data ArithOp
   = Add
@@ -98,8 +108,12 @@ data Expr :: ExprKind -> * where
   Logic :: Expr a -> LogicOp -> Expr b -> Expr 'R
   Comp :: Expr a -> CompOp -> Expr b -> Expr 'R
   TupLit :: [Expr a] -> Expr 'R
+  RecordLit :: Map Ident (Expr a) -> Expr 'R
   TupMember :: Expr a -> Int -> Expr a
-  With :: Expr a -> [(Int, Expr b)] -> Expr 'R
+  RecordMember :: Expr a -> Ident -> Expr a
+  TupWith :: Expr a -> Map Int (Expr b) -> Expr 'R
+  RecordWith :: Expr a -> Map Ident (Expr b) -> Expr 'R
+  RecordUnion :: Expr a -> Expr b -> Expr 'R
 
 instance Show (Expr a) where
   show (Lit v) = show v
@@ -108,10 +122,18 @@ instance Show (Expr a) where
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (TupLit es) = withParens "(" ")" (show <$> es)
-  show (TupMember e i) = show e ++ "." ++ show i
-  show (With lhs updates) = show lhs ++ " " ++ withParens "{ " " }" (showUpdate <$> updates)
+  show (RecordLit fs) = withParens "{ " " }" (showField <$> M.toList fs)
     where
-      showUpdate (idx, expr) = show idx ++ " <- " ++ show expr
+      showField (ident, expr) = ident ++ " <- " ++ show expr
+  show (TupMember e i) = show e ++ "." ++ show i
+  show (RecordMember e i) = show e ++ "." ++ i
+  show (TupWith lhs updates) = show lhs ++ " " ++ withParens "{ " " }" (showTupUpdate <$> M.toList updates)
+    where
+      showTupUpdate (idx, expr) = show idx ++ " <- " ++ show expr
+  show (RecordWith lhs updates) = show lhs ++ " " ++ withParens "{ " " }" (showRecordUpdate <$> M.toList updates)
+    where
+      showRecordUpdate (ident, expr) = ident ++ " <- " ++ show expr
+  show (RecordUnion a b) = show a ++ " | " ++ show b
 
 data Stmt
   = Nop
@@ -149,3 +171,6 @@ mapLeft _ (Right b) = Right b
 
 toTLI :: Show a => Either a b -> TLI b
 toTLI = mapLeft show
+
+traverseM :: Applicative f => (a -> f b) -> Map k a -> f (Map k b)
+traverseM = M.traverseWithKey . const

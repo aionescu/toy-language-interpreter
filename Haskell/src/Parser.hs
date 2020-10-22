@@ -3,9 +3,11 @@ module Parser(parse) where
 import Data.Functor(($>))
 import Control.Applicative(liftA2)
 import Text.Parsec hiding (parse)
+import qualified Data.Map.Strict as M
+import Data.Map.Strict(Map)
 
 import AST
-import Data.List (foldl')
+import Data.List(nub, foldl')
 
 type Parser = Parsec String ()
 
@@ -57,23 +59,47 @@ tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
     mkTup [a] False = a
     mkTup l _ = ctor l
 
+record :: Parser sep -> Parser a -> Parser (Map Ident a)
+record sep rhs = M.fromList <$> (unique =<< parens '{' '}' elems)
+  where
+    withTrailing = many (term <* comma)
+    noTrailing = sepBy1 term comma
+    elems = try withTrailing <|> noTrailing
+    term = liftA2 (,) (ident <* ws <* sep <* ws) (rhs <* ws)
+
+    unique es =
+      let es' = fst <$> es
+      in
+        if nub es' == es'
+          then pure es
+          else fail "Fields in a record must be unique"
+
 primType :: Parser Type
 primType = choice [string "Int" $> TInt, string "Bool" $> TBool]
 
 ttup :: Parser Type
 ttup = tuple TTup type'
 
-type' :: Parser Type
-type' = try ttup <|> primType
+trec :: Parser Type
+trec = TRecord <$> record colon type'
 
-tupMember :: Parser (Expr a) -> Parser (Expr a)
-tupMember lhs = liftA2 (foldl' TupMember) lhs (many $ char '.' *> number <* ws)
+type' :: Parser Type
+type' = try trec <|> try ttup <|> primType
+
+member :: Parser (Expr a) -> Parser (Expr a)
+member lhs = liftA2 (foldl' unroll) lhs (many $ char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
+  where
+    unroll lhs' (Left idx) = TupMember lhs' idx
+    unroll lhs' (Right ident') = RecordMember lhs' ident'
 
 vtup :: Parser (Expr 'R)
 vtup = tuple TupLit expr
 
+vrec :: Parser (Expr 'R)
+vrec = RecordLit <$> record arrow expr
+
 lvalue :: Parser (Expr 'L)
-lvalue = try (tupMember var) <|> var
+lvalue = try (member var) <|> var
 
 comma :: Parser ()
 comma = char ',' *> ws
@@ -84,6 +110,7 @@ opMul =
   [ char '*' $> flip Arith Multiply
   , char '/' $> flip Arith Divide
   , char '%' $> flip Arith Remainder
+  , char '|' $> RecordUnion
   ]
   <* ws
 
@@ -115,20 +142,34 @@ opLogic =
   ]
   <* ws
 
-termMul :: Parser (Expr 'R)
-termMul =
-  let
-    expr' = choice [try vtup, Lit <$> try val, var] <* ws
-    expr'' = try (tupMember expr') <|> expr'
-    update = liftA2 (,) (number <* arrow) (expr <* ws)
-    withBlock = parens '{' '}' $ sepBy update comma
-    tryWith e Nothing = e
-    tryWith e (Just updates) = With e updates
-  in
-    liftA2 tryWith expr'' (option Nothing $ Just <$> try withBlock)
+withBlock :: Ord a => Parser a -> Parser (Map a (Expr 'R))
+withBlock index = M.fromList <$> (unique =<< parens '{' '}' (sepBy update comma))
+  where
+    update = liftA2 (,) (index <* arrow) (expr <* ws)
+    unique es =
+      let es' = fst <$> es
+      in
+        if nub es' == es'
+          then pure es
+          else fail "Updates in a with-expression must be unique"
+
+exprNoMember :: Parser (Expr 'R)
+exprNoMember = choice [try vrec, try vtup, Lit <$> try val, var] <* ws
+
+exprNoWith :: Parser (Expr 'R)
+exprNoWith = try (member exprNoMember) <|> exprNoMember
+
+withExpr :: Ord a => (Expr 'R -> Map a (Expr 'R) -> Expr 'R) -> Parser a -> Parser (Expr 'R)
+withExpr ctor index = liftA2 ctor exprNoWith (withBlock index)
+
+exprNoOps :: Parser (Expr 'R)
+exprNoOps = try withRecord <|> try withTup <|> exprNoWith
+  where
+    withRecord =  withExpr RecordWith ident
+    withTup = withExpr TupWith number
 
 termAdd :: Parser (Expr 'R)
-termAdd = chainl1 termMul opMul
+termAdd = chainl1 exprNoOps opMul
 
 termComp :: Parser (Expr 'R)
 termComp = chainl1 termAdd opAdd

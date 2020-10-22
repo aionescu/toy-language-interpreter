@@ -1,15 +1,16 @@
 module TypeCk(typeCheck) where
 
-import qualified Data.HashMap.Strict as M
-import Data.HashMap.Strict(HashMap)
+import qualified Data.Map.Strict as M
+import Data.Map.Strict(Map)
 
 import AST
+import Data.Function (on)
 
 data VarState = Init | Uninit
   deriving Eq
 
 type VarInfo = (Type, VarState)
-type SymTypeTable = HashMap Ident VarInfo
+type SymTypeTable = Map Ident VarInfo
 
 data TypeError
   = ExpectedFound Type Type
@@ -18,6 +19,9 @@ data TypeError
   | UninitializedVar Ident
   | TupleTooShort Type Int
   | ExpectedTupleFound Type
+  | NoFieldInRecord Type Ident
+  | NeedRecordTypesForUnion
+  | DuplicateIncompatibleField Ident
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -28,6 +32,9 @@ instance Show TypeError where
       go (UninitializedVar ident) = "Variable " ++ ident ++ " is not guaranteed to be initialized before its first read"
       go (TupleTooShort t i) = "The tuple type " ++ show t ++ " does not have enough elements to be indexed by the index " ++ show i
       go (ExpectedTupleFound found) = "Expected tuple type, but found " ++ show found
+      go (NoFieldInRecord t i) = "The record type " ++ show t ++ " has no field named " ++ i
+      go NeedRecordTypesForUnion = "Both operands of the \"|\" operator must be of record types"
+      go (DuplicateIncompatibleField i) = "The field " ++ i ++ " appears twice in the union, but with different types"
 
 type TypeCk a = Either TypeError a
 
@@ -40,6 +47,7 @@ valType :: Val -> Type
 valType (VBool _) = TBool
 valType (VInt _) = TInt
 valType (VTup vs) = TTup $ valType <$> vs
+valType (VRecord vs) = TRecord $ valType <$> vs
 
 lookupVar :: Ident -> SymTypeTable -> TypeCk VarInfo
 lookupVar var sym = maybe (throw $ UndeclaredVar var) pure $ M.lookup var sym
@@ -78,6 +86,7 @@ typeCheckExpr sym (Comp a _ b) = do
   tb `mustBe` ta
   pure TBool
 typeCheckExpr sym (TupLit vs) = TTup <$> traverse (typeCheckExpr sym) vs
+typeCheckExpr sym (RecordLit vs) = TRecord <$> traverseM (typeCheckExpr sym) vs
 typeCheckExpr sym (TupMember lhs idx) = do
   t <- typeCheckExpr sym lhs
   case t of
@@ -86,21 +95,57 @@ typeCheckExpr sym (TupMember lhs idx) = do
         Nothing -> throw $ TupleTooShort t idx
         Just t' -> pure t'
     _ -> throw $ ExpectedTupleFound t
-typeCheckExpr sym (With lhs updates) = do
+typeCheckExpr sym (RecordMember lhs ident) = do
+  t <- typeCheckExpr sym lhs
+  case t of
+    TRecord ts ->
+      case M.lookup ident ts of
+        Nothing -> throw $ NoFieldInRecord t ident
+        Just t' -> pure t'
+    _ -> throw $ ExpectedTupleFound t
+typeCheckExpr sym (TupWith lhs updates) = do
   t <- typeCheckExpr sym lhs
   case t of
     TTup ts -> do
-      tys <- traverse typeCheckUpdate updates
-      mapM_ (checkMember ts) tys
+      tys <-  traverseM (typeCheckExpr sym) updates
+      M.traverseWithKey (checkMember ts) tys
       pure t
     _ -> throw $ ExpectedTupleFound t
   where
-    typeCheckUpdate (idx, expr) = (idx, ) <$> typeCheckExpr sym expr
-    checkMember :: [Type] -> (Int, Type) -> TypeCk ()
-    checkMember ts (idx, t) =
+    checkMember :: [Type] -> Int -> Type -> TypeCk ()
+    checkMember ts idx t =
       case ts !? idx of
         Nothing -> throw $ TupleTooShort (TTup ts) idx
         Just t' -> t `mustBe` t'
+typeCheckExpr sym (RecordWith lhs updates) = do
+  t <- typeCheckExpr sym lhs
+  case t of
+    TRecord ts -> do
+      tys <-  traverseM (typeCheckExpr sym) updates
+      M.traverseWithKey (checkMember ts) tys
+      pure t
+    _ -> throw $ ExpectedTupleFound t
+  where
+    checkMember :: Map Ident Type -> Ident -> Type -> TypeCk ()
+    checkMember ts ident t =
+      case M.lookup ident ts of
+        Nothing -> throw $ NoFieldInRecord (TRecord ts) ident
+        Just t' -> t `mustBe` t'
+typeCheckExpr sym (RecordUnion a b) = do
+  ta <- typeCheckExpr sym a
+  tb <- typeCheckExpr sym b
+
+  case (ta, tb) of
+    (TRecord tsA, TRecord tsB) -> do
+       TRecord <$> M.traverseWithKey throwIfDup ((M.unionWith checkDup `on` (Just <$>)) tsA tsB)
+    _ -> throw $ NeedRecordTypesForUnion
+  where
+    checkDup a' b'
+      | a' == b' = a'
+      | otherwise = Nothing
+
+    throwIfDup ident Nothing = throw $ DuplicateIncompatibleField ident
+    throwIfDup _ (Just t) = pure t
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b
@@ -119,7 +164,9 @@ typeCheckStmt sym (Assign (Var ident) expr) = do
   typ2 `mustBe` typ
   pure $ M.insert ident (typ, Init) sym
 typeCheckStmt sym (Assign (TupMember lhs idx) expr) =
-  typeCheckStmt sym $ Assign lhs (With lhs [(idx, expr)])
+  typeCheckStmt sym $ Assign lhs (TupWith lhs $ M.singleton idx expr)
+typeCheckStmt sym (Assign (RecordMember lhs ident) expr) =
+  typeCheckStmt sym $ Assign lhs (RecordWith lhs $ M.singleton ident expr)
 typeCheckStmt sym (DeclAssign ident (Just type') expr) = do
   sym2 <- typeCheckStmt sym (Decl ident type')
   typeCheckStmt sym2 (Assign (Var ident) expr)

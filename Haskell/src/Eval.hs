@@ -3,13 +3,12 @@
 
 module Eval(allSteps, eval, ProgState(..), showSteps, showOut) where
 
-import qualified Data.HashMap.Strict as M
-import Data.HashMap.Strict(HashMap)
+import qualified Data.Map.Strict as M
+import Data.Map.Strict(Map)
 
 import AST
-import Data.List(foldl')
 
-type SymValTable = HashMap Ident Val
+type SymValTable = Map Ident Val
 type ToDo = [Stmt]
 type Out = [String]
 
@@ -44,10 +43,10 @@ instance Show EvalError where
 
 type Eval a = Either EvalError a
 
-setN :: Int -> a -> [a] -> [a]
-setN _ _ [] = []
-setN 0 v (_ : as) = v : as
-setN n v (a : as) = a : setN (pred n) v as
+setN :: [a] -> Int -> a -> [a]
+setN [] _ _ = []
+setN (_ : as) 0 v  = v : as
+setN (a : as) n v = a : setN as (pred n) v
 
 evalExpr :: SymValTable -> Expr a -> Eval Val
 evalExpr _ (Lit v) = pure v
@@ -72,18 +71,32 @@ evalExpr sym (Comp a op b) = do
     (VInt a', VInt b') -> pure $ VBool $ compOp op a' b'
     (VBool a', VBool b') -> pure $ VBool $ compOp op a' b'
 evalExpr sym (TupLit t) = VTup <$> traverse (evalExpr sym) t
+evalExpr sym (RecordLit t) = VRecord <$> traverseM (evalExpr sym) t
 evalExpr sym (TupMember lhs idx) = do
   v <- evalExpr sym lhs
   case v of
     VTup vs -> pure $ vs !! idx
-evalExpr sym (With lhs updates) = do
+evalExpr sym (RecordMember lhs ident) = do
+  v <- evalExpr sym lhs
+  case v of
+    VRecord vs -> pure $ vs M.! ident
+evalExpr sym (TupWith lhs updates) = do
   v <- evalExpr sym lhs
   case v of
     VTup vs -> do
-      vals <- traverse evalUpdate updates
-      pure $ VTup $  foldl' (flip $ uncurry setN) vs vals
-  where
-    evalUpdate (idx, expr) = (idx, ) <$> evalExpr sym expr
+      vals <- traverseM (evalExpr sym) updates
+      pure $ VTup $ M.foldlWithKey' setN vs vals
+evalExpr sym (RecordWith lhs updates) = do
+  v <- evalExpr sym lhs
+  case v of
+    VRecord vs -> do
+      vals <- traverseM (evalExpr sym) updates
+      pure $ VRecord $ M.foldlWithKey' (\m k v' -> M.insert k v' m) vs vals
+evalExpr sym (RecordUnion a b) = do
+  ra <- evalExpr sym a
+  rb <- evalExpr sym b
+  case (ra, rb) of
+    (VRecord a', VRecord b') -> pure $ VRecord $ M.union a' b'
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
@@ -92,7 +105,9 @@ evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym expr
   pure $ ProgState {sym =  M.insert ident v sym, .. }
 evalStmt progState (Assign (TupMember lhs idx) expr) =
-  evalStmt progState (Assign lhs (With lhs [(idx, expr)]))
+  evalStmt progState (Assign lhs (TupWith lhs $ M.singleton idx expr))
+evalStmt progState (Assign (RecordMember lhs ident) expr) =
+  evalStmt progState (Assign lhs (RecordWith lhs $ M.singleton ident expr))
 evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (DeclAssign ident Nothing expr) =
