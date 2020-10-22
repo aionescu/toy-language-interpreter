@@ -83,7 +83,7 @@ typeCheckExpr sym (TupleMember lhs idx) = do
       case ts !? idx of
         Nothing -> throw $ TupleTooShort t idx
         Just t' -> pure t'
-    _ -> throw $ ExpectedFound (TTup (replicate idx (TTup []) ++ [t])) t
+    _ -> throw $ ExpectedFound (TTup (replicate (idx + 1) (TTup []))) t
 typeCheckExpr sym (With lhs idx e) = do
   t <- typeCheckExpr sym lhs
   tv <- typeCheckExpr sym e
@@ -94,7 +94,7 @@ typeCheckExpr sym (With lhs idx e) = do
         Just t' -> do
           tv `mustBe` t'
           pure t
-    _ -> throw $ ExpectedFound (TTup (replicate idx (TTup []) ++ [t])) t
+    _ -> throw $ ExpectedFound (TTup (replicate (idx + 1) (TTup []))) t
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b
