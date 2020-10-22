@@ -95,19 +95,19 @@ member lhs = liftA2 (foldl' unroll) lhs (many $ char '.' *> (Left <$> number <|>
     unroll lhs' (Left idx) = RecMember lhs' (FTup idx)
     unroll lhs' (Right ident') = RecMember lhs' (FRec ident')
 
-vtup :: Parser (Expr 'R)
+vtup :: Parser (Expr R)
 vtup = tuple (RecLit . tupToRec) expr
 
-vrec :: Parser (Expr 'R)
+vrec :: Parser (Expr R)
 vrec = RecLit <$> record arrow expr
 
-lvalue :: Parser (Expr 'L)
+lvalue :: Parser (Expr L)
 lvalue = try (member var) <|> var
 
 comma :: Parser ()
 comma = char ',' *> ws
 
-opMul :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opMul :: Parser (Expr R -> Expr R -> Expr R)
 opMul =
   choice
   [ char '*' $> flip Arith Multiply
@@ -117,7 +117,7 @@ opMul =
   ]
   <* ws
 
-opAdd :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opAdd :: Parser (Expr R -> Expr R -> Expr R)
 opAdd =
   choice
   [ char '+' $> flip Arith Add
@@ -125,7 +125,7 @@ opAdd =
   ]
   <* ws
 
-opComp :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opComp :: Parser (Expr R -> Expr R -> Expr R)
 opComp =
   choice
   [ try $ string "<=" $> flip Comp LtEq
@@ -137,7 +137,7 @@ opComp =
   ]
   <* ws
 
-opLogic :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opLogic :: Parser (Expr R -> Expr R -> Expr R)
 opLogic =
   choice
   [ string "and" $> flip Logic And
@@ -145,7 +145,7 @@ opLogic =
   ]
   <* ws
 
-withBlock :: Ord a => Parser a -> Parser (Map a (Expr 'R))
+withBlock :: Ord a => Parser a -> Parser (Map a (Expr R))
 withBlock index = M.fromList <$> (unique =<< parens '{' '}' (sepBy update comma))
   where
     update = liftA2 (,) (index <* arrow) (expr <* ws)
@@ -156,31 +156,31 @@ withBlock index = M.fromList <$> (unique =<< parens '{' '}' (sepBy update comma)
           then pure es
           else fail "Updates in a with-expression must be unique"
 
-exprNoMember :: Parser (Expr 'R)
+exprNoMember :: Parser (Expr R)
 exprNoMember = choice [try vrec, try vtup, Lit <$> try val, var] <* ws
 
-exprNoWith :: Parser (Expr 'R)
+exprNoWith :: Parser (Expr R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember
 
-withExpr :: Ord a => (Expr 'R -> Map a (Expr 'R) -> Expr 'R) -> Parser a -> Parser (Expr 'R)
+withExpr :: Ord a => (Expr R -> Map a (Expr R) -> Expr R) -> Parser a -> Parser (Expr R)
 withExpr ctor index = liftA2 ctor (exprNoWith <* ws <* string "with" <* ws) (withBlock index)
 
-exprNoOps :: Parser (Expr 'R)
+exprNoOps :: Parser (Expr R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
   where
     withRecord =  withExpr (\a -> RecWith a . FsRec) (FRec <$> ident)
     withTup = withExpr (\a -> RecWith a . FsTup) (FTup <$> number)
 
-termAdd :: Parser (Expr 'R)
+termAdd :: Parser (Expr R)
 termAdd = chainl1 exprNoOps opMul
 
-termComp :: Parser (Expr 'R)
+termComp :: Parser (Expr R)
 termComp = chainl1 termAdd opAdd
 
-termLogic :: Parser (Expr 'R)
+termLogic :: Parser (Expr R)
 termLogic = chainl1 termComp opComp
 
-expr :: Parser (Expr 'R)
+expr :: Parser (Expr R)
 expr = chainr1 termLogic opLogic
 
 print' :: Parser Stmt
