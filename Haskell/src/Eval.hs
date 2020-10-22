@@ -9,15 +9,7 @@ import Data.List(intercalate)
 
 import AST
 
-data VarState
-  = Undefined
-  | Defined Val
-
-instance Show VarState where
-  show Undefined = "!"
-  show (Defined v) = show v
-
-type SymValTable = HashMap Ident VarState
+type SymValTable = HashMap Ident Val
 type ToDo = [Stmt]
 type Out = [String]
 
@@ -43,27 +35,18 @@ showSteps = unlines . (show <$>)
 showOut :: ProgState -> String
 showOut = unlines . reverse . out
 
-data EvalError
-  = UninitializedVar Ident
-  | DivisionByZero
+data EvalError = DivisionByZero
 
 instance Show EvalError where
-  show te = "EvalError: " ++ go te ++ "."
+  show te = "Eval error: " ++ go te ++ "."
     where
-      go (UninitializedVar ident) = "Variable " ++ ident ++ " was declared, but not initialized"
       go DivisionByZero = "An attempt was made to divide by zero"
 
 type Eval a = Either EvalError a
 
-lookupVar :: Ident -> SymValTable -> Eval Val
-lookupVar var sym =
-  case sym M.! var of
-    Undefined -> throw $ UninitializedVar var
-    Defined v -> pure v
-
 evalExpr :: SymValTable -> Expr -> Eval Val
 evalExpr _ (Lit v) = pure v
-evalExpr sym (Var ident) = lookupVar ident sym
+evalExpr sym (Var ident) = pure $ sym M.! ident
 evalExpr sym (Arith a op b) = do
   a' <- evalExpr sym a
   b' <- evalExpr sym b
@@ -86,11 +69,10 @@ evalExpr sym (Comp a op b) = do
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
-evalStmt ProgState{..} (Decl ident _) =
-  pure $ ProgState {sym = M.insert ident Undefined sym, .. }
+evalStmt progState (Decl _ _) = pure progState
 evalStmt ProgState{..} (Assign ident expr) = do
   v <- evalExpr sym expr
-  pure $ ProgState {sym =  M.insert ident (Defined v) sym, .. }
+  pure $ ProgState {sym =  M.insert ident v sym, .. }
 evalStmt ProgState{..} (DeclAssign ident type' expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign ident expr : toDo, .. }
 evalStmt ProgState{..} (Print expr) = do
