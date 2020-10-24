@@ -85,7 +85,7 @@ public final class TLParser {
     var termComp = termAdd.chainl1(opAdd);
     var termLogic = termComp.chainl1(opComp);
 
-    var termFinal = termLogic.chainl1(opLogic);
+    var termFinal = termLogic.chainr1(opLogic);
     exprFwdRef.snd.set(termFinal);
 
     Parser<Stmt> print = string("print").and_(ws)._and(expr).map(Print::of);
