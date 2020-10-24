@@ -45,6 +45,13 @@ public final class Logic implements Expr {
   @Override
   public Val eval(Map<Ident, VarState> sym) {
     var lhs = ((Bool)_lhs.eval(sym)).val;
+
+    if (lhs == false && _op == Op.AND)
+      return new Bool(false);
+
+    if (lhs == true && _op == Op.OR)
+      return new Bool(true);
+
     var rhs = ((Bool)_rhs.eval(sym)).val;
 
     return new Bool(switch (_op) {

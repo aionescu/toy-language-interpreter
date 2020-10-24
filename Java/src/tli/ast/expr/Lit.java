@@ -6,7 +6,6 @@ import tli.ast.varstate.VarState;
 import utils.collections.map.Map;
 
 import tli.ast.Ident;
-import tli.exn.typeck.UndecidableTypeException;
 
 public final class Lit implements Expr {
   private final Val _val;
@@ -21,12 +20,7 @@ public final class Lit implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, Type> sym) {
-    if (_val instanceof Int)
-      return Type.INT;
-    else if (_val instanceof Bool)
-      return Type.BOOL;
-    else
-      throw new UndecidableTypeException();
+    return _val.type();
   }
 
   @Override

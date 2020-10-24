@@ -85,7 +85,7 @@ public final class Comp implements Expr {
     var rhs = _rhs.eval(sym);
 
     return
-      lhs instanceof Int
+      lhs.type() == Type.INT
       ? _op.evalInt((Int)lhs, (Int)rhs)
       : _op.evalBool((Bool)lhs, (Bool)rhs);
   }

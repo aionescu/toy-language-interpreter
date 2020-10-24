@@ -1,3 +1,7 @@
 package tli.ast.val;
 
-public interface Val { }
+import tli.ast.type.Type;
+
+public interface Val {
+  Type type();
+}

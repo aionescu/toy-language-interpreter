@@ -1,5 +1,7 @@
 package tli.ast.val;
 
+import tli.ast.type.Type;
+
 public final class Bool implements Val {
   public final boolean val;
 
@@ -9,6 +11,11 @@ public final class Bool implements Val {
 
   public Bool(boolean val) {
     this.val = val;
+  }
+
+  @Override
+  public Type type() {
+    return Type.BOOL;
   }
 
   @Override
