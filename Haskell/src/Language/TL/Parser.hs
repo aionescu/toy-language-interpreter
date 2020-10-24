@@ -40,8 +40,8 @@ val = int <|> bool
 ident :: Parser String
 ident = liftA2 (:) fstChar (many sndChar)
   where
-    fstChar = choice [letter, char '_']
-    sndChar = choice [fstChar, digit, char '\'']
+    fstChar = lower
+    sndChar = choice [letter, digit, char '\'']
 
 var :: Parser (Expr a)
 var = Var <$> ident

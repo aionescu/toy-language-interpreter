@@ -38,8 +38,8 @@ public final class TLParser {
 
     var val = int_.or(bool_);
 
-    var fstChar = letter.or(ch('_'));
-    var sndChar = fstChar.or(digit.or(ch('\'')));
+    var fstChar = lower;
+    var sndChar = letter.or(digit).or(ch('\''));
 
     var ident = liftA2(List::cons, fstChar, sndChar.many()).and_(ws).map(List::asString).map(Ident::of);
 

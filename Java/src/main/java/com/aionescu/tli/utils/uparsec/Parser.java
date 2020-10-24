@@ -82,6 +82,7 @@ public interface Parser<A> {
 
   public static final Parser<Character> digit = satisfy(Character::isDigit);
   public static final Parser<Character> letter = satisfy(Character::isLetter);
+  public static final Parser<Character> lower = satisfy(Character::isLowerCase);
   public static final Parser<Character> newline = satisfy(c -> c == '\n' || c == '\r');
   public static final Parser<Unit> spaces = s -> Result.of(Unit.UNIT, s.replaceFirst("^\\s+", ""));
   public static final Parser<Unit> eof = s -> s.isEmpty() ? Result.of(Unit.UNIT, s) : Result.fail();
