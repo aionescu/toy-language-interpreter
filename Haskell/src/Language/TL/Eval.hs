@@ -1,12 +1,12 @@
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
-module Eval(allSteps, eval, ProgState(..), showSteps, showOut) where
+module Language.TL.Eval(allSteps, eval, ProgState(..), showSteps, showOut) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
 
-import AST
+import Language.TL.AST
 
 type SymValTable = Map Ident Val
 type ToDo = [Stmt]

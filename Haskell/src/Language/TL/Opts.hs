@@ -1,4 +1,4 @@
-module Opts(Cmd(..), Opts(..), getOpts) where
+module Language.TL.Opts(Cmd(..), Opts(..), getOpts) where
 
 import Options.Generic
 import Control.Applicative (liftA2)

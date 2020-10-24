@@ -1,9 +1,9 @@
-module TypeCk(typeCheck) where
+module Language.TL.TypeCk(typeCheck) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
 
-import AST
+import Language.TL.AST
 import Data.Function (on)
 
 data VarState = Init | Uninit

@@ -14,11 +14,11 @@ executable tli
   main-is: Main.hs
 
   other-modules:
-    AST
-    Parser
-    TypeCk
-    Eval
-    Opts
+    Language.TL.AST
+    Language.TL.Parser
+    Language.TL.TypeCk
+    Language.TL.Eval
+    Language.TL.Opts
     Paths_tli
 
   autogen-modules:

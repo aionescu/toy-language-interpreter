@@ -2,10 +2,10 @@ module Main where
 
 import Data.Function((&))
 
-import Parser
-import TypeCk
-import Eval
-import Opts
+import Language.TL.Parser
+import Language.TL.TypeCk
+import Language.TL.Eval
+import Language.TL.Opts
 
 run :: Opts -> IO ()
 run (Opts Run{..} path) = do

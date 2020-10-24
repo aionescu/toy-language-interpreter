@@ -1,4 +1,4 @@
-module AST where
+module Language.TL.AST where
 
 import Data.List (intercalate)
 import qualified Data.Map.Strict as M

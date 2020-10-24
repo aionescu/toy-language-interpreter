@@ -1,4 +1,4 @@
-module Parser(parse) where
+module Language.TL.Parser(parse) where
 
 import Data.Functor(($>))
 import Control.Applicative(liftA2)
@@ -6,7 +6,7 @@ import Text.Parsec hiding (parse)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
 
-import AST
+import Language.TL.AST
 import Data.List(nub, foldl')
 
 type Parser = Parsec String ()

@@ -3,17 +3,17 @@ cradle:
     - path: "src/Main.hs"
       component: "tli:exe:tli"
 
-    - path: "src/AST.hs"
+    - path: "src/Language/TL/AST.hs"
       component: "tli:exe:tli"
 
-    - path: "src/Parser.hs"
+    - path: "src/Language/TL/Parser.hs"
       component: "tli:exe:tli"
 
-    - path: "src/TypeCk.hs"
+    - path: "src/Language/TL/TypeCk.hs"
       component: "tli:exe:tli"
 
-    - path: "src/Eval.hs"
+    - path: "src/Language/TL/Eval.hs"
       component: "tli:exe:tli"
 
-    - path: "src/Opts.hs"
+    - path: "src/Language/TL/Opts.hs"
       component: "tli:exe:tli"
