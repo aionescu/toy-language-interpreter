@@ -7,43 +7,38 @@ import Data.Map.Strict(Map)
 type Ident = String
 
 data Field :: * -> * where
-  FRec :: Ident -> Field Ident
-  FTup :: Int -> Field Int
+  FRec :: Field Ident
+  FTup :: Field Int
 
-deriving instance Eq (Field a)
-deriving instance Ord (Field a)
-
-instance Show (Field a) where
-  show (FRec ident) = ident
-  show (FTup idx) = show idx
-
-data Fields :: * -> * -> * where
-  FsRec :: Map (Field Ident) a -> Fields Ident a
-  FsTup :: Map (Field Int) a -> Fields Int a
+deriving instance Eq (Field f)
 
 data Type :: * where
   TInt :: Type
   TBool :: Type
-  TRec :: Fields a Type -> Type
+  TRec :: Field f -> Map f Type -> Type
 
 instance Eq Type where
   TInt == TInt = True
   TBool == TBool = True
-  TRec (FsRec as) == TRec (FsRec bs) = as == bs
-  TRec (FsTup as) == TRec (FsTup bs) = as == bs
+  TRec FRec a == TRec FRec b = a == b
+  TRec FTup a == TRec FTup b = a == b
   _ == _ = False
 
 withParens :: String -> String -> [String] -> String
 withParens begin end l = begin ++ intercalate ", " l ++ end
 
-showField :: String -> (Field a, String) -> String
-showField sep (f, s) = show f ++ " " ++ sep ++ " " ++ s
+showF :: Field f -> f -> String
+showF FRec ident = ident
+showF FTup idx = show idx
 
-showFields :: Show v => Bool -> String -> Fields a v -> String
-showFields False sep (FsRec m) = withParens "{ " " }" (showField sep <$> M.toList (show <$> m))
-showFields True sep (FsRec m) = withParens " | " " }" (showField sep <$> M.toList (show <$> m))
-showFields True sep (FsTup m) = withParens " | " " }" (showField sep <$> M.toList (show <$> m))
-showFields False _ (FsTup m) =
+showField :: Field f -> String -> (f, String) -> String
+showField f sep (i, s) = showF f i ++ " " ++ sep ++ " " ++ s
+
+showFields :: Show v => Bool -> Field f -> String -> Map f v -> String
+showFields False FRec sep m = withParens "{ " " }" (showField FRec sep <$> M.toList (show <$> m))
+showFields True FRec sep m = withParens " | " " }" (showField FRec sep <$> M.toList (show <$> m))
+showFields True FTup sep m = withParens " | " " }" (showField FTup sep <$> M.toList (show <$> m))
+showFields False FTup _ m =
   case snd <$> M.toList m of
     [a] -> "(" ++ show a ++ ",)"
     l -> withParens "(" ")" (show <$> l)
@@ -51,17 +46,17 @@ showFields False _ (FsTup m) =
 instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
-  show (TRec fs) = showFields False ":" fs
+  show (TRec f m) = showFields False f ":" m
 
 data Val :: * where
   VInt :: Int -> Val
   VBool :: Bool -> Val
-  VRec :: Fields a Val -> Val
+  VRec :: Field f -> Map f Val -> Val
 
 instance Show Val where
   show (VBool b) = show b
   show (VInt i) = show i
-  show (VRec fs) = showFields False "<-" fs
+  show (VRec f m) = showFields False f "<-" m
 
 data ArithOp
   = Add
@@ -129,9 +124,9 @@ data Expr :: ExprKind -> * where
   Arith :: Expr a -> ArithOp -> Expr b -> Expr R
   Logic :: Expr a -> LogicOp -> Expr b -> Expr R
   Comp :: Expr a -> CompOp -> Expr b -> Expr R
-  RecLit :: Fields f (Expr a) -> Expr R
-  RecMember :: Expr a -> Field f -> Expr a
-  RecWith :: Expr a -> Fields f ({- forall b. -} Expr b) -> Expr R -- No ImpredicativePolymorphism yet
+  RecLit :: Field f -> Map f (Expr a) -> Expr R
+  RecMember :: Expr a -> Field f -> f -> Expr a
+  RecWith :: Expr a -> Field f -> Map f ({- forall b. -} Expr b) -> Expr R -- No ImpredicativePolymorphism yet
   RecUnion :: Expr a -> Expr b -> Expr R
 
 instance Show (Expr a) where
@@ -140,9 +135,9 @@ instance Show (Expr a) where
   show (Arith a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
-  show (RecLit fs) = showFields False "<-" fs
-  show (RecMember e f) = show e ++ "." ++ show f
-  show (RecWith lhs updates) = "{ " ++ show lhs ++ showFields True "<-" updates
+  show (RecLit f m) = showFields False f "<-" m
+  show (RecMember e f i) = show e ++ "." ++ showF f i
+  show (RecWith lhs f updates) = "{ " ++ show lhs ++ showFields True f "<-" updates
   show (RecUnion a b) = show a ++ " | " ++ show b
 
 data Stmt

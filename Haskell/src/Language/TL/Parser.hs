@@ -59,13 +59,13 @@ tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
     mkTup [a] False = a
     mkTup l _ = ctor l
 
-record :: Parser sep -> Parser a -> Parser (Fields Ident a)
-record sep rhs = FsRec . M.fromList <$> (unique =<< parens '{' '}' elems)
+record :: Parser sep -> Parser a -> Parser (Map Ident a)
+record sep rhs = M.fromList <$> (unique =<< parens '{' '}' elems)
   where
     withTrailing = many (term <* comma)
     noTrailing = sepBy1 term comma
     elems = try withTrailing <|> noTrailing
-    term = liftA2 (,) (FRec <$> ident <* ws <* sep <* ws) (rhs <* ws)
+    term = liftA2 (,) (ident <* ws <* sep <* ws) (rhs <* ws)
 
     unique es =
       let es' = fst <$> es
@@ -77,14 +77,14 @@ record sep rhs = FsRec . M.fromList <$> (unique =<< parens '{' '}' elems)
 primType :: Parser Type
 primType = choice [string "Int" $> TInt, string "Bool" $> TBool]
 
-tupToRec :: [a] -> Fields Int a
-tupToRec = FsTup . M.fromList . zip (FTup <$> [0..])
+tupToRec :: [a] -> Map Int a
+tupToRec = M.fromList . zip [0..]
 
 ttup :: Parser Type
-ttup = tuple (TRec . tupToRec) type'
+ttup = tuple (TRec FTup . tupToRec) type'
 
 trec :: Parser Type
-trec = TRec <$> record colon type'
+trec = TRec FRec <$> record colon type'
 
 type' :: Parser Type
 type' = try trec <|> try ttup <|> primType
@@ -92,14 +92,14 @@ type' = try trec <|> try ttup <|> primType
 member :: Parser (Expr a) -> Parser (Expr a)
 member lhs = liftA2 (foldl' unroll) lhs (many $ char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
   where
-    unroll lhs' (Left idx) = RecMember lhs' (FTup idx)
-    unroll lhs' (Right ident') = RecMember lhs' (FRec ident')
+    unroll lhs' (Left idx) = RecMember lhs' FTup idx
+    unroll lhs' (Right ident') = RecMember lhs' FRec ident'
 
 vtup :: Parser (Expr R)
-vtup = tuple (RecLit . tupToRec) expr
+vtup = tuple (RecLit FTup . tupToRec) expr
 
 vrec :: Parser (Expr R)
-vrec = RecLit <$> record arrow expr
+vrec = RecLit FRec <$> record arrow expr
 
 lvalue :: Parser (Expr L)
 lvalue = try (member var) <|> var
@@ -168,8 +168,8 @@ withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (withBloc
 exprNoOps :: Parser (Expr R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
   where
-    withRecord =  withExpr (\a -> RecWith a . FsRec) (FRec <$> ident)
-    withTup = withExpr (\a -> RecWith a . FsTup) (FTup <$> number)
+    withRecord = withExpr (flip RecWith FRec) ident
+    withTup = withExpr (flip RecWith FTup) number
 
 termAdd :: Parser (Expr R)
 termAdd = chainl1 exprNoOps opMul

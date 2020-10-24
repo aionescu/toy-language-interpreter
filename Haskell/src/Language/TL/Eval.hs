@@ -70,33 +70,25 @@ evalExpr sym (Comp a op b) = do
   case (va, vb) of
     (VInt a', VInt b') -> pure $ VBool $ compOp op a' b'
     (VBool a', VBool b') -> pure $ VBool $ compOp op a' b'
-evalExpr sym (RecLit (FsRec fs)) = VRec . FsRec <$> traverse (evalExpr sym) fs
-evalExpr sym (RecLit (FsTup fs)) = VRec . FsTup <$> traverse (evalExpr sym) fs
-evalExpr sym (RecMember lhs f@(FRec _)) = do
+evalExpr sym (RecLit f m) = VRec f <$> traverse (evalExpr sym) m
+evalExpr sym (RecMember lhs f i) = do
   v <- evalExpr sym lhs
-  case v of
-    VRec (FsRec fs) -> pure $ fs M.! f
-evalExpr sym (RecMember lhs f@(FTup _)) = do
+  case (v, f) of
+    (VRec FRec m, FRec) -> pure $ m M.! i
+    (VRec FTup m, FTup) -> pure $ m M.! i
+evalExpr sym (RecWith lhs f us) = do
   v <- evalExpr sym lhs
-  case v of
-    VRec (FsTup fs) -> pure $ fs M.! f
-evalExpr sym (RecWith lhs (FsRec us)) = do
-  v <- evalExpr sym lhs
-  case v of
-    VRec (FsRec fs) -> do
-      vals <- traverseM (evalExpr sym) us
-      pure $ VRec $ FsRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
-evalExpr sym (RecWith lhs (FsTup us)) = do
-  v <- evalExpr sym lhs
-  case v of
-    VRec (FsTup fs) -> do
-      vals <- traverseM (evalExpr sym) us
-      pure $ VRec $ FsTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
+  vals <- traverseM (evalExpr sym) us
+  case (v, f) of
+    (VRec FRec fs, FRec) ->
+      pure $ VRec FRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
+    (VRec FTup fs, FTup) ->
+      pure $ VRec FTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
 evalExpr sym (RecUnion a b) = do
   ra <- evalExpr sym a
   rb <- evalExpr sym b
   case (ra, rb) of
-    (VRec (FsRec a'), VRec (FsRec b')) -> pure $ VRec $ FsRec $ M.union a' b'
+    (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union a' b'
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
@@ -104,10 +96,8 @@ evalStmt progState (Decl _ _) = pure progState
 evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym expr
   pure $ ProgState {sym =  M.insert ident v sym, .. }
-evalStmt progState (Assign (RecMember lhs f@(FRec _)) expr) =
-  evalStmt progState (Assign lhs (RecWith lhs $ FsRec $ M.singleton f expr))
-evalStmt progState (Assign (RecMember lhs f@(FTup _)) expr) =
-  evalStmt progState (Assign lhs (RecWith lhs $ FsTup $ M.singleton f expr))
+evalStmt progState (Assign (RecMember lhs f i) expr) =
+  evalStmt progState (Assign lhs (RecWith lhs f $ M.singleton i expr))
 evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (DeclAssign ident Nothing expr) =
