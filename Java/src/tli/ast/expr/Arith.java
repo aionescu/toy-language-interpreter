@@ -4,9 +4,9 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import tli.ast.val.Int;
 import tli.ast.val.Val;
-import tli.ast.varstate.VarState;
 import tli.exn.eval.DivisionByZeroException;
 
 public final class Arith implements Expr {
@@ -43,14 +43,14 @@ public final class Arith implements Expr {
   }
 
   @Override
-  public Type typeCheck(Map<Ident, Type> sym) {
+  public Type typeCheck(Map<Ident, VarInfo> sym) {
     _lhs.typeCheck(sym).expect(Type.INT);
     _rhs.typeCheck(sym).expect(Type.INT);
     return Type.INT;
   }
 
   @Override
-  public Val eval(Map<Ident, VarState> sym) {
+  public Val eval(Map<Ident, Val> sym) {
     var lhs = ((Int)_lhs.eval(sym)).val;
     var rhs = ((Int)_rhs.eval(sym)).val;
 

@@ -1,8 +1,8 @@
-package tli.exn.eval;
+package tli.exn.typeck;
 
 import tli.ast.Ident;
 
-public final class UninitializedVariableException extends EvalException {
+public final class UninitializedVariableException extends TypeCheckerException {
   private final static long serialVersionUID = 1;
 
   private final Ident _ident;

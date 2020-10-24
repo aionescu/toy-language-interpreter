@@ -4,9 +4,9 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import tli.ast.val.Bool;
 import tli.ast.val.Val;
-import tli.ast.varstate.VarState;
 
 public final class Logic implements Expr {
   public static enum Op {
@@ -36,14 +36,14 @@ public final class Logic implements Expr {
   }
 
   @Override
-  public Type typeCheck(Map<Ident, Type> sym) {
+  public Type typeCheck(Map<Ident, VarInfo> sym) {
     _lhs.typeCheck(sym).expect(Type.BOOL);
     _rhs.typeCheck(sym).expect(Type.BOOL);
     return Type.BOOL;
   }
 
   @Override
-  public Val eval(Map<Ident, VarState> sym) {
+  public Val eval(Map<Ident, Val> sym) {
     var lhs = ((Bool)_lhs.eval(sym)).val;
 
     if (lhs == false && _op == Op.AND)

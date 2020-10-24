@@ -4,10 +4,11 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import tli.ast.val.Val;
-import tli.ast.varstate.VarState;
-import tli.exn.eval.UninitializedVariableException;
+import tli.ast.type.VarState;
 import tli.exn.typeck.UndeclaredVariableException;
+import tli.exn.typeck.UninitializedVariableException;
 
 public final class Var implements Expr {
   private final Ident _ident;
@@ -21,20 +22,20 @@ public final class Var implements Expr {
   }
 
   @Override
-  public Type typeCheck(Map<Ident, Type> sym) {
-    var v = sym.lookup(_ident);
-
-    if (!v.isPresent())
+  public Type typeCheck(Map<Ident, VarInfo> sym) {
+    var info = sym.lookup(_ident).orElseGet(() -> {
       throw new UndeclaredVariableException(_ident);
+    });
 
-    return v.get();
+    if (info.state == VarState.UNINIT)
+      throw new UninitializedVariableException(_ident);
+
+    return info.type;
   }
 
   @Override
-  public Val eval(Map<Ident, VarState> sym) {
-    return sym.lookup(_ident).get().val().orElseGet(() -> {
-      throw new UninitializedVariableException(_ident);
-    });
+  public Val eval(Map<Ident, Val> sym) {
+    return sym.lookup(_ident).get();
   }
 
   @Override

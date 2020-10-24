@@ -5,7 +5,8 @@ import utils.collections.map.Map;
 import tli.ast.Ident;
 import tli.ast.prog.ProgState;
 import tli.ast.type.Type;
-import tli.ast.varstate.Undefined;
+import tli.ast.type.VarInfo;
+import tli.ast.type.VarState;
 import tli.exn.typeck.VariableAlreadyDeclaredException;
 
 public final class Decl implements Stmt {
@@ -22,16 +23,16 @@ public final class Decl implements Stmt {
   }
 
   @Override
-  public Map<Ident, Type> typeCheck(Map<Ident, Type> sym) {
+  public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     if (sym.lookup(_ident).isPresent())
       throw new VariableAlreadyDeclaredException(_ident);
 
-    return sym.insert(_ident, _type);
+    return sym.insert(_ident, VarInfo.of(_type, VarState.UNINIT));
   }
 
   @Override
   public ProgState eval(ProgState prog) {
-    return prog.withSym(prog.sym.insert(_ident, Undefined.value));
+    return prog;
   }
 
   @Override

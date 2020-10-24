@@ -4,7 +4,7 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.prog.ProgState;
-import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 
 public final class Nop implements Stmt {
   public static final Nop nop = new Nop();
@@ -12,7 +12,7 @@ public final class Nop implements Stmt {
   private Nop() { }
 
   @Override
-  public Map<Ident, Type> typeCheck(Map<Ident, Type> sym) {
+  public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     return sym;
   }
 

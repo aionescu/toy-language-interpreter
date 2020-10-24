@@ -4,10 +4,10 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import tli.ast.val.Bool;
 import tli.ast.val.Int;
 import tli.ast.val.Val;
-import tli.ast.varstate.VarState;
 
 public final class Comp implements Expr {
   public static enum Op {
@@ -73,13 +73,13 @@ public final class Comp implements Expr {
   }
 
   @Override
-  public Type typeCheck(Map<Ident, Type> sym) {
+  public Type typeCheck(Map<Ident, VarInfo> sym) {
     _rhs.typeCheck(sym).expect(_lhs.typeCheck(sym));
     return Type.BOOL;
   }
 
   @Override
-  public Val eval(Map<Ident, VarState> sym) {
+  public Val eval(Map<Ident, Val> sym) {
 
     var lhs = _lhs.eval(sym);
     var rhs = _rhs.eval(sym);

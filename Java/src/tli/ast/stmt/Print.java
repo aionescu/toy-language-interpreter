@@ -3,7 +3,7 @@ package tli.ast.stmt;
 import tli.ast.Ident;
 import tli.ast.expr.Expr;
 import tli.ast.prog.ProgState;
-import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import utils.collections.list.List;
 import utils.collections.map.Map;
 
@@ -19,7 +19,7 @@ public final class Print implements Stmt {
   }
 
   @Override
-  public Map<Ident, Type> typeCheck(Map<Ident, Type> sym) {
+  public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     _expr.typeCheck(sym);
     return sym;
   }

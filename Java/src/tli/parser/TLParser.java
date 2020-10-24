@@ -1,5 +1,6 @@
 package tli.parser;
 
+import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
@@ -95,7 +96,8 @@ public final class TLParser {
     var arrow = ws._and(string("<-"))._and(ws);
     Parser<Stmt> assign = liftA2(Assign::of, ident.and_(arrow), expr);
 
-    Parser<Stmt> declAssign = liftA3(DeclAssign::of, ident.and_(colon), type.and_(arrow), expr);
+    var typeOrInfer = ch('_').map_(Optional.<Type>empty()).or(type.map(Optional::of));
+    Parser<Stmt> declAssign = liftA3(DeclAssign::of, ident.and_(colon), typeOrInfer.and_(arrow), expr);
 
     var stmtFwdRef = Parser.<Stmt>fwdRef();
     var stmt = stmtFwdRef.fst;

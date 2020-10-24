@@ -1,8 +1,8 @@
 package tli.ast.expr;
 
 import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import tli.ast.val.*;
-import tli.ast.varstate.VarState;
 import utils.collections.map.Map;
 
 import tli.ast.Ident;
@@ -19,12 +19,12 @@ public final class Lit implements Expr {
   }
 
   @Override
-  public Type typeCheck(Map<Ident, Type> sym) {
+  public Type typeCheck(Map<Ident, VarInfo> sym) {
     return _val.type();
   }
 
   @Override
-  public Val eval(Map<Ident, VarState> sym) {
+  public Val eval(Map<Ident, Val> sym) {
     return _val;
   }
 

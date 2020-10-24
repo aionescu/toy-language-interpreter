@@ -5,6 +5,7 @@ import tli.ast.expr.Expr;
 import tli.ast.val.Bool;
 import tli.ast.prog.ProgState;
 import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 import utils.collections.list.List;
 import utils.collections.map.Map;
 
@@ -23,7 +24,7 @@ public final class If implements Stmt {
   }
 
   @Override
-  public Map<Ident, Type> typeCheck(Map<Ident, Type> sym) {
+  public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     _cond.typeCheck(sym).expect(Type.BOOL);
     _then.typeCheck(sym);
     _else.typeCheck(sym);

@@ -4,9 +4,9 @@ import utils.collections.map.Map;
 
 import tli.ast.Ident;
 import tli.ast.prog.ProgState;
-import tli.ast.type.Type;
+import tli.ast.type.VarInfo;
 
 public interface Stmt {
-  Map<Ident, Type> typeCheck(Map<Ident, Type> sym);
+  Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym);
   ProgState eval(ProgState prog);
 }
