@@ -14,7 +14,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.tl",
-				"match": "\\b(if|while|print)\\b"
+				"match": "\\b(if|else|while|print)\\b"
 			}]
     },
     "numbers": {
