@@ -10,7 +10,7 @@ import Language.TL.AST
 
 type SymValTable = Map Ident Val
 type ToDo = [Stmt]
-type Out = [String]
+type Out = [Val]
 
 data ProgState =
   ProgState
@@ -32,7 +32,7 @@ showSteps :: [ProgState] -> String
 showSteps = unlines . (show <$>)
 
 showOut :: ProgState -> String
-showOut = unlines . reverse . out
+showOut = unlines . reverse . (show <$>) . out
 
 data EvalError = DivisionByZero
 
@@ -104,7 +104,7 @@ evalStmt ProgState{..} (DeclAssign ident Nothing expr) =
   pure $ ProgState { toDo = Assign (Var ident) expr : toDo, .. }
 evalStmt ProgState{..} (Print expr) = do
   v <- evalExpr sym expr
-  pure $ ProgState { out = show v : out, .. }
+  pure $ ProgState { out = v : out, .. }
 evalStmt ProgState{..} (If cond then' else') = do
   c' <- evalExpr sym cond
   case c' of

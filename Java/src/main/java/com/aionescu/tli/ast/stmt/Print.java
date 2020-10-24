@@ -26,7 +26,7 @@ public final class Print implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    return prog.withOut(List.cons(_expr.eval(prog.sym).toString(), prog.out));
+    return prog.withOut(List.cons(_expr.eval(prog.sym), prog.out));
   }
 
   @Override

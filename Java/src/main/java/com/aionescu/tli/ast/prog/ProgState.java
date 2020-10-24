@@ -10,11 +10,11 @@ import com.aionescu.tli.ast.val.Val;
 public final class ProgState {
   public final List<Stmt> toDo;
   public final Map<Ident, Val> sym;
-  public final List<String> out;
+  public final List<Val> out;
 
   public static final ProgState empty = new ProgState(List.nil(), Map.empty(), List.nil());
 
-  private ProgState(List<Stmt> toDo, Map<Ident, Val> sym, List<String> out) {
+  private ProgState(List<Stmt> toDo, Map<Ident, Val> sym, List<Val> out) {
     this.toDo = toDo;
     this.sym = sym;
     this.out = out;
@@ -28,7 +28,7 @@ public final class ProgState {
     return new ProgState(this.toDo, sym, this.out);
   }
 
-  public ProgState withOut(List<String> out) {
+  public ProgState withOut(List<Val> out) {
     return new ProgState(this.toDo, this.sym, out);
   }
 
