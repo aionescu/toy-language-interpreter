@@ -8,7 +8,7 @@ import Eval
 import Opts
 
 run :: Opts -> IO ()
-run Run{..} = do
+run (Opts Run{..} path) = do
   code <- readFile path
 
   parse code
@@ -17,7 +17,7 @@ run Run{..} = do
     & either id id
     & putStrLn
 
-run DumpAst{..} = do
+run (Opts DumpAst{..} path) = do
   code <- readFile path
 
   parse code
