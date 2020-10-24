@@ -146,7 +146,7 @@ opLogic =
   <* ws
 
 withBlock :: Ord a => Parser a -> Parser (Map a (Expr R))
-withBlock index = M.fromList <$> (unique =<< parens '{' '}' (sepBy update comma))
+withBlock index = M.fromList <$> (unique =<< parens '|' '}' (sepBy update comma))
   where
     update = liftA2 (,) (index <* arrow) (expr <* ws)
     unique es =
@@ -163,7 +163,7 @@ exprNoWith :: Parser (Expr R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember
 
 withExpr :: Ord a => (Expr R -> Map a (Expr R) -> Expr R) -> Parser a -> Parser (Expr R)
-withExpr ctor index = liftA2 ctor (exprNoWith <* ws <* string "with" <* ws) (withBlock index)
+withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (withBlock index)
 
 exprNoOps :: Parser (Expr R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith

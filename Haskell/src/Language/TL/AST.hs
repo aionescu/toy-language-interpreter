@@ -40,8 +40,9 @@ showField :: String -> (Field a, String) -> String
 showField sep (f, s) = show f ++ " " ++ sep ++ " " ++ s
 
 showFields :: Show v => Bool -> String -> Fields a v -> String
-showFields _ sep (FsRec m) = withParens "{ " " }" (showField sep <$> M.toList (show <$> m))
-showFields True sep (FsTup m) = withParens "{ " " }" (showField sep <$> M.toList (show <$> m))
+showFields False sep (FsRec m) = withParens "{ " " }" (showField sep <$> M.toList (show <$> m))
+showFields True sep (FsRec m) = withParens " | " " }" (showField sep <$> M.toList (show <$> m))
+showFields True sep (FsTup m) = withParens " | " " }" (showField sep <$> M.toList (show <$> m))
 showFields False _ (FsTup m) =
   case snd <$> M.toList m of
     [a] -> "(" ++ show a ++ ",)"
@@ -141,7 +142,7 @@ instance Show (Expr a) where
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (RecLit fs) = showFields False "<-" fs
   show (RecMember e f) = show e ++ "." ++ show f
-  show (RecWith lhs updates) = show lhs ++ " with " ++ showFields True "<-" updates
+  show (RecWith lhs updates) = "{ " ++ show lhs ++ showFields True "<-" updates
   show (RecUnion a b) = show a ++ " | " ++ show b
 
 data Stmt

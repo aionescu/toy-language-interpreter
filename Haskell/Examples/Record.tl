@@ -18,7 +18,7 @@ print d.0.a.0.b;
 print d;
 
 -- Mixed record/tuple update
-d <- d with { 0 <- d.0 with { a <- d.0.a with { 0 <- d.0.a.0 with { b <- False } } } };
+d <- { d | 0 <- { d.0 | a <- { d.0.a | 0 <- { d.0.a.0 | b <- False } } } };
 print d;
 
 -- Field order doesn't matter
@@ -28,10 +28,11 @@ f : { b : Bool, a : Int } <- e;
 print e;
 print f;
 
--- Actually, there are 2 Unit types :D (Empty record)
+-- Empty record / Union type
+-- Distinct from empty tuple
 g : { } <- { };
 print g;
 
 print f;
-f <- f with { }; -- Empty record update (works with tuples too)
+f <- {f | }; -- Empty record update (works with tuples too)
 print f
