@@ -16,6 +16,6 @@ public final class TypeMismatchException extends TypeCheckerException {
 
   @Override
   public String getMessage() {
-    return String.format("Type mismatch: Expected type %s, but found type %s", _expected, _actual);
+    return String.format("Expected %s, but found %s.", _expected, _actual);
   }
 }

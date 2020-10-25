@@ -15,6 +15,6 @@ public final class VariableAlreadyDeclaredException extends TypeCheckerException
 
   @Override
   public String getMessage() {
-    return String.format("Variable \"%s\" has already been defined.", _ident);
+    return String.format("Variable %s has already been declared.", _ident);
   }
 }

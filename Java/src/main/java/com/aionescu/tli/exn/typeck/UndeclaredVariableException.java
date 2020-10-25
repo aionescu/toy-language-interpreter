@@ -15,6 +15,6 @@ public final class UndeclaredVariableException extends TypeCheckerException {
 
   @Override
   public String getMessage() {
-    return String.format("Undefined variable: \"%s\"", _ident);
+    return String.format("Variable %s was not declared.", _ident);
   }
 }

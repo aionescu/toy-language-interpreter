@@ -13,6 +13,6 @@ public final class UninitializedVariableException extends TypeCheckerException {
 
   @Override
   public String getMessage() {
-    return String.format("Variable %s was declared, but not initialized.", _ident);
+    return String.format("Variable %s is not guaranteed to be initialized before its first read.", _ident);
   }
 }
