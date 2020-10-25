@@ -19,3 +19,6 @@ tli run --small-step <path> # Runs and displays every intermediate program state
 tli dump-ast <path> # Parses, type-checks, then prints the AST of the program.
 tli dump-ast --no-type-check <path> # Prints the AST straight from the parser.
 ```
+
+If `-` is passed as the `<path>`, then the interpreter will read the code from stdin.
+e.g. `echo 'a : _ <- 2; print a' | tli run -`

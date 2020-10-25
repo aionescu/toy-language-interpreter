@@ -7,9 +7,13 @@ import Language.TL.TypeCk
 import Language.TL.Eval
 import Language.TL.Opts
 
+getCode :: String -> IO String
+getCode "-" = getContents
+getCode path = readFile path
+
 run :: Opts -> IO ()
 run (Opts Run{..} path) = do
-  code <- readFile path
+  code <- getCode path
 
   parse code
     >>= typeCheck
@@ -18,7 +22,7 @@ run (Opts Run{..} path) = do
     & putStrLn
 
 run (Opts DumpAst{..} path) = do
-  code <- readFile path
+  code <- getCode path
 
   parse code
     >>= (if noTypeCheck then pure else typeCheck)
