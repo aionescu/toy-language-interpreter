@@ -24,10 +24,9 @@ public final class Decl implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    if (sym.lookup(_ident).isPresent())
-      throw new VariableAlreadyDeclaredException(_ident);
-
-    return sym.insert(_ident, VarInfo.of(_type, VarState.UNINIT));
+    return sym.lookup(_ident).match(
+      () -> sym.insert(_ident, VarInfo.of(_type, VarState.UNINIT)),
+      a -> { throw new VariableAlreadyDeclaredException(_ident); });
   }
 
   @Override

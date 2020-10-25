@@ -6,7 +6,6 @@ import com.aionescu.tli.ast.val.Bool;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.VarInfo;
-import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class If implements Stmt {
@@ -36,7 +35,7 @@ public final class If implements Stmt {
     var v = ((Bool)_cond.eval(prog.sym)).val;
     var block = v ? _then : _else;
 
-    return prog.withToDo(List.cons(block, prog.toDo));
+    return prog.withToDo(prog.toDo.push(block));
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.VarInfo;
 import com.aionescu.tli.exn.eval.EvaluationFinishedException;
+import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class SingleStateRepository implements Repository {
@@ -26,13 +27,13 @@ public final class SingleStateRepository implements Repository {
 
   @Override
   public void oneStep() {
-    _state = _state.toDo.match(
+    _state = _state.toDo.pop().match(
       () -> { throw new EvaluationFinishedException(); },
-      (stmt, toDo) -> stmt.eval(_state.withToDo(toDo)));
+      Pair.match((stmt, toDo) -> stmt.eval(_state.withToDo(toDo))));
   }
 
   @Override
   public boolean done() {
-    return _state.toDo.empty();
+    return _state.toDo.isEmpty();
   }
 }

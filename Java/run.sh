@@ -1,4 +1,4 @@
 #!/bin/sh
 
 ARGS="$@"
-mvn exec:java -Dexec.args="$ARGS"
+mvn clean compile exec:java -Dexec.args="$ARGS"

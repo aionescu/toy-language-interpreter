@@ -1,9 +1,7 @@
 package com.aionescu.tli.ast.stmt;
 
-import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
-
-import java.util.Optional;
+import com.aionescu.tli.utils.control.Maybe;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
@@ -13,14 +11,14 @@ import com.aionescu.tli.ast.type.VarInfo;
 
 public final class DeclAssign implements Stmt {
   private final Ident _ident;
-  private final Optional<Type> _type;
+  private final Maybe<Type> _type;
   private final Expr _expr;
 
-  public static DeclAssign of(Ident ident, Optional<Type> type, Expr expr) {
+  public static DeclAssign of(Ident ident, Maybe<Type> type, Expr expr) {
     return new DeclAssign(ident, type, expr);
   }
 
-  public DeclAssign(Ident ident, Optional<Type> type, Expr expr) {
+  public DeclAssign(Ident ident, Maybe<Type> type, Expr expr) {
     _ident = ident;
     _type = type;
     _expr = expr;
@@ -28,7 +26,7 @@ public final class DeclAssign implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    var type = _type.orElseGet(() -> _expr.typeCheck(sym));
+    var type = _type.match(() -> _expr.typeCheck(sym), a -> a);
 
     var sym2 = Decl.of(_ident, type).typeCheck(sym);
     return Assign.of(_ident, _expr).typeCheck(sym2);
@@ -36,18 +34,15 @@ public final class DeclAssign implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    var tail = List.cons(Assign.of(_ident, _expr), prog.toDo);
+    var tail = prog.toDo.push(Assign.of(_ident, _expr));
 
-    var newToDo =
-      _type.isPresent()
-        ? List.cons(Decl.of(_ident, _type.get()), tail)
-        : tail;
-
-    return prog.withToDo(newToDo);
+    return prog.withToDo(_type.match(
+      () -> tail,
+      t -> tail.push(Decl.of(_ident, t))));
   }
 
   @Override
   public String toString() {
-    return String.format("%s : %s <- %s", _ident, _type.map(Object::toString).orElse("_"), _expr);
+    return String.format("%s : %s <- %s", _ident, _type.match(() -> "_", Object::toString), _expr);
   }
 }

@@ -23,9 +23,9 @@ public final class Assign implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    var info = sym.lookup(_ident).orElseGet(() -> {
-      throw new UndeclaredVariableException(_ident);
-    });
+    var info = sym.lookup(_ident).match(
+      () -> { throw new UndeclaredVariableException(_ident); },
+      a -> a);
 
     _expr.typeCheck(sym).expect(info.type);
     return sym.insert(_ident, VarInfo.of(info.type, VarState.INIT));

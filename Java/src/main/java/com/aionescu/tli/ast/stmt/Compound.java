@@ -3,7 +3,6 @@ package com.aionescu.tli.ast.stmt;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.VarInfo;
-import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class Compound implements Stmt {
@@ -25,7 +24,7 @@ public final class Compound implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    return prog.withToDo(List.cons(_stmt1, List.cons(_stmt2, prog.toDo)));
+    return prog.withToDo(prog.toDo.push(_stmt2).push(_stmt1));
   }
 
   @Override

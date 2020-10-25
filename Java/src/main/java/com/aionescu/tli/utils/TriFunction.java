@@ -1,4 +1,4 @@
-package com.aionescu.tli.utils.uparsec;
+package com.aionescu.tli.utils;
 
 import java.util.function.Function;
 

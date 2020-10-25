@@ -23,9 +23,9 @@ public final class Var implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    var info = sym.lookup(_ident).orElseGet(() -> {
-      throw new UndeclaredVariableException(_ident);
-    });
+    var info = sym.lookup(_ident).match(
+      () -> { throw new UndeclaredVariableException(_ident); },
+      a -> a);
 
     if (info.state == VarState.UNINIT)
       throw new UninitializedVariableException(_ident);
@@ -35,7 +35,7 @@ public final class Var implements Expr {
 
   @Override
   public Val eval(Map<Ident, Val> sym) {
-    return sym.lookup(_ident).get();
+    return sym.lookup(_ident).unwrap();
   }
 
   @Override

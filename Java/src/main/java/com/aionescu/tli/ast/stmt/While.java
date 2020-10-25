@@ -6,7 +6,6 @@ import com.aionescu.tli.ast.val.Bool;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.VarInfo;
-import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class While implements Stmt {
@@ -32,7 +31,7 @@ public final class While implements Stmt {
   @Override
   public ProgState eval(ProgState prog) {
     var v = ((Bool)_cond.eval(prog.sym)).val;
-    var toDo = v ? List.cons(_body, List.cons(this, prog.toDo)) : prog.toDo;
+    var toDo = v ? prog.toDo.push(this).push(_body) : prog.toDo;
 
     return prog.withToDo(toDo);
   }

@@ -1,6 +1,5 @@
 package com.aionescu.tli.parser;
 
-import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
@@ -10,9 +9,10 @@ import com.aionescu.tli.ast.stmt.*;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.list.List;
+import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.uparsec.Parser;
 import static com.aionescu.tli.utils.uparsec.Parser.*;
-import com.aionescu.tli.utils.uparsec.Unit;
+import com.aionescu.tli.utils.Unit;
 
 public final class TLParser {
   private static Parser<Stmt> _mkParser() {
@@ -96,7 +96,7 @@ public final class TLParser {
     var arrow = ws._and(string("<-"))._and(ws);
     Parser<Stmt> assign = liftA2(Assign::of, ident.and_(arrow), expr);
 
-    var typeOrInfer = ch('_').map_(Optional.<Type>empty()).or(type.map(Optional::of));
+    var typeOrInfer = ch('_').map_(Maybe.<Type>nothing()).or(type.map(Maybe::just));
     Parser<Stmt> declAssign = liftA3(DeclAssign::of, ident.and_(colon), typeOrInfer.and_(arrow), expr);
 
     var stmtFwdRef = Parser.<Stmt>fwdRef();
