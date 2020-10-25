@@ -11,6 +11,10 @@ public interface Stack<A> {
     return List.nil();
   }
 
+  static <A> Stack<A> of(A val) {
+    return Stack.<A>empty().push(val);
+  }
+
   Stack<A> push(A val);
   Maybe<Pair<A, Stack<A>>> pop();
 

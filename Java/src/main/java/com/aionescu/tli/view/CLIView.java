@@ -9,7 +9,7 @@ import com.aionescu.tli.exn.typeck.TypeCheckerException;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.controller.*;
 import com.aionescu.tli.parser.TLParser;
-import com.aionescu.tli.utils.collections.list.List;
+import com.aionescu.tli.utils.collections.stack.Stack;
 import com.aionescu.tli.utils.uparsec.exn.UParsecException;
 
 public final class CLIView implements View {
@@ -19,80 +19,86 @@ public final class CLIView implements View {
     _controller = controller;
   }
 
-  private void _handleCommand(String line) throws IOException {
-    var parts = line.split("\\s+", 2);
+  private String _getCode(String path) throws IOException {
+    return switch (path) {
+      case "-" -> new String(System.in.readAllBytes());
+      default -> Files.readString(Path.of(path));
+    };
+  }
 
-    switch (parts[0]) {
-      case "load":
-        var code = Files.readString(Path.of(parts[1]));
-        var ast = TLParser.parse(code);
-        _controller.setState(ProgState.empty.withToDo(List.singleton(ast)));
-        _controller.typeCheck();
-        break;
+  private void _runSmallStep(String code) {
+    var ast = TLParser.parse(code);
+    var prog = ProgState.empty.withToDo(Stack.of(ast));
 
-      case "show-state":
-        System.out.println(_controller.state());
-        break;
+    _controller.setState(prog);
+    _controller.typeCheck();
 
-      case "run":
-        var state = _controller.state();
+    System.out.println(_controller.state());
 
-        try {
-          _controller.allSteps();
-          System.out.println(_controller.state().output());
-        } finally {
-          _controller.setState(state);
-        }
+    while (!_controller.done())
+      System.out.println(_controller.oneStep());
+  }
 
-        break;
+  private void _runBigStep(String code) {
+    var ast = TLParser.parse(code);
+    var prog = ProgState.empty.withToDo(Stack.of(ast));
 
-      case "all-steps":
-        _controller.allSteps().map(Object::toString).iter(System.out::println);
-        break;
+    _controller.setState(prog);
+    _controller.typeCheck();
 
-      case "one-step":
-        _controller.oneStep();
-        System.out.println(_controller.state());
-        break;
+    _controller.allSteps();
+    System.out.println(_controller.state().output());
+  }
 
-      case "parse":
-        var ast_ = TLParser.parse(parts[1]);
-        _controller.setState(ProgState.empty.withToDo(List.singleton(ast_)));
-        _controller.typeCheck();
-        break;
+  private void _handleRun(String[] args) throws IOException {
+    switch (args[1]) {
+      case "--small-step" -> _runSmallStep(_getCode(args[2]));
+      default -> _runBigStep(_getCode(args[1]));
+    };
+  }
 
-      case "exit":
-        System.exit(0);
-        break;
+  private void _dumpAST(String code, boolean typeCheck) {
+    var ast = TLParser.parse(code);
+    var prog = ProgState.empty.withToDo(Stack.of(ast));
 
-      default:
-        System.out.println("Unrecognized command");
-        break;
+    _controller.setState(prog);
+
+    if (typeCheck)
+      _controller.typeCheck();
+
+    System.out.println(ast);
+  }
+
+  private void _handleDumpAST(String[] args) throws IOException {
+    switch (args[1]) {
+      case "--no-type-check" -> _dumpAST(_getCode(args[2]), false);
+      default -> _dumpAST(_getCode(args[1]), true);
+    }
+  }
+
+  private void _handleCommand(String[] args) throws IOException {
+    switch (args[0]) {
+      case "run" -> _handleRun(args);
+      case "dump-ast" -> _handleDumpAST(args);
+      default -> System.out.println(String.format("Unrecognized command %s.", args[0]));
     }
   }
 
   @Override
-  public void run() {
-    var console = System.console();
-
-    while (true) {
-      try {
-        System.out.print("\ntli> ");
-        var line = console.readLine();
-
-        _handleCommand(line);
-      } catch (IOException e) {
-        System.out.println("IO Error: " + e.getMessage());
-      } catch (UParsecException e) {
-        System.out.println("Parser error: " + e.getMessage());
-      } catch (TypeCheckerException e) {
-        System.out.println("Type error: " + e.getMessage());
-      } catch (EvalException e) {
-        System.out.println("Evaluation error: " + e.getMessage());
-      } catch (Throwable e) {
-        System.out.println("Something unexpected occurred:");
-        e.printStackTrace();
-      }
+  public void run(String[] args) {
+    try {
+      _handleCommand(args);
+    } catch (IOException e) {
+      System.out.println("IO Error: " + e.getMessage());
+    } catch (UParsecException e) {
+      System.out.println("Parser error: " + e.getMessage());
+    } catch (TypeCheckerException e) {
+      System.out.println("Type error: " + e.getMessage());
+    } catch (EvalException e) {
+      System.out.println("Evaluation error: " + e.getMessage());
+    } catch (Throwable e) {
+      System.out.println("Something unexpected occurred:");
+      e.printStackTrace();
     }
   }
 }
