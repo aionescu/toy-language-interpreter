@@ -1,3 +1,4 @@
+-- Comment
 a : Bool;
 a <- True;
 
@@ -34,4 +35,4 @@ if e = 2 {
   print e
 };
 e <- e + 1;
-print e
+print e -- comment before eof

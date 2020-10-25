@@ -15,7 +15,7 @@ multiLine :: Parser ()
 multiLine = try $ string "{-" *> manyTill (multiLine <|> (anyChar $> ())) (try $ string "-}") $> ()
 
 singleLine :: Parser ()
-singleLine = try $ string "--" *> manyTill anyChar newline $> ()
+singleLine = try $ string "--" *> manyTill anyChar (eof <|> endOfLine $> ()) $> ()
 
 comment :: Parser ()
 comment = singleLine <|> multiLine

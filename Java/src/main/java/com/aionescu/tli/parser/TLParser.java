@@ -22,7 +22,7 @@ public final class TLParser {
     var multiLine_ = string("{-")._and(multiLine.or(anyChar.skip()).manyTill(string("-}"))).skip();
     multiLineFwdRef.snd.set(multiLine_);
 
-    var singleLine = string("--")._and(anyChar.manyTill(newline)).skip();
+    var singleLine = string("--")._and(anyChar.manyTill(eof.or(newline.skip()))).skip();
 
     var comment = singleLine.or(multiLine);
     var ws = spaces._and(comment._and(spaces).many()).skip();
