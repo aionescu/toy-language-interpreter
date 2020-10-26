@@ -8,6 +8,18 @@ import Data.Map.Strict(Map)
 
 import Language.TL.AST
 
+data Val :: * where
+  VInt :: Int -> Val
+  VBool :: Bool -> Val
+  VRec :: Field f -> Map f Val -> Val
+  VFun :: (Val -> Eval Val) -> Val
+
+instance Show Val where
+  show (VBool b) = show b
+  show (VInt i) = show i
+  show (VRec f m) = showFields False f "<-" m
+  show (VFun _) = "<λ>"
+
 type SymValTable = Map Ident Val
 type ToDo = [Stmt]
 type Out = [Val]
@@ -44,7 +56,8 @@ instance Show EvalError where
 type Eval a = Either EvalError a
 
 evalExpr :: SymValTable -> Expr a -> Eval Val
-evalExpr _ (Lit v) = pure v
+evalExpr _ (IntLit i) = pure $ VInt i
+evalExpr _ (BoolLit b) = pure $ VBool b
 evalExpr sym (Var ident) = pure $ sym M.! ident
 evalExpr sym (Arith a op b) = do
   a' <- evalExpr sym a
@@ -89,6 +102,12 @@ evalExpr sym (RecUnion a b) = do
   rb <- evalExpr sym b
   case (ra, rb) of
     (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union a' b'
+evalExpr sym (Lam i _ e) = pure $ VFun \a -> evalExpr (M.insert i a sym) e
+evalExpr sym (App f a) = do
+  vf <- evalExpr sym f
+  va <- evalExpr sym a
+  case vf of
+    VFun f' -> f' va
 
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState

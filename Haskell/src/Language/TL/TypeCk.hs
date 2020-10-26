@@ -22,6 +22,8 @@ data TypeError :: * where
   NoFieldInRec :: Type -> Field f -> f -> TypeError
   NeedRecordTypesForUnion :: TypeError
   DuplicateIncompatibleField :: Ident -> TypeError
+  ExpectedFunFound :: Type -> TypeError
+  CantShadow :: Ident -> TypeError
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -37,6 +39,8 @@ instance Show TypeError where
       go (NoFieldInRec t FTup i) = "The tuple type " ++ show t ++ " does not have enough elements to be indexed by the index " ++ show i
       go NeedRecordTypesForUnion = "Both operands of the \"|\" operator must be of record types"
       go (DuplicateIncompatibleField i) = "The field " ++ i ++ " appears twice in the union, but with different types"
+      go (ExpectedFunFound t) = "Expected function type, but found " ++ show t
+      go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
 
 type TypeCk a = Either TypeError a
 
@@ -45,16 +49,12 @@ mustBe found expected
   | found == expected = pure ()
   | otherwise = throw $ ExpectedFound expected found
 
-valType :: Val -> Type
-valType (VBool _) = TBool
-valType (VInt _) = TInt
-valType (VRec f m) = TRec f $ valType <$> m
-
 lookupVar :: Ident -> SymTypeTable -> TypeCk VarInfo
 lookupVar var sym = maybe (throw $ UndeclaredVar var) pure $ M.lookup var sym
 
 typeCheckExpr :: SymTypeTable -> Expr a -> TypeCk Type
-typeCheckExpr _ (Lit v) = pure $ valType v
+typeCheckExpr _ (IntLit _) = pure TInt
+typeCheckExpr _ (BoolLit _) = pure TBool
 typeCheckExpr sym (Var ident) = do
   (type', state) <- lookupVar ident sym
   case state of
@@ -120,6 +120,16 @@ typeCheckExpr sym (RecUnion a b) = do
     throwIfDup :: Ident -> Maybe Type -> TypeCk Type
     throwIfDup ident Nothing = throw $ DuplicateIncompatibleField ident
     throwIfDup _ (Just t) = pure t
+typeCheckExpr sym (Lam i t e) = do
+  case M.lookup i sym of
+    Just _ -> throw $ CantShadow i
+    Nothing -> (TFun t) <$> typeCheckExpr (M.insert i (t, Init) sym) e
+typeCheckExpr sym (App f a) = do
+  tf <- typeCheckExpr sym f
+  ta <- typeCheckExpr sym a
+  case tf of
+    TFun i o -> ta `mustBe` i $> o
+    _ -> throw $ ExpectedFunFound tf
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b

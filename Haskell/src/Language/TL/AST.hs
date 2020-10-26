@@ -16,12 +16,14 @@ data Type :: * where
   TInt :: Type
   TBool :: Type
   TRec :: Field f -> Map f Type -> Type
+  TFun :: Type -> Type -> Type
 
 instance Eq Type where
   TInt == TInt = True
   TBool == TBool = True
   TRec FRec a == TRec FRec b = a == b
   TRec FTup a == TRec FTup b = a == b
+  TFun a b == TFun a' b' = a == a' && b == b'
   _ == _ = False
 
 withParens :: String -> String -> [String] -> String
@@ -47,16 +49,7 @@ instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
   show (TRec f m) = showFields False f ":" m
-
-data Val :: * where
-  VInt :: Int -> Val
-  VBool :: Bool -> Val
-  VRec :: Field f -> Map f Val -> Val
-
-instance Show Val where
-  show (VBool b) = show b
-  show (VInt i) = show i
-  show (VRec f m) = showFields False f "<-" m
+  show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
 
 data ArithOp
   = Add
@@ -119,7 +112,8 @@ compOp NEq = (/=)
 data ExprKind = L | R
 
 data Expr :: ExprKind -> * where
-  Lit :: Val -> Expr R
+  IntLit :: Int -> Expr R
+  BoolLit :: Bool -> Expr R
   Var :: Ident -> Expr a
   Arith :: Expr a -> ArithOp -> Expr b -> Expr R
   Logic :: Expr a -> LogicOp -> Expr b -> Expr R
@@ -128,9 +122,12 @@ data Expr :: ExprKind -> * where
   RecMember :: Expr a -> Field f -> f -> Expr a
   RecWith :: Expr a -> Field f -> Map f ({- forall b. -} Expr b) -> Expr R -- No ImpredicativePolymorphism yet
   RecUnion :: Expr a -> Expr b -> Expr R
+  Lam :: Ident -> Type -> Expr a -> Expr R
+  App :: Expr a -> Expr b -> Expr R
 
 instance Show (Expr a) where
-  show (Lit v) = show v
+  show (IntLit i) = show i
+  show (BoolLit b) = show b
   show (Var ident) = ident
   show (Arith a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
@@ -139,6 +136,8 @@ instance Show (Expr a) where
   show (RecMember e f i) = show e ++ "." ++ showF f i
   show (RecWith lhs f updates) = "{ " ++ show lhs ++ showFields True f "<-" updates
   show (RecUnion a b) = show a ++ " | " ++ show b
+  show (Lam i t e) = "(\\(" ++ i ++ " : " ++ show t ++ "). " ++ show e ++ ")"
+  show (App f a) = "(" ++ show f ++ " " ++ show a ++ ")"
 
 data Stmt
   = Nop
