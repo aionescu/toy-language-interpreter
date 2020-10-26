@@ -176,7 +176,7 @@ public interface Parser<A> {
 
   private static <A, End> Parser<List<A>> _manyTill(Parser<A> p, Parser<End> end, List<A> acc) {
     return s -> end.run(s).match(
-      () -> p.run(s).match(() -> Result.of(acc, s), (a, s2) -> _manyTill(p, end, List.cons(a, acc)).run(s2)),
+      () -> p.run(s).match(() -> Result.fail(), (a, s2) -> _manyTill(p, end, List.cons(a, acc)).run(s2)),
       (a, s2) -> Result.of(acc, s2));
   }
 
