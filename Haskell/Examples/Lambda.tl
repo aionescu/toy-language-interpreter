@@ -34,4 +34,10 @@ if True {- Imagine complex condition here -} {
   f'' <- \(x : Int). x - 2
 };
 
-print f 2
+print f 2;
+
+-- Higher order function
+run : (() -> Int) -> Int;
+run <- \(r : () -> Int). r ();
+
+print run \(a : ()). 10
