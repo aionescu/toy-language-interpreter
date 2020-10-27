@@ -108,22 +108,22 @@ compOp LtEq = (<=)
 compOp Eq = (==)
 compOp NEq = (/=)
 
--- `Expr L` are lvalue-expressions, `Expr R` are rvalue-expression
+-- `Expr 'L` are lvalue-expressions, `Expr 'R` are rvalue-expression
 data ExprKind = L | R
 
 data Expr :: ExprKind -> * where
-  IntLit :: Int -> Expr R
-  BoolLit :: Bool -> Expr R
+  IntLit :: Int -> Expr 'R
+  BoolLit :: Bool -> Expr 'R
   Var :: Ident -> Expr a
-  Arith :: Expr a -> ArithOp -> Expr b -> Expr R
-  Logic :: Expr a -> LogicOp -> Expr b -> Expr R
-  Comp :: Expr a -> CompOp -> Expr b -> Expr R
-  RecLit :: Field f -> Map f (Expr a) -> Expr R
+  Arith :: Expr a -> ArithOp -> Expr b -> Expr 'R
+  Logic :: Expr a -> LogicOp -> Expr b -> Expr 'R
+  Comp :: Expr a -> CompOp -> Expr b -> Expr 'R
+  RecLit :: Field f -> Map f (Expr a) -> Expr 'R
   RecMember :: Expr a -> Field f -> f -> Expr a
-  RecWith :: Expr a -> Field f -> Map f ({- forall b. -} Expr b) -> Expr R -- No ImpredicativePolymorphism yet
-  RecUnion :: Expr a -> Expr b -> Expr R
-  Lam :: Ident -> Type -> Expr a -> Expr R
-  App :: Expr a -> Expr b -> Expr R
+  RecWith :: Expr a -> Field f -> Map f ({- forall b. -} Expr b) -> Expr 'R -- No ImpredicativePolymorphism yet
+  RecUnion :: Expr a -> Expr b -> Expr 'R
+  Lam :: Ident -> Type -> Expr a -> Expr 'R
+  App :: Expr a -> Expr b -> Expr 'R
 
 instance Show (Expr a) where
   show (IntLit i) = show i
@@ -142,11 +142,11 @@ instance Show (Expr a) where
 data Stmt
   = Nop
   | Decl Ident Type
-  | Assign (Expr L) (Expr R)
-  | DeclAssign Ident (Maybe Type) (Expr R)
-  | Print (Expr R)
-  | If (Expr R) Stmt Stmt
-  | While (Expr R) Stmt
+  | Assign (Expr 'L) (Expr 'R)
+  | DeclAssign Ident (Maybe Type) (Expr 'R)
+  | Print (Expr 'R)
+  | If (Expr 'R) Stmt Stmt
+  | While (Expr 'R) Stmt
   | Compound Stmt Stmt
 
 instance Show Stmt where

@@ -38,7 +38,6 @@ executable tli
     -with-rtsopts=-N
     -Wall
     -Wincomplete-uni-patterns
-    -Wno-unticked-promoted-constructors
 
   default-extensions:
     ApplicativeDo

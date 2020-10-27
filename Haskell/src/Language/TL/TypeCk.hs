@@ -110,7 +110,7 @@ typeCheckExpr sym (RecUnion a b) = do
   tb <- typeCheckExpr sym b
   case (ta, tb) of
     (TRec FRec as, TRec FRec bs) -> do
-       (TRec FRec) <$> M.traverseWithKey throwIfDup ((M.unionWith checkDup `on` (Just <$>)) as bs)
+      (TRec FRec) <$> M.traverseWithKey throwIfDup ((M.unionWith checkDup `on` (Just <$>)) as bs)
     _ -> throw $ NeedRecordTypesForUnion
   where
     checkDup a' b'
