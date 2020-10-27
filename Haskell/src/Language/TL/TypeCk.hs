@@ -1,11 +1,13 @@
 module Language.TL.TypeCk(typeCheck) where
 
+import Data.Function(on)
+import Data.Functor(($>))
+import Control.Monad(unless)
+
 import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
 
 import Language.TL.AST
-import Data.Function (on)
-import Data.Functor (($>))
 
 data VarState = Init | Uninit
   deriving Eq
@@ -24,6 +26,7 @@ data TypeError :: * where
   DuplicateIncompatibleField :: Ident -> TypeError
   ExpectedFunFound :: Type -> TypeError
   CantShadow :: Ident -> TypeError
+  CantCompareType :: TypeError
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -41,6 +44,7 @@ instance Show TypeError where
       go (DuplicateIncompatibleField i) = "The field " ++ i ++ " appears twice in the union, but with different types"
       go (ExpectedFunFound t) = "Expected function type, but found " ++ show t
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
+      go CantCompareType = "Only Ints and Bools can be compared"
 
 type TypeCk a = Either TypeError a
 
@@ -76,6 +80,8 @@ typeCheckExpr sym (Comp a _ b) = do
   ta <- typeCheckExpr sym a
   tb <- typeCheckExpr sym b
   tb `mustBe` ta
+  unless (ta `elem` [TInt, TBool])
+    $ throw CantCompareType
   pure TBool
 typeCheckExpr sym (RecLit f m) = TRec f <$> traverse (typeCheckExpr sym) m
 typeCheckExpr sym (RecMember lhs f i) = do

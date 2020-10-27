@@ -15,8 +15,8 @@ data Val :: * where
   VFun :: (Val -> Eval Val) -> Val
 
 instance Show Val where
-  show (VBool b) = show b
   show (VInt i) = show i
+  show (VBool b) = show b
   show (VRec f m) = showFields False f "<-" m
   show (VFun _) = "<λ>"
 
