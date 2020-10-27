@@ -1,10 +1,8 @@
-a : _ <- 2;
+a : Int <- 2;
+print a;
+
 b : _ <- 3;
+print b;
 
-print a + b;
-
-bool : _ <- True;
-
-if True and bool {
-  print bool
-}
+-- b : _ <- 4;
+print b

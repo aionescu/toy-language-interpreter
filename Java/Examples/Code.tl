@@ -1,4 +1,3 @@
--- Comment
 a : Bool;
 a <- True;
 
@@ -20,8 +19,8 @@ c : Int;
 c <- -1;
 print c;
 
-d : Int;
-d <- 1 + 2 * 3; -- Comment
+-- Declare-and-assign shorthand syntax
+d : Int <- 1 + 2 * 3;
 print d;
 
 -- If with no else branch
@@ -29,10 +28,12 @@ if True {
   print {- Multiline comment -} False
 };
 
--- DeclAssign shorthand syntax
-e : Int <- 2;
+-- Declare-and-assign + Rudimentary type inference
+e : _ <- 2;
+
 if e = 2 {
-  print e
-};
-e <- e + 1;
-print e -- comment before eof
+  while e <= 10 {
+    print e;
+    e <- e + 1
+  }
+}
