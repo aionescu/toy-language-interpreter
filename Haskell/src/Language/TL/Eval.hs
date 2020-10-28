@@ -8,11 +8,11 @@ import Data.Map.Strict(Map)
 
 import Language.TL.AST
 
-data Val :: * where
-  VInt :: Int -> Val
-  VBool :: Bool -> Val
-  VRec :: Field f -> Map f Val -> Val
-  VFun :: (Val -> Eval Val) -> Val
+data Val
+  = VInt Int
+  | VBool Bool
+  | forall f. VRec (Field f) (Map f Val)
+  | VFun (Val -> Eval Val)
 
 instance Show Val where
   show (VInt i) = show i

@@ -12,11 +12,11 @@ data Field :: * -> * where
 
 deriving instance Eq (Field f)
 
-data Type :: * where
-  TInt :: Type
-  TBool :: Type
-  TRec :: Field f -> Map f Type -> Type
-  TFun :: Type -> Type -> Type
+data Type
+  = TInt
+  | TBool
+  | forall f. TRec (Field f) (Map f Type)
+  | TFun Type Type
 
 instance Eq Type where
   TInt == TInt = True
