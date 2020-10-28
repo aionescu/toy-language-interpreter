@@ -120,7 +120,7 @@ data Expr :: ExprKind -> * where
   Comp :: Expr a -> CompOp -> Expr b -> Expr 'R
   RecLit :: Field f -> Map f (Expr a) -> Expr 'R
   RecMember :: Expr a -> Field f -> f -> Expr a
-  RecWith :: Expr a -> Field f -> Map f ({- forall b. -} Expr b) -> Expr 'R -- No ImpredicativePolymorphism yet
+  RecWith :: Expr a -> Field f -> Map f (Expr b) -> Expr 'R
   RecUnion :: Expr a -> Expr b -> Expr 'R
   Lam :: Ident -> Type -> Expr a -> Expr 'R
   App :: Expr a -> Expr b -> Expr 'R
