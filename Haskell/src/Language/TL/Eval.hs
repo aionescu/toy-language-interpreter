@@ -1,7 +1,7 @@
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
-module Language.TL.Eval(allSteps, eval, ProgState(..), showSteps, showOut) where
+module Language.TL.Eval(ProgState(..), traverseSteps_, finalState, showOut) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
@@ -39,9 +39,6 @@ instance Show ProgState where
 
 mkProgState :: Stmt -> ProgState
 mkProgState stmt = ProgState { toDo = [stmt], sym = M.empty, out = [] }
-
-showSteps :: [ProgState] -> String
-showSteps = unlines . (show <$>)
 
 showOut :: ProgState -> String
 showOut = unlines . reverse . (show <$>) . out
@@ -139,17 +136,15 @@ smallStep :: ProgState -> Maybe (Eval ProgState)
 smallStep ProgState { toDo = [] } = Nothing
 smallStep ProgState { toDo = stmt : toDo, .. } = Just $ evalStmt ProgState{..} stmt
 
-allSteps' :: ProgState -> Eval [ProgState]
-allSteps' state =
-  case smallStep state of
-    Nothing -> pure [state]
-    Just result -> do
-      state' <- result
-      states <- allSteps' state'
-      pure $ state : states
+traverseSteps_' :: Applicative f => (String -> f a) -> ProgState -> f ()
+traverseSteps_' f state =
+  f (show state) *> maybe (pure ()) (either ((() <$) . f . show) $ traverseSteps_' f) (smallStep state)
 
-allSteps :: Program -> TLI [ProgState]
-allSteps prog = toTLI $ allSteps' $ mkProgState prog
+traverseSteps_ :: Applicative f => (String -> f a) -> Program -> f ()
+traverseSteps_ f = traverseSteps_' f . mkProgState
 
-eval :: Program -> TLI ProgState
-eval p = last <$> allSteps p
+finalState' :: ProgState -> Eval ProgState
+finalState' s = maybe (pure s) (>>= finalState') $ smallStep s
+
+finalState :: Program -> TLI ProgState
+finalState = toTLI . finalState' . mkProgState

@@ -17,9 +17,11 @@ run (Opts Run{..} path) = do
 
   parse code
     >>= typeCheck
-    >>= (if smallStep then (showSteps <$>) . allSteps else (showOut <$>) . eval)
-    & either id id
-    & putStrLn
+    >>=
+      (if smallStep
+        then pure . traverseSteps_ putStrLn
+        else (putStrLn . showOut <$>) . finalState)
+    & either putStrLn id
 
 run (Opts DumpAst{..} path) = do
   code <- getCode path
