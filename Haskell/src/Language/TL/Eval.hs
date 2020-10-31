@@ -88,7 +88,7 @@ evalExpr sym (RecMember lhs f i) = do
     (VRec FTup m, FTup) -> pure $ m M.! i
 evalExpr sym (RecWith lhs f us) = do
   v <- evalExpr sym lhs
-  vals <- traverseM (evalExpr sym) us
+  vals <- traverse (evalExpr sym) us
   case (v, f) of
     (VRec FRec fs, FRec) ->
       pure $ VRec FRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals

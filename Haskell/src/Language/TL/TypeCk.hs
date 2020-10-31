@@ -97,7 +97,7 @@ typeCheckExpr sym (RecMember lhs f i) = do
     _ -> throw $ ExpectedRecFound t
 typeCheckExpr sym (RecWith lhs f us) = do
   t <- typeCheckExpr sym lhs
-  tys <- traverseM (typeCheckExpr sym) us
+  tys <- traverse (typeCheckExpr sym) us
   case (t, f) of
     (TRec FRec m, FRec) -> do
       M.traverseWithKey (checkMember t f m) tys $> t

@@ -1,6 +1,7 @@
 module Language.TL.AST where
 
 import Data.List(intercalate)
+import Data.Bifunctor(first)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 
@@ -166,15 +167,8 @@ type Program = Stmt
 
 type TLI a = Either String a
 
-throw :: a -> Either a b
+throw :: e -> Either e a
 throw = Left
 
-mapLeft :: (a -> c) -> Either a b -> Either c b
-mapLeft f (Left a) = Left $ f a
-mapLeft _ (Right b) = Right b
-
-toTLI :: Show a => Either a b -> TLI b
-toTLI = mapLeft show
-
-traverseM :: Applicative f => (a -> f b) -> Map k a -> f (Map k b)
-traverseM = M.traverseWithKey . const
+toTLI :: Show e => Either e a -> TLI a
+toTLI = first show
