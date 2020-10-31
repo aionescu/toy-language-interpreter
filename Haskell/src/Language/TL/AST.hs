@@ -135,7 +135,7 @@ instance Show (Expr a) where
   show (RecLit f m) = showFields False f "<-" m
   show (RecMember e f i) = show e ++ "." ++ showF f i
   show (RecWith lhs f updates) = "{ " ++ show lhs ++ showFields True f "<-" updates
-  show (RecUnion a b) = show a ++ " | " ++ show b
+  show (RecUnion a b) = show a ++ " & " ++ show b
   show (Lam i t e) = "(\\(" ++ i ++ " : " ++ show t ++ "). " ++ show e ++ ")"
   show (App f a) = "(" ++ show f ++ " " ++ show a ++ ")"
 

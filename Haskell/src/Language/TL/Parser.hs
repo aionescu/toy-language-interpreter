@@ -121,7 +121,7 @@ opMul =
   [ char '*' $> flip Arith Multiply
   , char '/' $> flip Arith Divide
   , char '%' $> flip Arith Remainder
-  , char '|' $> RecUnion
+  , char '&' $> RecUnion
   ]
   <* ws
 

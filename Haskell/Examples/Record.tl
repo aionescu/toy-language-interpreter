@@ -4,9 +4,9 @@ a <- { x <- 2, y <- 3 };
 -- Inferred: b : { a : Bool };
 b : _ <- { a <- True };
 
--- Record union/merging
+-- Record union (left-biased)
 -- Inferred: c : { a : Bool, x : Int, y : Int }
-c : _ <- a | b;
+c : _ <- a & b;
 c.a <- False;
 print c;
 
