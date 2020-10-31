@@ -3,9 +3,8 @@ module Language.TL.TypeCk(typeCheck) where
 import Data.Function(on)
 import Data.Functor(($>))
 import Control.Monad(unless)
-
-import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
+import qualified Data.Map.Strict as M
 
 import Language.TL.AST
 

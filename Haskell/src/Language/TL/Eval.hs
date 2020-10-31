@@ -3,8 +3,8 @@
 
 module Language.TL.Eval(ProgState(..), traverseSteps_, finalState, showOut) where
 
-import qualified Data.Map.Strict as M
 import Data.Map.Strict(Map)
+import qualified Data.Map.Strict as M
 
 import Language.TL.AST
 

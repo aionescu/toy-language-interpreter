@@ -1,7 +1,7 @@
 module Language.TL.Opts(Cmd(..), Opts(..), getOpts) where
 
+import Control.Applicative(liftA2)
 import Options.Generic
-import Control.Applicative (liftA2)
 
 data Cmd
   = Run { smallStep :: Bool }

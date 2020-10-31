@@ -1,8 +1,8 @@
 module Language.TL.AST where
 
-import Data.List (intercalate)
-import qualified Data.Map.Strict as M
+import Data.List(intercalate)
 import Data.Map.Strict(Map)
+import qualified Data.Map.Strict as M
 
 type Ident = String
 
