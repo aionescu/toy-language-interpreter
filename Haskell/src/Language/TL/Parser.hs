@@ -1,13 +1,13 @@
 module Language.TL.Parser(parse) where
 
+import Data.List(nub, foldl')
 import Data.Functor(($>))
-import Control.Applicative(liftA2)
-import Text.Parsec hiding (parse)
-import qualified Data.Map.Strict as M
+import Control.Applicative(liftA2, liftA3)
 import Data.Map.Strict(Map)
+import qualified Data.Map.Strict as M
+import Text.Parsec hiding (parse)
 
 import Language.TL.AST
-import Data.List(nub, foldl')
 
 type Parser = Parsec String ()
 
@@ -217,7 +217,8 @@ assign :: Parser Stmt
 assign = liftA2 Assign (lvalue <* arrow) expr
 
 declAssign :: Parser Stmt
-declAssign = DeclAssign <$> (ident <* colon) <*> ((char '_' $> Nothing <|> Just <$> type') <* arrow) <*> expr
+declAssign =
+  liftA3 DeclAssign (ident <* colon) ((char '_' $> Nothing <|> Just <$> type') <* arrow) expr
 
 block :: Parser Stmt
 block =
@@ -226,13 +227,13 @@ block =
   <* ws <* char '}' <* ws
 
 if' :: Parser Stmt
-if' = If <$> cond <*> block <*> option Nop elseBlock
+if' = liftA3 If cond block (option Nop elseBlock)
   where
     cond = string "if" *> ws *> expr <* ws
     elseBlock = string "else" *> ws *> block
 
 while :: Parser Stmt
-while = While <$> cond <*> block
+while = liftA2 While cond block
   where
     cond = string "while" *> ws *> expr <* ws
 
