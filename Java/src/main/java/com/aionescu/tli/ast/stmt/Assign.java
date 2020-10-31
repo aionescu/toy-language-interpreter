@@ -12,10 +12,6 @@ public final class Assign implements Stmt {
   private final Ident _ident;
   private final Expr _expr;
 
-  public static Assign of(Ident ident, Expr expr) {
-    return new Assign(ident, expr);
-  }
-
   public Assign(Ident ident, Expr expr) {
     _ident = ident;
     _expr = expr;
@@ -28,7 +24,7 @@ public final class Assign implements Stmt {
       a -> a);
 
     _expr.typeCheck(sym).expect(info.type);
-    return sym.insert(_ident, VarInfo.of(info.type, VarState.INIT));
+    return sym.insert(_ident, new VarInfo(info.type, VarState.INIT));
   }
 
   @Override

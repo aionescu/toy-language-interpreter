@@ -13,10 +13,6 @@ import com.aionescu.tli.exn.typeck.UninitializedVariableException;
 public final class Var implements Expr {
   private final Ident _ident;
 
-  public static Var of(Ident ident) {
-    return new Var(ident);
-  }
-
   public Var(Ident ident) {
     _ident = ident;
   }

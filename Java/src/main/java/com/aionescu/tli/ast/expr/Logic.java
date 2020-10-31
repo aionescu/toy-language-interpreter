@@ -25,10 +25,6 @@ public final class Logic implements Expr {
   private final Expr _lhs, _rhs;
   private final Op _op;
 
-  public static Logic of(Expr lhs, Op op, Expr rhs) {
-    return new Logic(lhs, op, rhs);
-  }
-
   public Logic(Expr lhs, Op op, Expr rhs) {
     _lhs = lhs;
     _rhs = rhs;

@@ -7,10 +7,6 @@ import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.VarInfo;
 
 public final class Nop implements Stmt {
-  public static final Nop nop = new Nop();
-
-  private Nop() { }
-
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     return sym;

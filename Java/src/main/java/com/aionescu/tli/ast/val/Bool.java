@@ -5,10 +5,6 @@ import com.aionescu.tli.ast.type.Type;
 public final class Bool implements Val {
   public final boolean val;
 
-  public static Bool of(boolean val) {
-    return new Bool(val);
-  }
-
   public Bool(boolean val) {
     this.val = val;
   }

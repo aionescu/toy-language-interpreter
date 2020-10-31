@@ -3,10 +3,6 @@ package com.aionescu.tli.ast;
 public final class Ident {
   public final String name;
 
-  public static Ident of(String name) {
-    return new Ident(name);
-  }
-
   public Ident(String name) {
     this.name = name;
   }

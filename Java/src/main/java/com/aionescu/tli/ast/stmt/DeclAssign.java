@@ -14,10 +14,6 @@ public final class DeclAssign implements Stmt {
   private final Maybe<Type> _type;
   private final Expr _expr;
 
-  public static DeclAssign of(Ident ident, Maybe<Type> type, Expr expr) {
-    return new DeclAssign(ident, type, expr);
-  }
-
   public DeclAssign(Ident ident, Maybe<Type> type, Expr expr) {
     _ident = ident;
     _type = type;
@@ -28,17 +24,17 @@ public final class DeclAssign implements Stmt {
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     var type = _type.match(() -> _expr.typeCheck(sym), a -> a);
 
-    var sym2 = Decl.of(_ident, type).typeCheck(sym);
-    return Assign.of(_ident, _expr).typeCheck(sym2);
+    var sym2 = new Decl(_ident, type).typeCheck(sym);
+    return new Assign(_ident, _expr).typeCheck(sym2);
   }
 
   @Override
   public ProgState eval(ProgState prog) {
-    var tail = prog.toDo.push(Assign.of(_ident, _expr));
+    var tail = prog.toDo.push(new Assign(_ident, _expr));
 
     return prog.withToDo(_type.match(
       () -> tail,
-      t -> tail.push(Decl.of(_ident, t))));
+      t -> tail.push(new Decl(_ident, t))));
   }
 
   @Override

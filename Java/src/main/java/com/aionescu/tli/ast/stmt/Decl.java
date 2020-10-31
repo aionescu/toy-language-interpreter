@@ -13,10 +13,6 @@ public final class Decl implements Stmt {
   private final Ident _ident;
   private final Type _type;
 
-  public static Decl of(Ident ident, Type type) {
-    return new Decl(ident, type);
-  }
-
   public Decl(Ident ident, Type type) {
     _ident = ident;
     _type = type;
@@ -25,7 +21,7 @@ public final class Decl implements Stmt {
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     return sym.lookup(_ident).match(
-      () -> sym.insert(_ident, VarInfo.of(_type, VarState.UNINIT)),
+      () -> sym.insert(_ident, new VarInfo(_type, VarState.UNINIT)),
       a -> { throw new VariableAlreadyDeclaredException(_ident); });
   }
 

@@ -12,10 +12,6 @@ public final class If implements Stmt {
   private final Expr _cond;
   private final Stmt _then, _else;
 
-  public static If of(Expr cond, Stmt then, Stmt else_) {
-    return new If(cond, then, else_);
-  }
-
   public If(Expr cond, Stmt then, Stmt else_) {
     _cond = cond;
     _then = then;
