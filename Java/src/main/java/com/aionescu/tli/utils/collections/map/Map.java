@@ -7,6 +7,8 @@ public interface Map<K extends Comparable<K>, V> {
     return CopyingTreeMap.empty();
   }
 
+  String toString(String begin, String end, String sep);
+
   Map<K, V> insert(K k, V v);
   Maybe<V> lookup(K k);
 }

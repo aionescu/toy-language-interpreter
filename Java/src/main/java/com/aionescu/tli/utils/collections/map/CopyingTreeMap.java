@@ -18,15 +18,17 @@ public final class CopyingTreeMap<K extends Comparable<K>, V> implements Map<K, 
 
   @Override
   public String toString() {
+    return toString("{ ", " }", " <- ");
+  }
+
+  @Override
+  public String toString(String begin, String end, String sep) {
     var entries = List.ofStream(_tm.entrySet().stream());
 
     return
       entries
-      .map(e -> e.getKey() + " <- " + e.getValue())
-      .toString()
-      .replace("[]", "{ }")
-      .replace("[", "{ ")
-      .replace("]", " }");
+      .map(e -> e.getKey() + sep + e.getValue())
+      .toString(begin, end);
   }
 
   @Override

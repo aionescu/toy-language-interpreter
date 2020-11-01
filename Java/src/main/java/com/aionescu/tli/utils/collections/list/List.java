@@ -53,9 +53,7 @@ public abstract class List<A> implements Stack<A> {
 
   @Override
   public final String toString() {
-    return match(
-      () -> "[]",
-      (h, t) -> "[" + h + t.foldl((s, a) -> s + ", " + a, "") + "]");
+    return toString("[", "]");
   }
 
   @Override
@@ -100,6 +98,12 @@ public abstract class List<A> implements Stack<A> {
 
   public static String asString(List<Character> chars) {
     return _asString(chars, "");
+  }
+
+  public final String toString(String begin, String end) {
+    return match(
+      () -> begin + end,
+      (h, t) -> begin + h + t.foldl((s, a) -> s + ", " + a, "") + end);
   }
 
   public final List<A> append(List<A> b) {
