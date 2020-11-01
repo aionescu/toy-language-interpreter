@@ -8,11 +8,11 @@ import com.aionescu.tli.ast.stmt.Stmt;
 import com.aionescu.tli.ast.val.Val;
 
 public final class ProgState {
+  public static final ProgState empty = new ProgState(Stack.empty(), Map.empty(), List.nil());
+
   public final Stack<Stmt> toDo;
   public final Map<Ident, Val> sym;
   public final List<Val> out;
-
-  public static final ProgState empty = new ProgState(Stack.empty(), Map.empty(), List.nil());
 
   private ProgState(Stack<Stmt> toDo, Map<Ident, Val> sym, List<Val> out) {
     this.toDo = toDo;

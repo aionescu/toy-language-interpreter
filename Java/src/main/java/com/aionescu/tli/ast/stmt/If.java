@@ -19,6 +19,11 @@ public final class If implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("if %s { %s } else { %s }", _cond, _then, _else);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     _cond.typeCheck(sym).expect(Type.BOOL);
     _then.typeCheck(sym);
@@ -32,10 +37,5 @@ public final class If implements Stmt {
     var block = v ? _then : _else;
 
     return prog.withToDo(prog.toDo.push(block));
-  }
-
-  @Override
-  public String toString() {
-    return String.format("if %s { %s } else { %s }", _cond, _then, _else);
   }
 }

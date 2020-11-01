@@ -39,6 +39,11 @@ public final class Arith implements Expr {
   }
 
   @Override
+  public String toString() {
+    return String.format("(%s %s %s)", _lhs, _op, _rhs);
+  }
+
+  @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
     _lhs.typeCheck(sym).expect(Type.INT);
     _rhs.typeCheck(sym).expect(Type.INT);
@@ -63,10 +68,5 @@ public final class Arith implements Expr {
         default -> lhs % rhs;
       };
     });
-  }
-
-  @Override
-  public String toString() {
-    return String.format("(%s %s %s)", _lhs, _op, _rhs);
   }
 }

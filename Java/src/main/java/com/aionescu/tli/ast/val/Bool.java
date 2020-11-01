@@ -10,12 +10,12 @@ public final class Bool implements Val {
   }
 
   @Override
-  public Type type() {
-    return Type.BOOL;
+  public String toString() {
+    return val ? "True" : "False";
   }
 
   @Override
-  public String toString() {
-    return val ? "True" : "False";
+  public Type type() {
+    return Type.BOOL;
   }
 }

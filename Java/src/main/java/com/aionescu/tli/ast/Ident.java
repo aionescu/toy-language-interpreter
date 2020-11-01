@@ -8,11 +8,6 @@ public final class Ident implements Comparable<Ident> {
   }
 
   @Override
-  public int compareTo(Ident rhs) {
-    return name.compareTo(rhs.name);
-  }
-
-  @Override
   public int hashCode() {
     return name.hashCode();
   }
@@ -28,5 +23,10 @@ public final class Ident implements Comparable<Ident> {
   @Override
   public String toString() {
     return name;
+  }
+
+  @Override
+  public int compareTo(Ident rhs) {
+    return name.compareTo(rhs.name);
   }
 }

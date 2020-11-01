@@ -51,6 +51,33 @@ public abstract class List<A> implements Stack<A> {
   public abstract <B> B match(Supplier<B> nil, BiFunction<A, List<A>, B> cons);
   public abstract void matchDo(Runnable nil, BiConsumer<A, List<A>> cons);
 
+  @Override
+  public final String toString() {
+    return match(
+      () -> "[]",
+      (h, t) -> "[" + h + t.foldl((s, a) -> s + ", " + a, "") + "]");
+  }
+
+  @Override
+  public final List<A> push(A val) {
+    return List.cons(val, this);
+  }
+
+  @Override
+  public final Maybe<Pair<A, Stack<A>>> pop() {
+    return match(Maybe::nothing, (h, t) -> Maybe.just(Pair.of(h, t)));
+  }
+
+  @Override
+  public final boolean isEmpty() {
+    return match(() -> true, (h, t) -> false);
+  }
+
+  @Override
+  public final <S> S foldl(BiFunction<S, A, S> f, S s) {
+    return match(() -> s, (h, t) -> t.foldl(f, f.apply(s, h)));
+  }
+
   public static <A> List<A> nil() {
     return new Nil<>();
   }
@@ -87,11 +114,6 @@ public abstract class List<A> implements Stack<A> {
     matchDo(() -> { }, (h, t) -> { f.accept(h); t.iter(f); });
   }
 
-  @Override
-  public final <S> S foldl(BiFunction<S, A, S> f, S s) {
-    return match(() -> s, (h, t) -> t.foldl(f, f.apply(s, h)));
-  }
-
   public final <S> S foldr(BiFunction<A, S, S> f, S s) {
     return match(() -> s, (h, t) -> f.apply(h, t.foldr(f, s)));
   }
@@ -104,27 +126,5 @@ public abstract class List<A> implements Stack<A> {
     return match(
       () -> "",
       (h, t) -> h.toString() + t.foldl((s, a) -> s + "\n" + a, ""));
-  }
-
-  @Override
-  public final boolean isEmpty() {
-    return match(() -> true, (h, t) -> false);
-  }
-
-  @Override
-  public final String toString() {
-    return match(
-      () -> "[]",
-      (h, t) -> "[" + h + t.foldl((s, a) -> s + ", " + a, "") + "]");
-  }
-
-  @Override
-  public final Maybe<Pair<A, Stack<A>>> pop() {
-    return match(Maybe::nothing, (h, t) -> Maybe.just(Pair.of(h, t)));
-  }
-
-  @Override
-  public final List<A> push(A val) {
-    return List.cons(val, this);
   }
 }

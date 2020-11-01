@@ -10,12 +10,12 @@ public final class Int implements Val {
   }
 
   @Override
-  public Type type() {
-    return Type.INT;
+  public String toString() {
+    return String.valueOf(val);
   }
 
   @Override
-  public String toString() {
-    return String.valueOf(val);
+  public Type type() {
+    return Type.INT;
   }
 }

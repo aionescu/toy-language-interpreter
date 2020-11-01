@@ -14,6 +14,11 @@ public final class Compound implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("%s; %s", _stmt1, _stmt2);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     return _stmt2.typeCheck(_stmt1.typeCheck(sym));
   }
@@ -21,10 +26,5 @@ public final class Compound implements Stmt {
   @Override
   public ProgState eval(ProgState prog) {
     return prog.withToDo(prog.toDo.push(_stmt2).push(_stmt1));
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s; %s", _stmt1, _stmt2);
   }
 }

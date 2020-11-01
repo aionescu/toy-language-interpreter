@@ -18,6 +18,11 @@ public final class While implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("while %s { %s }", _cond, _body);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     _cond.typeCheck(sym).expect(Type.BOOL);
     _body.typeCheck(sym);
@@ -30,10 +35,5 @@ public final class While implements Stmt {
     var toDo = v ? prog.toDo.push(this).push(_body) : prog.toDo;
 
     return prog.withToDo(toDo);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("while %s { %s }", _cond, _body);
   }
 }

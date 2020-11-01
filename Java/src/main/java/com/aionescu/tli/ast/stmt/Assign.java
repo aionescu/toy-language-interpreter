@@ -18,6 +18,11 @@ public final class Assign implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("%s <- %s", _ident, _expr);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     var info = sym.lookup(_ident).match(
       () -> { throw new UndeclaredVariableException(_ident); },
@@ -30,10 +35,5 @@ public final class Assign implements Stmt {
   @Override
   public ProgState eval(ProgState prog) {
     return prog.withSym(prog.sym.insert(_ident, _expr.eval(prog.sym)));
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s <- %s", _ident, _expr);
   }
 }

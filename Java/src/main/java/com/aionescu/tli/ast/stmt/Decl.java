@@ -19,6 +19,11 @@ public final class Decl implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("%s : %s", _ident, _type);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     return sym.lookup(_ident).match(
       () -> sym.insert(_ident, new VarInfo(_type, VarState.UNINIT)),
@@ -28,10 +33,5 @@ public final class Decl implements Stmt {
   @Override
   public ProgState eval(ProgState prog) {
     return prog;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s : %s", _ident, _type);
   }
 }

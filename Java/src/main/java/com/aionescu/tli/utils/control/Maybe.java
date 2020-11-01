@@ -62,18 +62,6 @@ public abstract class Maybe<A> {
     return new Just<>(val);
   }
 
-  public final <B> Maybe<B> map(Function<A, B> f) {
-    return match(Maybe::nothing, a -> Maybe.just(f.apply(a)));
-  }
-
-  public final <B> Maybe<B> map_(B b) {
-    return map(a -> b);
-  }
-
-  public final <B> Maybe<B> bind(Function<A, Maybe<B>> f) {
-    return match(Maybe::nothing, f);
-  }
-
   public static <A, B> Maybe<B> ap(Maybe<Function<A, B>> mf, Maybe<A> ma) {
     return mf.match(Maybe::nothing, f -> ma.match(Maybe::nothing, a -> Maybe.just(f.apply(a))));
   }
@@ -84,6 +72,18 @@ public abstract class Maybe<A> {
 
   public static <E, A, B, C, D> Maybe<D> liftA3(TriFunction<A, B, C, D> f, Maybe<A> ma, Maybe<B> mb, Maybe<C> ec) {
     return ma.match(Maybe::nothing, a -> mb.match(Maybe::nothing, b -> ec.match(Maybe::nothing, c -> Maybe.just(f.apply(a, b, c)))));
+  }
+
+  public final <B> Maybe<B> map(Function<A, B> f) {
+    return match(Maybe::nothing, a -> Maybe.just(f.apply(a)));
+  }
+
+  public final <B> Maybe<B> map_(B b) {
+    return map(a -> b);
+  }
+
+  public final <B> Maybe<B> bind(Function<A, Maybe<B>> f) {
+    return match(Maybe::nothing, f);
   }
 
   public final <B> Maybe<B> _then(Maybe<B> next) {

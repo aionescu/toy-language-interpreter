@@ -9,21 +9,13 @@ public final class Pair<A, B> {
   public final A fst;
   public final B snd;
 
-  public static <A, B> Pair<A, B> of(A fst, B snd) {
-    return new Pair<>(fst, snd);
-  }
-
   public Pair(A fst, B snd) {
     this.fst = fst;
     this.snd = snd;
   }
 
-  public A fst_() {
-    return fst;
-  }
-
-  public B snd_() {
-    return snd;
+  public static <A, B> Pair<A, B> of(A fst, B snd) {
+    return new Pair<>(fst, snd);
   }
 
   public static <A, B, C> Function<Pair<A, B>, C> match(BiFunction<A, B, C> f) {
@@ -37,5 +29,13 @@ public final class Pair<A, B> {
   @Override
   public String toString() {
     return String.format("(%s, %s)", fst, snd);
+  }
+
+  public A fst_() {
+    return fst;
+  }
+
+  public B snd_() {
+    return snd;
   }
 }

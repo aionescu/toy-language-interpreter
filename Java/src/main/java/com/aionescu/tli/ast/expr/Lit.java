@@ -15,6 +15,11 @@ public final class Lit implements Expr {
   }
 
   @Override
+  public String toString() {
+    return _val.toString();
+  }
+
+  @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
     return _val.type();
   }
@@ -22,10 +27,5 @@ public final class Lit implements Expr {
   @Override
   public Val eval(Map<Ident, Val> sym) {
     return _val;
-  }
-
-  @Override
-  public String toString() {
-    return _val.toString();
   }
 }

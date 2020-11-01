@@ -8,25 +8,12 @@ import com.aionescu.tli.utils.control.Maybe;
 public final class CopyingTreeMap<K extends Comparable<K>, V> implements Map<K, V> {
   private final TreeMap<K, V> _tm;
 
-  public static <K extends Comparable<K>, V> Map<K, V> empty() {
-    return new CopyingTreeMap<K, V>(new TreeMap<>(Comparable::compareTo));
-  }
-
   private CopyingTreeMap(TreeMap<K, V> tm) {
     _tm = tm;
   }
 
-  @Override
-  public CopyingTreeMap<K, V> insert(K k, V v) {
-    var hm = new TreeMap<>(_tm);
-    hm.put(k, v);
-
-    return new CopyingTreeMap<>(hm);
-  }
-
-  @Override
-  public Maybe<V> lookup(K k) {
-    return _tm.containsKey(k) ? Maybe.just(_tm.get(k)) : Maybe.nothing();
+  public static <K extends Comparable<K>, V> Map<K, V> empty() {
+    return new CopyingTreeMap<K, V>(new TreeMap<>(Comparable::compareTo));
   }
 
   @Override
@@ -40,5 +27,18 @@ public final class CopyingTreeMap<K extends Comparable<K>, V> implements Map<K, 
       .replace("[]", "{ }")
       .replace("[", "{ ")
       .replace("]", " }");
+  }
+
+  @Override
+  public CopyingTreeMap<K, V> insert(K k, V v) {
+    var hm = new TreeMap<>(_tm);
+    hm.put(k, v);
+
+    return new CopyingTreeMap<>(hm);
+  }
+
+  @Override
+  public Maybe<V> lookup(K k) {
+    return _tm.containsKey(k) ? Maybe.just(_tm.get(k)) : Maybe.nothing();
   }
 }

@@ -21,6 +21,11 @@ public final class DeclAssign implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("%s : %s <- %s", _ident, _type.match(() -> "_", Object::toString), _expr);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     var type = _type.match(() -> _expr.typeCheck(sym), a -> a);
 
@@ -35,10 +40,5 @@ public final class DeclAssign implements Stmt {
     return prog.withToDo(_type.match(
       () -> tail,
       t -> tail.push(new Decl(_ident, t))));
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s : %s <- %s", _ident, _type.match(() -> "_", Object::toString), _expr);
   }
 }

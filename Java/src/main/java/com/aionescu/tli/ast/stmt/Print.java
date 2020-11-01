@@ -15,6 +15,11 @@ public final class Print implements Stmt {
   }
 
   @Override
+  public String toString() {
+    return String.format("print %s", _expr);
+  }
+
+  @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
     _expr.typeCheck(sym);
     return sym;
@@ -23,10 +28,5 @@ public final class Print implements Stmt {
   @Override
   public ProgState eval(ProgState prog) {
     return prog.withOut(List.cons(_expr.eval(prog.sym), prog.out));
-  }
-
-  @Override
-  public String toString() {
-    return String.format("print %s", _expr);
   }
 }

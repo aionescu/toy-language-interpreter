@@ -32,6 +32,11 @@ public final class Logic implements Expr {
   }
 
   @Override
+  public String toString() {
+    return String.format("(%s %s %s)", _lhs, _op, _rhs);
+  }
+
+  @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
     _lhs.typeCheck(sym).expect(Type.BOOL);
     _rhs.typeCheck(sym).expect(Type.BOOL);
@@ -54,10 +59,5 @@ public final class Logic implements Expr {
       case AND -> lhs && rhs;
       case OR -> lhs || rhs;
     });
-  }
-
-  @Override
-  public String toString() {
-    return String.format("(%s %s %s)", _lhs, _op, _rhs);
   }
 }

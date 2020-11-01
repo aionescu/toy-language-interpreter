@@ -18,6 +18,11 @@ public final class Var implements Expr {
   }
 
   @Override
+  public String toString() {
+    return _ident.toString();
+  }
+
+  @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
     var info = sym.lookup(_ident).match(
       () -> { throw new UndeclaredVariableException(_ident); },
@@ -32,10 +37,5 @@ public final class Var implements Expr {
   @Override
   public Val eval(Map<Ident, Val> sym) {
     return sym.lookup(_ident).unwrap();
-  }
-
-  @Override
-  public String toString() {
-    return _ident.toString();
   }
 }
