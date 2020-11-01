@@ -38,6 +38,6 @@ public final class ProgState {
 
   @Override
   public String toString() {
-    return String.format("toDo = %s\nsym = %s\nout = %s\n", toDo, sym, out);
+    return String.format("toDo = %s\nsym = %s\nout = %s\n", toDo, sym, out.reverse());
   }
 }

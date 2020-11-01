@@ -1,10 +1,15 @@
 package com.aionescu.tli.ast;
 
-public final class Ident {
+public final class Ident implements Comparable<Ident> {
   public final String name;
 
   public Ident(String name) {
     this.name = name;
+  }
+
+  @Override
+  public int compareTo(Ident rhs) {
+    return name.compareTo(rhs.name);
   }
 
   @Override
