@@ -6,7 +6,6 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.VarInfo;
 import com.aionescu.tli.ast.val.Bool;
-import com.aionescu.tli.ast.val.Int;
 import com.aionescu.tli.ast.val.Val;
 
 public final class Comp implements Expr {
@@ -28,34 +27,6 @@ public final class Comp implements Expr {
         case EQ -> "=";
         case NEQ -> "<>";
       };
-    }
-
-    public Bool evalInt(Int lhs, Int rhs) {
-      var a = lhs.val;
-      var b = rhs.val;
-
-      return new Bool(switch (this) {
-        case LT -> a < b;
-        case LTE -> a <= b;
-        case GT -> a > b;
-        case GTE -> a >= b;
-        case EQ -> a == b;
-        case NEQ -> a != b;
-      });
-    }
-
-    public Bool evalBool(Bool lhs, Bool rhs) {
-      var a = lhs.val;
-      var b = rhs.val;
-
-      return new Bool(switch (this) {
-        case LT -> Boolean.compare(a, b) < 0;
-        case LTE -> Boolean.compare(a, b) <= 0;
-        case GT -> Boolean.compare(a, b) > 0;
-        case GTE -> Boolean.compare(a, b) >= 0;
-        case EQ -> a == b;
-        case NEQ -> a != b;
-      });
     }
   }
 
@@ -79,11 +50,16 @@ public final class Comp implements Expr {
 
     var lhs = _lhs.eval(sym);
     var rhs = _rhs.eval(sym);
+    var ordering = lhs.compareTo(rhs);
 
-    return
-      lhs.type() == Type.INT
-      ? _op.evalInt((Int)lhs, (Int)rhs)
-      : _op.evalBool((Bool)lhs, (Bool)rhs);
+    return new Bool(switch (_op) {
+      case LT -> ordering < 0;
+      case LTE -> ordering <= 0;
+      case GT -> ordering > 0;
+      case GTE -> ordering >= 0;
+      case EQ -> ordering == 0;
+      case NEQ -> ordering != 0;
+    });
   }
 
   @Override
