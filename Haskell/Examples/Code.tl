@@ -28,7 +28,7 @@ if True {
   print {- Multiline comment -} False
 };
 
--- Declare-and-assign + Rudimentary type inference
+-- Declare-and-assign + Type inference
 e : _ <- 2;
 
 if e = 2 {
