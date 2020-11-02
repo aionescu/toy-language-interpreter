@@ -32,7 +32,7 @@ data ProgState =
   }
 
 instance Show ProgState where
-  show ProgState{..} = unlines ["toDo = " ++ show toDo, "sym = " ++ sym', "out = " ++ show out]
+  show ProgState{..} = unlines ["toDo = " ++ show toDo, "sym = " ++ sym', "out = " ++ show (reverse out)]
     where
       sym' = withParens "{ " " }" (showVar <$> M.toList sym)
       showVar (ident, var) = ident ++ " <- " ++ show var
