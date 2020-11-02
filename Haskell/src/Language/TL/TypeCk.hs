@@ -14,18 +14,18 @@ data VarState = Init | Uninit
 type VarInfo = (Type, VarState)
 type SymTypeTable = Map Ident VarInfo
 
-data TypeError :: * where
-  ExpectedFound :: Type -> Type -> TypeError
-  UndeclaredVar :: Ident -> TypeError
-  VarAlreadyDeclared :: Ident -> TypeError
-  UninitializedVar :: Ident -> TypeError
-  ExpectedRecFound :: Type -> TypeError
-  NoFieldInRec :: Type -> Field f -> f -> TypeError
-  NeedRecordTypesForUnion :: TypeError
-  DuplicateIncompatibleField :: Ident -> TypeError
-  ExpectedFunFound :: Type -> TypeError
-  CantShadow :: Ident -> TypeError
-  TypeNotComparable :: Type -> TypeError
+data TypeError
+  = ExpectedFound Type Type
+  | UndeclaredVar Ident
+  | VarAlreadyDeclared Ident
+  | UninitializedVar Ident
+  | ExpectedRecFound Type
+  | forall f. NoFieldInRec Type (Field f) f
+  | NeedRecordTypesForUnion
+  | DuplicateIncompatibleField Ident
+  | ExpectedFunFound Type
+  | CantShadow Ident
+  | TypeNotComparable Type
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
