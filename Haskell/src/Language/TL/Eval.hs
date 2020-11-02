@@ -20,6 +20,18 @@ instance Show Val where
   show (VRec f m) = showFields False f "<-" m
   show (VFun _) = "<λ>"
 
+instance Ord Val where
+  compare (VInt a) (VInt b) = compare a b
+  compare (VBool a) (VBool b) = compare a b
+  compare (VRec FRec a) (VRec FRec b) = compare a b
+  compare (VRec FTup a) (VRec FTup b) = compare a b
+  compare (VFun _) _ = error "Functions are not comparable. Did you run the typechecker?"
+  compare _ (VFun _) = error "Functions are not comparable. Did you run the typechecker?"
+  compare _ _ = error "Type mismatch. Did you run the typechecker?"
+
+instance Eq Val where
+  (==) = ((== EQ) .) . compare
+
 type SymValTable = Map Ident Val
 type ToDo = [Stmt]
 type Out = [Val]
@@ -75,11 +87,9 @@ evalExpr sym (Logic a op b) = do
       case b' of
         VBool vb -> pure $ VBool $ logicOp op va vb
 evalExpr sym (Comp a op b) = do
-  va <- evalExpr sym a
-  vb <- evalExpr sym b
-  case (va, vb) of
-    (VInt a', VInt b') -> pure $ VBool $ compOp op a' b'
-    (VBool a', VBool b') -> pure $ VBool $ compOp op a' b'
+  a' <- evalExpr sym a
+  b' <- evalExpr sym b
+  pure $ VBool $ compOp op a' b'
 evalExpr sym (RecLit f m) = VRec f <$> traverse (evalExpr sym) m
 evalExpr sym (RecMember lhs f i) = do
   v <- evalExpr sym lhs

@@ -27,6 +27,11 @@ instance Eq Type where
   TFun a b == TFun a' b' = a == a' && b == b'
   _ == _ = False
 
+isComparable :: Type -> Bool
+isComparable (TFun _ _) = False
+isComparable (TRec _ m) = all isComparable m
+isComparable _ = True
+
 withParens :: String -> String -> [String] -> String
 withParens begin end l = begin ++ intercalate ", " l ++ end
 
@@ -101,7 +106,7 @@ instance Show CompOp where
   show Eq = "="
   show NEq = "<>"
 
-compOp :: CompOp -> forall a . Ord a => a -> a -> Bool
+compOp :: CompOp -> forall a. Ord a => a -> a -> Bool
 compOp Gt = (>)
 compOp GtEq = (>=)
 compOp Lt = (<)
