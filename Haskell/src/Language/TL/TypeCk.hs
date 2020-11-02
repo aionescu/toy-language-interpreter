@@ -33,7 +33,7 @@ instance Show TypeError where
       go (ExpectedFound expected found) = "Expected " ++ show expected ++ ", but found " ++ show found
       go (UndeclaredVar ident) = "Variable " ++ ident ++ " was not declared"
       go (VarAlreadyDeclared ident) = "Variable " ++ ident ++ " has already been declared"
-      go (UninitializedVar ident) = "Variable " ++ ident ++ " is not guaranteed to be initialized before its first read"
+      go (UninitializedVar ident) = "Variable " ++ ident ++ " is not guaranteed to be initialized before it is used"
       go (ExpectedRecFound t@(TRec FRec _)) = "Expected tuple type, but found record type " ++ show t
       go (ExpectedRecFound t@(TRec FTup _)) = "Expected record type, but found tuple type " ++ show t
       go (ExpectedRecFound t) = "Expected tuple or record type, but found " ++ show t
