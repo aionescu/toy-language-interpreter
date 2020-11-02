@@ -10,10 +10,10 @@ print a < b;
 a' : _ <- (0, 1, 2);
 b' : _ <- (0, 1, 3);
 print a' = b';
-print b' >= a';
+print b' >= a'
 
 -- Doesn't typecheck: Can't compare functions
 {-
-f : _ <- \(x : Int). x + 1;
+; f : _ <- \(x : Int). x + 1;
 print f = f
 -}
