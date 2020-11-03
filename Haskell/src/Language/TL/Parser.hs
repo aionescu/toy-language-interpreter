@@ -11,6 +11,9 @@ import Language.TL.AST
 
 type Parser = Parsec String ()
 
+shebang :: Parser ()
+shebang = try $ string "#!" *> manyTill anyChar (endOfLine $> ()) $> ()
+
 multiLine :: Parser ()
 multiLine = try $ string "{-" *> manyTill (multiLine <|> (anyChar $> ())) (try $ string "-}") $> ()
 
@@ -244,7 +247,7 @@ stmt :: Parser Stmt
 stmt = option Nop $ stmt' `chainr1` (char ';' *> ws $> Compound)
 
 program :: Parser Program
-program = ws *> stmt <* eof
+program = option () shebang *> ws *> stmt <* eof
 
 parse :: String -> TLI Program
 parse = toTLI . runParser program () ""

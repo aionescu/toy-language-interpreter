@@ -1,3 +1,5 @@
+#!/home/oldpug/.cabal/bin/tli run
+
 a : Bool;
 a <- True;
 

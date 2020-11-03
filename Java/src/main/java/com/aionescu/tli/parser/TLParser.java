@@ -19,6 +19,8 @@ public final class TLParser {
     var multiLineFwdRef = Parser.<Unit>fwdRef();
     var multiLine = multiLineFwdRef.fst;
 
+    var shebang = string("#!")._and(anyChar.manyTill(eof.or(newline.skip()))).skip();
+
     var multiLine_ = string("{-")._and(multiLine.or(anyChar.skip()).manyTill(string("-}"))).skip();
     multiLineFwdRef.snd.set(multiLine_);
 
@@ -116,7 +118,7 @@ public final class TLParser {
     var compound = stmt_.chainr1(ch(';').and_(ws).map_(Compound::new)).option(new Nop());
     stmtFwdRef.snd.set(compound);
 
-    var program = ws._and(stmt).and_(eof);
+    var program = shebang.option(Unit.UNIT)._and(ws)._and(stmt).and_(eof);
     return program;
   }
 

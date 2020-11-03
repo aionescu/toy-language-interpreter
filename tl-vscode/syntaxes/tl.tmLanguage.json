@@ -46,6 +46,9 @@
         "name": "comment.double-dash.tl",
         "match": "--.*$"
       }, {
+        "name": "comment.number-sign.tl",
+        "match": "^#.*$"
+      }, {
         "name": "comment.block.tl",
         "begin": "{-",
         "beginCaptures": { "0": { "name": "punctuation.definition.comment.tl" }},
