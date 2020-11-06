@@ -4,6 +4,7 @@ com/aionescu/tli/ast/stmt/While.class
 com/aionescu/tli/ast/stmt/Assign.class
 com/aionescu/tli/view/CLIView.class
 com/aionescu/tli/ast/type/Type.class
+com/aionescu/tli/utils/collections/stack/ConsListStack.class
 com/aionescu/tli/ast/expr/Expr.class
 com/aionescu/tli/ast/expr/Var.class
 com/aionescu/tli/utils/TriFunction.class
@@ -15,7 +16,6 @@ com/aionescu/tli/ast/val/Int.class
 com/aionescu/tli/ast/stmt/If.class
 com/aionescu/tli/ast/Ident.class
 com/aionescu/tli/exn/typeck/UninitializedVariableException.class
-com/aionescu/tli/utils/collections/map/CopyingHashMap.class
 com/aionescu/tli/exn/eval/EvaluationFinishedException.class
 com/aionescu/tli/ast/stmt/Nop.class
 com/aionescu/tli/ast/stmt/Decl.class
@@ -62,6 +62,7 @@ com/aionescu/tli/ast/type/VarState.class
 com/aionescu/tli/utils/uparsec/Parser.class
 com/aionescu/tli/ast/expr/Logic$Op.class
 com/aionescu/tli/ast/expr/Arith.class
+com/aionescu/tli/utils/collections/map/AssocListMap.class
 com/aionescu/tli/utils/control/Maybe$Nothing.class
 com/aionescu/tli/utils/uparsec/Parser$FwdRef.class
 com/aionescu/tli/utils/uparsec/exn/ParserStuckException.class

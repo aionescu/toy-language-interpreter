@@ -33,6 +33,7 @@
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/collections/list/List.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/val/Val.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/stmt/Print.java
+/home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/collections/map/AssocListMap.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/repo/SingleStateRepository.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/val/Bool.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/Unit.java
@@ -41,13 +42,13 @@
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/stmt/Compound.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/type/Type.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/repo/Repository.java
-/home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/collections/map/CopyingHashMap.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/exn/typeck/UninitializedVariableException.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/uparsec/exn/ParserStuckException.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/Main.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/uparsec/exn/UParsecException.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/expr/Arith.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/exn/typeck/UndeclaredVariableException.java
+/home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/utils/collections/stack/ConsListStack.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/Ident.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/stmt/Stmt.java
 /home/oldpug/Git/tli/Java/src/main/java/com/aionescu/tli/ast/stmt/Decl.java
