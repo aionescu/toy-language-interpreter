@@ -1,17 +1,18 @@
 package com.aionescu.tli.utils.collections.list;
 
+import java.util.Comparator;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.stack.Stack;
 import com.aionescu.tli.utils.control.Maybe;
 
-public abstract class List<A> implements Stack<A> {
+public abstract class List<A> {
   private static final class Nil<A> extends List<A> {
     public Nil() { }
 
@@ -51,31 +52,6 @@ public abstract class List<A> implements Stack<A> {
   public abstract <B> B match(Supplier<B> nil, BiFunction<A, List<A>, B> cons);
   public abstract void matchDo(Runnable nil, BiConsumer<A, List<A>> cons);
 
-  @Override
-  public final String toString() {
-    return toString("[", "]");
-  }
-
-  @Override
-  public final List<A> push(A val) {
-    return List.cons(val, this);
-  }
-
-  @Override
-  public final Maybe<Pair<A, Stack<A>>> pop() {
-    return match(Maybe::nothing, (h, t) -> Maybe.just(Pair.of(h, t)));
-  }
-
-  @Override
-  public final boolean isEmpty() {
-    return match(() -> true, (h, t) -> false);
-  }
-
-  @Override
-  public final <S> S foldl(BiFunction<S, A, S> f, S s) {
-    return match(() -> s, (h, t) -> t.foldl(f, f.apply(s, h)));
-  }
-
   public static <A> List<A> nil() {
     return new Nil<>();
   }
@@ -84,8 +60,17 @@ public abstract class List<A> implements Stack<A> {
     return new Cons<>(head, tail);
   }
 
+  @Override
+  public final String toString() {
+    return toString("[", "]");
+  }
+
   public static <A> List<A> singleton(A value) {
     return cons(value, nil());
+  }
+
+  public final boolean isEmpty() {
+    return match(() -> true, (h, t) -> false);
   }
 
   public static <A> List<A> ofStream(Stream<A> stream) {
@@ -106,16 +91,49 @@ public abstract class List<A> implements Stack<A> {
       (h, t) -> begin + h + t.foldl((s, a) -> s + ", " + a, "") + end);
   }
 
+  public final Maybe<Pair<A, List<A>>> uncons() {
+    return match(Maybe::nothing, (h, t) -> Maybe.just(Pair.of(h, t)));
+  }
+
   public final List<A> append(List<A> b) {
     return match(() -> b, (h, t) -> List.cons(h, t.append(b)));
   }
 
   public final <B> List<B> map(Function<A, B> f) {
-    return match(() -> nil(), (h, t) -> List.cons(f.apply(h), t.map(f)));
+    return match(List::nil, (h, t) -> List.cons(f.apply(h), t.map(f)));
   }
 
   public final void iter(Consumer<A> f) {
     matchDo(() -> { }, (h, t) -> { f.accept(h); t.iter(f); });
+  }
+
+  public final List<A> filter(Predicate<A> f) {
+    return match(List::nil, (a, as) -> f.test(a) ? cons(a, as.filter(f)) : as.filter(f));
+  }
+
+  public final Maybe<A> find(Predicate<A> f) {
+    return match(Maybe::nothing, (a, as) -> f.test(a) ? Maybe.just(a) : as.find(f));
+  }
+
+  public final boolean any(Predicate<A> f) {
+    return foldl((s, a) -> s || f.test(a), false);
+  }
+
+  public final boolean all(Predicate<A> f) {
+    return foldl((s, a) -> s && f.test(a), true);
+  }
+
+  public final List<A> insertSorted(Comparator<A> f, A v) {
+    return match(
+      () -> List.singleton(v),
+      (a, as) ->
+        f.compare(a, v) >= 0
+        ? List.cons(v, as)
+        : List.cons(a, as.insertSorted(f, v)));
+  }
+
+  public final <S> S foldl(BiFunction<S, A, S> f, S s) {
+    return match(() -> s, (h, t) -> t.foldl(f, f.apply(s, h)));
   }
 
   public final <S> S foldr(BiFunction<A, S, S> f, S s) {

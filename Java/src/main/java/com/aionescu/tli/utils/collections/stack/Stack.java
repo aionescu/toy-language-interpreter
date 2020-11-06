@@ -3,12 +3,11 @@ package com.aionescu.tli.utils.collections.stack;
 import java.util.function.BiFunction;
 
 import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.control.Maybe;
 
 public interface Stack<A> {
   static <A> Stack<A> empty() {
-    return List.nil();
+    return ConsListStack.empty();
   }
 
   static <A> Stack<A> of(A val) {
