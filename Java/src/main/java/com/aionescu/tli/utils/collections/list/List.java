@@ -62,13 +62,15 @@ public abstract class List<A> {
 
   @Override
   public final boolean equals(Object rhs) {
-    return rhs instanceof List<?> && eq((List<?>)rhs);
+    @SuppressWarnings("unchecked")
+    var r = rhs instanceof List<?> && equals((List<A>)rhs);
+    return r;
   }
 
-  private final boolean eq(List<?> rhs) {
+  private final boolean equals(List<A> rhs) {
     return match(rhs::isEmpty, (a, as) -> rhs.match(
       () -> false,
-      (b, bs) -> a.equals(b) && as.eq(bs)
+      (b, bs) -> a.equals(b) && as.equals(bs)
     ));
   }
 
@@ -133,6 +135,17 @@ public abstract class List<A> {
 
   public final boolean all(Predicate<A> f) {
     return foldl((s, a) -> s && f.test(a), true);
+  }
+
+  public static <A extends Comparable<A>> int compare(List<A> as, List<A> bs) {
+    return as.match(
+      () -> bs.isEmpty() ? 0 : -1,
+      (a, as_) -> bs.match(
+        () -> 1,
+        (b, bs_) -> {
+          var c = a.compareTo(b);
+          return c != 0 ? c : compare(as_, bs_);
+        }));
   }
 
   public final List<A> insertSorted(Comparator<A> f, A v) {

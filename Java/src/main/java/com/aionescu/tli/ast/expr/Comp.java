@@ -6,7 +6,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
-import com.aionescu.tli.ast.val.Bool;
+import com.aionescu.tli.ast.val.VBool;
 import com.aionescu.tli.ast.val.Val;
 
 public final class Comp implements Expr {
@@ -53,7 +53,7 @@ public final class Comp implements Expr {
     var rhs = _rhs.eval(sym);
     var ordering = lhs.compareTo(rhs);
 
-    return new Bool(switch (_op) {
+    return new VBool(switch (_op) {
       case LT -> ordering < 0;
       case LTE -> ordering <= 0;
       case GT -> ordering > 0;

@@ -6,7 +6,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
-import com.aionescu.tli.ast.val.Bool;
+import com.aionescu.tli.ast.val.VBool;
 import com.aionescu.tli.ast.val.Val;
 
 public final class Logic implements Expr {
@@ -46,17 +46,17 @@ public final class Logic implements Expr {
 
   @Override
   public Val eval(Map<Ident, Val> sym) {
-    var lhs = ((Bool)_lhs.eval(sym)).val;
+    var lhs = ((VBool)_lhs.eval(sym)).val;
 
     if (lhs == false && _op == Op.AND)
-      return new Bool(false);
+      return new VBool(false);
 
     if (lhs == true && _op == Op.OR)
-      return new Bool(true);
+      return new VBool(true);
 
-    var rhs = ((Bool)_rhs.eval(sym)).val;
+    var rhs = ((VBool)_rhs.eval(sym)).val;
 
-    return new Bool(switch (_op) {
+    return new VBool(switch (_op) {
       case AND -> lhs && rhs;
       case OR -> lhs || rhs;
     });

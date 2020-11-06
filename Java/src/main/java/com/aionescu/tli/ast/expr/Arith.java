@@ -6,7 +6,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
-import com.aionescu.tli.ast.val.Int;
+import com.aionescu.tli.ast.val.VInt;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.eval.DivisionByZeroException;
 
@@ -53,10 +53,10 @@ public final class Arith implements Expr {
 
   @Override
   public Val eval(Map<Ident, Val> sym) {
-    var lhs = ((Int)_lhs.eval(sym)).val;
-    var rhs = ((Int)_rhs.eval(sym)).val;
+    var lhs = ((VInt)_lhs.eval(sym)).val;
+    var rhs = ((VInt)_rhs.eval(sym)).val;
 
-    return new Int(switch (_op) {
+    return new VInt(switch (_op) {
       case ADD -> lhs + rhs;
       case SUB -> lhs - rhs;
       case MUL -> lhs * rhs;

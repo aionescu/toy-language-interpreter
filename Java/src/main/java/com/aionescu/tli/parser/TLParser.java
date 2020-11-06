@@ -33,12 +33,12 @@ public final class TLParser {
 
     Parser<Function<Integer, Integer>> sign = ch('-').map_(i -> -i);
     var number = digit.many1().map(List::asString).map(Integer::parseInt);
-    Parser<Val> int_ = ap(sign.option(i -> i), number).map(Int::new);
+    Parser<Val> int_ = ap(sign.option(i -> i), number).map(VInt::new);
 
     Parser<Val> bool_ = choice(
       string("True").map_(true),
       string("False").map_(false)
-    ).map(Bool::new);
+    ).map(VBool::new);
 
     var val = int_.or(bool_);
 

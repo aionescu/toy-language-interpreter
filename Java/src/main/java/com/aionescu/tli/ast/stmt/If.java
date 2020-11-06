@@ -2,7 +2,7 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.val.Bool;
+import com.aionescu.tli.ast.val.VBool;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
@@ -40,7 +40,7 @@ public final class If implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    var v = ((Bool)_cond.eval(prog.sym)).val;
+    var v = ((VBool)_cond.eval(prog.sym)).val;
     var block = v ? _then : _else;
 
     return prog.withToDo(prog.toDo.push(block));

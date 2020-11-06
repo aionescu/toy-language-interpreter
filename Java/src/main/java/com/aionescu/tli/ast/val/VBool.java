@@ -1,31 +1,31 @@
 package com.aionescu.tli.ast.val;
 
-import com.aionescu.tli.ast.type.TInt;
+import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.typeck.TypeMismatchException;
 
-public final class Int implements Val {
-  public final int val;
+public final class VBool implements Val {
+  public final boolean val;
 
-  public Int(int val) {
+  public VBool(boolean val) {
     this.val = val;
   }
 
   @Override
   public String toString() {
-    return String.valueOf(val);
+    return val ? "True" : "False";
   }
 
   @Override
   public int compareTo(Val rhs) {
-    if (rhs instanceof Int)
-      return Integer.compare(val, ((Int)rhs).val);
-    else
+    if (!(rhs instanceof VBool))
       throw new TypeMismatchException(type(), rhs.type());
+
+    return Boolean.compare(val, ((VBool)rhs).val);
   }
 
   @Override
   public Type type() {
-    return TInt.t;
+    return TBool.t;
   }
 }

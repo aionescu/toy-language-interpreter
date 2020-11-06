@@ -1,6 +1,7 @@
 package com.aionescu.tli.utils.collections.map;
 
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.list.List;
@@ -45,6 +46,11 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   @Override
   public Maybe<V> lookup(K k) {
     return _list.find(p -> p.fst.compareTo(k) == 0).map(Pair::snd_);
+  }
+
+  @Override
+  public <W> Map<K, W> map(Function<V, W> f) {
+    return new AssocListMap<>(_list.map(Pair.match((k, v) -> Pair.of(k, f.apply(v)))));
   }
 
   @Override
