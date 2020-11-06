@@ -155,10 +155,16 @@ public abstract class List<A> {
   public final List<A> insertSorted(Comparator<A> f, A v) {
     return match(
       () -> List.singleton(v),
-      (a, as) ->
-        f.compare(a, v) >= 0
-        ? List.cons(v, as)
-        : List.cons(a, as.insertSorted(f, v)));
+      (a, as) -> {
+        var c = f.compare(a, v);
+
+        return
+          c == 0
+          ? List.cons(v, as)
+          : c > 0
+          ? List.cons(v, this)
+          : List.cons(a, as.insertSorted(f, v));
+      });
   }
 
   public final <S> S foldl(BiFunction<S, A, S> f, S s) {
