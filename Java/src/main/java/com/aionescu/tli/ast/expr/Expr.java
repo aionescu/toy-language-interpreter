@@ -4,7 +4,7 @@ import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.type.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.Val;
 
 public interface Expr {

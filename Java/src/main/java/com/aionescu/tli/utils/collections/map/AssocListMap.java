@@ -18,6 +18,11 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   }
 
   @Override
+  public boolean equals(Object rhs) {
+    return rhs instanceof AssocListMap<?, ?> && _list.equals(((AssocListMap<?, ?>)rhs)._list);
+  }
+
+  @Override
   public String toString() {
     return toString("{ ", " }", " <- ");
   }

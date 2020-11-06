@@ -4,9 +4,9 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.val.Bool;
 import com.aionescu.tli.ast.prog.ProgState;
-import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.type.VarInfo;
-import com.aionescu.tli.ast.type.VarState;
+import com.aionescu.tli.ast.type.TBool;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class If implements Stmt {
@@ -26,7 +26,7 @@ public final class If implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    _cond.typeCheck(sym).expect(Type.BOOL);
+    _cond.typeCheck(sym).expect(TBool.t);
     var symT = _then.typeCheck(sym);
     var symE = _else.typeCheck(sym);
 

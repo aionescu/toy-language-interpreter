@@ -3,8 +3,8 @@ package com.aionescu.tli.ast.stmt;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.prog.ProgState;
-import com.aionescu.tli.ast.type.VarInfo;
-import com.aionescu.tli.ast.type.VarState;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
 import com.aionescu.tli.utils.collections.map.Map;
 

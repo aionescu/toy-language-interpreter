@@ -61,6 +61,18 @@ public abstract class List<A> {
   }
 
   @Override
+  public final boolean equals(Object rhs) {
+    return rhs instanceof List<?> && eq((List<?>)rhs);
+  }
+
+  private final boolean eq(List<?> rhs) {
+    return match(rhs::isEmpty, (a, as) -> rhs.match(
+      () -> false,
+      (b, bs) -> a.equals(b) && as.eq(bs)
+    ));
+  }
+
+  @Override
   public final String toString() {
     return toString("[", "]");
   }

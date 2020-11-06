@@ -1,4 +1,4 @@
-package com.aionescu.tli.ast.type;
+package com.aionescu.tli.ast.type.varinfo;
 
 public enum VarState {
   UNINIT,

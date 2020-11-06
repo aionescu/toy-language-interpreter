@@ -7,7 +7,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.type.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
 
 public final class DeclAssign implements Stmt {
   private final Ident _ident;

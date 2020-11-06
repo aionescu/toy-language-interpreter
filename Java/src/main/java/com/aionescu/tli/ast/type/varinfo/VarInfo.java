@@ -1,4 +1,6 @@
-package com.aionescu.tli.ast.type;
+package com.aionescu.tli.ast.type.varinfo;
+
+import com.aionescu.tli.ast.type.Type;
 
 public final class VarInfo {
   public final Type type;

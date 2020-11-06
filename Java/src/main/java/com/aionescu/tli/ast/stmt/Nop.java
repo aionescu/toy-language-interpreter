@@ -4,9 +4,13 @@ import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.ProgState;
-import com.aionescu.tli.ast.type.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
 
 public final class Nop implements Stmt {
+  public static final Nop nop = new Nop();
+
+  private Nop() { }
+
   @Override
   public String toString() {
     return "";

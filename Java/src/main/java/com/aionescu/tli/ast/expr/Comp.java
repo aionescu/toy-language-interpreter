@@ -3,8 +3,9 @@ package com.aionescu.tli.ast.expr;
 import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
+import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.type.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.Bool;
 import com.aionescu.tli.ast.val.Val;
 
@@ -42,7 +43,7 @@ public final class Comp implements Expr {
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
     _rhs.typeCheck(sym).expect(_lhs.typeCheck(sym));
-    return Type.BOOL;
+    return TBool.t;
   }
 
   @Override

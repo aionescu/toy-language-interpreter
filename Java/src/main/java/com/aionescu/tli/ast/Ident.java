@@ -14,10 +14,7 @@ public final class Ident implements Comparable<Ident> {
 
   @Override
   public boolean equals(Object rhs) {
-    if (rhs instanceof Ident) {
-      return name.equals(((Ident)rhs).name);
-    } else
-      throw new IllegalArgumentException("Can't compare Ident to non-Ident.");
+    return rhs instanceof Ident && name.equals(((Ident)rhs).name);
   }
 
   @Override

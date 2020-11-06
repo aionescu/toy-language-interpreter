@@ -1,5 +1,6 @@
 package com.aionescu.tli.ast.val;
 
+import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.typeck.TypeMismatchException;
 
@@ -25,6 +26,6 @@ public final class Int implements Val {
 
   @Override
   public Type type() {
-    return Type.INT;
+    return TInt.t;
   }
 }

@@ -6,6 +6,8 @@ import java.util.function.Function;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.*;
 import com.aionescu.tli.ast.stmt.*;
+import com.aionescu.tli.ast.type.TBool;
+import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.list.List;
@@ -46,8 +48,8 @@ public final class TLParser {
     var ident = liftA2(List::cons, fstChar, sndChar.many()).and_(ws).map(List::asString).map(Ident::new);
 
     var type = choice(
-      string("Int").map_(Type.INT),
-      string("Bool").map_(Type.BOOL));
+      string("Int").map_(TInt.t),
+      string("Bool").map_(TBool.t));
 
     var opMul = Parser.<BinaryOperator<Expr>>choice(
       ch('*').map_((a, b) -> new Arith(a, Arith.Op.MUL, b)),
@@ -107,7 +109,7 @@ public final class TLParser {
     var block = ch('{')._and(ws)._and(stmt).and_(ws).and_(ch('}')).and_(ws);
 
     var ifCond = string("if")._and(ws)._and(expr).and_(ws);
-    var elseBlock = string("else")._and(ws)._and(block).option(new Nop());
+    var elseBlock = string("else")._and(ws)._and(block).option(Nop.nop);
 
     Parser<Stmt> if_ = liftA3(If::new, ifCond, block, elseBlock);
 
@@ -115,7 +117,7 @@ public final class TLParser {
     Parser<Stmt> while_ = liftA2(While::new, whileCond, block);
 
     var stmt_ = choice(while_, if_, declAssign, assign, decl, print).and_(ws);
-    var compound = stmt_.chainr1(ch(';').and_(ws).map_(Compound::new)).option(new Nop());
+    var compound = stmt_.chainr1(ch(';').and_(ws).map_(Compound::new)).option(Nop.nop);
     stmtFwdRef.snd.set(compound);
 
     var program = shebang.option(Unit.UNIT)._and(ws)._and(stmt).and_(eof);

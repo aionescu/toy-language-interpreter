@@ -18,6 +18,11 @@ public final class ConsListStack<A> implements Stack<A> {
   }
 
   @Override
+  public boolean equals(Object rhs) {
+    return rhs instanceof ConsListStack<?> && _list.equals(((ConsListStack<?>)rhs)._list);
+  }
+
+  @Override
   public String toString() {
     return _list.toString();
   }

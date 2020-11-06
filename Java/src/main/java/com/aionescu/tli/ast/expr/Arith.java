@@ -3,8 +3,9 @@ package com.aionescu.tli.ast.expr;
 import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
+import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.type.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.Int;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.eval.DivisionByZeroException;
@@ -45,9 +46,9 @@ public final class Arith implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    _lhs.typeCheck(sym).expect(Type.INT);
-    _rhs.typeCheck(sym).expect(Type.INT);
-    return Type.INT;
+    _lhs.typeCheck(sym).expect(TInt.t);
+    _rhs.typeCheck(sym).expect(TInt.t);
+    return TInt.t;
   }
 
   @Override

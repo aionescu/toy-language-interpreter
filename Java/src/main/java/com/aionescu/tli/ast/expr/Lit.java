@@ -1,7 +1,7 @@
 package com.aionescu.tli.ast.expr;
 
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.type.VarInfo;
+import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.map.Map;
 
