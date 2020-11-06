@@ -2,6 +2,7 @@ package com.aionescu.tli.ast.val;
 
 import com.aionescu.tli.ast.Field;
 import com.aionescu.tli.exn.eval.DidYouRunTheTypeCheckerException;
+import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class VRec<F extends Field<A>, A extends Comparable<A>> implements Val {
@@ -24,7 +25,11 @@ public final class VRec<F extends Field<A>, A extends Comparable<A>> implements 
 
   @Override
   public String toString() {
-    return _m.toString();
+    if (_f.equals(Field.fRec))
+      return _m.toString();
+
+    var ts = _m.toList().map(Pair::snd_);
+    return ts.toString("(", ts.length() == 1 ? ",)" : ")");
   }
 
   @Override

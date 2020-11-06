@@ -87,6 +87,10 @@ public abstract class List<A> {
     return match(() -> true, (h, t) -> false);
   }
 
+  public final int length() {
+    return foldl((s, a) -> s + 1, 0);
+  }
+
   public static <A> List<A> ofStream(Stream<A> stream) {
     return stream.reduce(List.<A>nil(), (l, a) -> cons(a, l), List::append).reverse();
   }

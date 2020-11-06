@@ -24,7 +24,11 @@ public final class TRec<F extends Field<A>, A extends Comparable<A>> implements 
 
   @Override
   public String toString() {
-    return _m.toString("{ ", " }", " : ");
+    if (_f.equals(Field.fRec))
+      return _m.toString("{ ", " }", " : ");
+
+    var ts = _m.toList().map(Pair::snd_);
+    return ts.toString("(", ts.length() == 1 ? ",)" : ")");
   }
 
   @Override
