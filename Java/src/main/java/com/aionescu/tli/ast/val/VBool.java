@@ -1,6 +1,6 @@
 package com.aionescu.tli.ast.val;
 
-import com.aionescu.tli.exn.eval.DidYouRunTheTypeCheckerException;
+import com.aionescu.tli.exn.eval.InvalidComparisonException;
 
 public final class VBool implements Val {
   public final boolean val;
@@ -17,7 +17,7 @@ public final class VBool implements Val {
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VBool))
-      throw new DidYouRunTheTypeCheckerException();
+      throw new InvalidComparisonException();
 
     return Boolean.compare(val, ((VBool)rhs).val);
   }

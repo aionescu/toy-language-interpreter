@@ -7,8 +7,9 @@ import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
+import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 
-public final class IntLit implements Expr {
+public final class IntLit implements Expr<R> {
   private final int _val;
 
   public IntLit(int val) {

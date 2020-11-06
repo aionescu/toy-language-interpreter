@@ -1,6 +1,6 @@
 package com.aionescu.tli.ast.val;
 
-import com.aionescu.tli.exn.eval.DidYouRunTheTypeCheckerException;
+import com.aionescu.tli.exn.eval.InvalidComparisonException;
 
 public final class VInt implements Val {
   public final int val;
@@ -17,7 +17,7 @@ public final class VInt implements Val {
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VInt))
-      throw new DidYouRunTheTypeCheckerException();
+      throw new InvalidComparisonException();
 
     return Integer.compare(val, ((VInt)rhs).val);
   }

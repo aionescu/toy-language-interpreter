@@ -5,6 +5,7 @@ import com.aionescu.tli.utils.control.Maybe;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
+import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
@@ -12,9 +13,9 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 public final class DeclAssign implements Stmt {
   private final Ident _ident;
   private final Maybe<Type> _type;
-  private final Expr _expr;
+  private final Expr<R> _expr;
 
-  public DeclAssign(Ident ident, Maybe<Type> type, Expr expr) {
+  public DeclAssign(Ident ident, Maybe<Type> type, Expr<R> expr) {
     _ident = ident;
     _type = type;
     _expr = expr;

@@ -3,6 +3,7 @@ package com.aionescu.tli.ast.expr;
 import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
+import com.aionescu.tli.ast.expr.kind.ExprKind;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.Val;
@@ -10,7 +11,7 @@ import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
 import com.aionescu.tli.exn.typeck.UninitializedVariableException;
 
-public final class Var implements Expr {
+public final class Var<K extends ExprKind> implements Expr<K> {
   private final Ident _ident;
 
   public Var(Ident ident) {

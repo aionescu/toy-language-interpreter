@@ -1,7 +1,7 @@
 package com.aionescu.tli.ast.val;
 
 import com.aionescu.tli.ast.Field;
-import com.aionescu.tli.exn.eval.DidYouRunTheTypeCheckerException;
+import com.aionescu.tli.exn.eval.InvalidComparisonException;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
@@ -35,12 +35,12 @@ public final class VRec<F extends Field<A>, A extends Comparable<A>> implements 
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VRec<?, ?>))
-      throw new DidYouRunTheTypeCheckerException();
+      throw new InvalidComparisonException();
 
     var rec = (VRec<?, ?>)rhs;
 
     if (!_f.equals(rec._f))
-      throw new DidYouRunTheTypeCheckerException();
+      throw new InvalidComparisonException();
 
     @SuppressWarnings("unchecked")
     var r = Map.compare(_m, (Map<A, Val>)rec._m);

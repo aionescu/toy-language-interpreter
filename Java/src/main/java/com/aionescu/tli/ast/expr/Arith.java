@@ -3,6 +3,7 @@ package com.aionescu.tli.ast.expr;
 import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
+import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
@@ -10,7 +11,7 @@ import com.aionescu.tli.ast.val.VInt;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.eval.DivisionByZeroException;
 
-public final class Arith implements Expr {
+public final class Arith implements Expr<R> {
   public static enum Op {
     ADD,
     SUB,
@@ -30,10 +31,10 @@ public final class Arith implements Expr {
     }
   }
 
-  private final Expr _lhs, _rhs;
+  private final Expr<?> _lhs, _rhs;
   private final Op _op;
 
-  public Arith(Expr lhs, Op op, Expr rhs) {
+  public Arith(Expr<?> lhs, Op op, Expr<?> rhs) {
     _lhs = lhs;
     _rhs = rhs;
     _op = op;

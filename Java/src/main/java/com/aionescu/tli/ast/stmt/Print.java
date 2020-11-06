@@ -2,15 +2,16 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
+import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class Print implements Stmt {
-  private final Expr _expr;
+  private final Expr<R> _expr;
 
-  public Print(Expr expr) {
+  public Print(Expr<R> expr) {
     _expr = expr;
   }
 

@@ -2,6 +2,7 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
+import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.type.varinfo.VarState;
@@ -10,9 +11,9 @@ import com.aionescu.tli.utils.collections.map.Map;
 
 public final class Assign implements Stmt {
   private final Ident _ident;
-  private final Expr _expr;
+  private final Expr<R> _expr;
 
-  public Assign(Ident ident, Expr expr) {
+  public Assign(Ident ident, Expr<R> expr) {
     _ident = ident;
     _expr = expr;
   }

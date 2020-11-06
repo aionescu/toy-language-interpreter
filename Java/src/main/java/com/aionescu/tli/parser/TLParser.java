@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.*;
+import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.stmt.*;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.TInt;
@@ -32,9 +33,9 @@ public final class TLParser {
 
     Parser<Function<Integer, Integer>> sign = ch('-').map_(i -> -i);
     var number = digit.many1().map(List::asString).map(Integer::parseInt);
-    Parser<Expr> int_ = ap(sign.option(i -> i), number).map(IntLit::new);
+    Parser<Expr<R>> int_ = ap(sign.option(i -> i), number).map(IntLit::new);
 
-    Parser<Expr> bool_ = choice(
+    Parser<Expr<R>> bool_ = choice(
       string("True").map_(true),
       string("False").map_(false)
     ).map(BoolLit::new);
@@ -50,18 +51,18 @@ public final class TLParser {
       string("Int").map_(TInt.t),
       string("Bool").map_(TBool.t));
 
-    var opMul = Parser.<BinaryOperator<Expr>>choice(
+    var opMul = Parser.<BinaryOperator<Expr<R>>>choice(
       ch('*').map_((a, b) -> new Arith(a, Arith.Op.MUL, b)),
       ch('/').map_((a, b) -> new Arith(a, Arith.Op.DIV, b)),
       ch('%').map_((a, b) -> new Arith(a, Arith.Op.REM, b))
     ).and_(ws);
 
-    var opAdd = Parser.<BinaryOperator<Expr>>choice(
+    var opAdd = Parser.<BinaryOperator<Expr<R>>>choice(
       ch('+').map_((a, b) -> new Arith(a, Arith.Op.ADD, b)),
       ch('-').map_((a, b) -> new Arith(a, Arith.Op.SUB, b))
     ).and_(ws);
 
-    var opComp = Parser.<BinaryOperator<Expr>>choice(
+    var opComp = Parser.<BinaryOperator<Expr<R>>>choice(
       string("<=").map_((a, b) -> new Comp(a, Comp.Op.LTE, b)),
       string(">=").map_((a, b) -> new Comp(a, Comp.Op.GTE, b)),
       string("<>").map_((a, b) -> new Comp(a, Comp.Op.NEQ, b)),
@@ -70,15 +71,15 @@ public final class TLParser {
       ch('=').map_((a, b) -> new Comp(a, Comp.Op.EQ, b))
     ).and_(ws);
 
-    var opLogic = Parser.<BinaryOperator<Expr>>choice(
+    var opLogic = Parser.<BinaryOperator<Expr<R>>>choice(
       string("and").map_((a, b) -> new Logic(a, Logic.Op.AND, b)),
       string("or").map_((a, b) -> new Logic(a, Logic.Op.OR, b))
     ).and_(ws);
 
-    var exprFwdRef = Parser.<Expr>fwdRef();
+    var exprFwdRef = Parser.<Expr<R>>fwdRef();
     var expr = exprFwdRef.fst;
 
-    Parser<Expr> termMul = choice(
+    Parser<Expr<R>> termMul = choice(
       expr.between(ch('(').and_(ws), ch(')').and(ws)),
       lit,
       ident.map(Var::new)
