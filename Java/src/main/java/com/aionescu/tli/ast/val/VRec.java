@@ -1,9 +1,7 @@
 package com.aionescu.tli.ast.val;
 
 import com.aionescu.tli.ast.Field;
-import com.aionescu.tli.ast.type.TRec;
-import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.exn.typeck.TypeMismatchException;
+import com.aionescu.tli.exn.eval.DidYouRunTheTypeCheckerException;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class VRec<F extends Field<A>, A extends Comparable<A>> implements Val {
@@ -32,21 +30,16 @@ public final class VRec<F extends Field<A>, A extends Comparable<A>> implements 
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VRec<?, ?>))
-      throw new TypeMismatchException(type(), rhs.type());
+      throw new DidYouRunTheTypeCheckerException();
 
     var rec = (VRec<?, ?>)rhs;
 
     if (!_f.equals(rec._f))
-      throw new TypeMismatchException(type(), rhs.type());
+      throw new DidYouRunTheTypeCheckerException();
 
     @SuppressWarnings("unchecked")
     var r = Map.compare(_m, (Map<A, Val>)rec._m);
 
     return r;
-  }
-
-  @Override
-  public Type type() {
-    return new TRec<>(_f, _m.map(Val::type));
   }
 }

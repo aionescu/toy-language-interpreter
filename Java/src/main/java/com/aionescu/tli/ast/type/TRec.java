@@ -1,6 +1,7 @@
 package com.aionescu.tli.ast.type;
 
 import com.aionescu.tli.ast.Field;
+import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class TRec<F extends Field<A>, A extends Comparable<A>> implements Type {
@@ -24,5 +25,10 @@ public final class TRec<F extends Field<A>, A extends Comparable<A>> implements 
   @Override
   public String toString() {
     return _m.toString("{ ", " }", " : ");
+  }
+
+  @Override
+  public boolean isComparable() {
+    return _m.toList().map(Pair::snd_).all(Type::isComparable);
   }
 }

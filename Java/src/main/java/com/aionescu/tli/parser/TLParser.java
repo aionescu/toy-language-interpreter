@@ -9,7 +9,6 @@ import com.aionescu.tli.ast.stmt.*;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.uparsec.Parser;
@@ -33,14 +32,14 @@ public final class TLParser {
 
     Parser<Function<Integer, Integer>> sign = ch('-').map_(i -> -i);
     var number = digit.many1().map(List::asString).map(Integer::parseInt);
-    Parser<Val> int_ = ap(sign.option(i -> i), number).map(VInt::new);
+    Parser<Expr> int_ = ap(sign.option(i -> i), number).map(IntLit::new);
 
-    Parser<Val> bool_ = choice(
+    Parser<Expr> bool_ = choice(
       string("True").map_(true),
       string("False").map_(false)
-    ).map(VBool::new);
+    ).map(BoolLit::new);
 
-    var val = int_.or(bool_);
+    var lit = int_.or(bool_);
 
     var fstChar = lower;
     var sndChar = letter.or(digit).or(ch('\''));
@@ -81,7 +80,7 @@ public final class TLParser {
 
     Parser<Expr> termMul = choice(
       expr.between(ch('(').and_(ws), ch(')').and(ws)),
-      val.map(Lit::new),
+      lit,
       ident.map(Var::new)
     ).and_(ws);
 

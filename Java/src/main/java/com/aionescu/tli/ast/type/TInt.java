@@ -14,4 +14,9 @@ public final class TInt implements Type {
   public String toString() {
     return "Int";
   }
+
+  @Override
+  public boolean isComparable() {
+    return true;
+  }
 }

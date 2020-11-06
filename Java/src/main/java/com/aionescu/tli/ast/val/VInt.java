@@ -1,8 +1,6 @@
 package com.aionescu.tli.ast.val;
 
-import com.aionescu.tli.ast.type.TInt;
-import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.exn.typeck.TypeMismatchException;
+import com.aionescu.tli.exn.eval.DidYouRunTheTypeCheckerException;
 
 public final class VInt implements Val {
   public final int val;
@@ -19,13 +17,8 @@ public final class VInt implements Val {
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VInt))
-      throw new TypeMismatchException(type(), rhs.type());
+      throw new DidYouRunTheTypeCheckerException();
 
     return Integer.compare(val, ((VInt)rhs).val);
-  }
-
-  @Override
-  public Type type() {
-    return TInt.t;
   }
 }

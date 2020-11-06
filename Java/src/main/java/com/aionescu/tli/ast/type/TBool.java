@@ -14,4 +14,9 @@ public final class TBool implements Type {
   public String toString() {
     return "Bool";
   }
+
+  @Override
+  public boolean isComparable() {
+    return true;
+  }
 }
