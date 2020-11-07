@@ -26,6 +26,7 @@ data TypeError
   | ExpectedFunFound Type
   | CantShadow Ident
   | TypeNotComparable Type
+  | TypeNotShowable Type
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -44,6 +45,7 @@ instance Show TypeError where
       go (ExpectedFunFound t) = "Expected function type, but found " ++ show t
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
       go (TypeNotComparable t) = "Values of type " ++ show t ++ " cannot be compared"
+      go (TypeNotShowable t) = "Values of type " ++ show t ++ " cannot be represented as strings"
 
 type TypeCk a = Either TypeError a
 
@@ -160,7 +162,11 @@ typeCheckStmt sym (DeclAssign ident (Just type') expr) = do
 typeCheckStmt sym (DeclAssign ident Nothing expr) = do
   t <- typeCheckExpr sym expr
   typeCheckStmt sym $ DeclAssign ident (Just t) expr
-typeCheckStmt sym (Print e) = sym <$ typeCheckExpr sym e
+typeCheckStmt sym (Print e) = do
+  t <- typeCheckExpr sym e
+  unless (isShowable t)
+    $ throw $ TypeNotShowable t
+  pure sym
 typeCheckStmt sym (If cond then' else') = do
   tc <- typeCheckExpr sym cond
   tc `mustBe` TBool

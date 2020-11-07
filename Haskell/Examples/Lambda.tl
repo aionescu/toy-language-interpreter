@@ -1,7 +1,7 @@
 -- Inferred: f : Int -> Int
 f : _ <- \(a : Int). a + 2;
 print f 2;
-print f; -- Can't really print functions, so it prints a lambda :)
+-- print f; -- Cannot print functions
 
 f' : Bool -> Bool -> Bool;
 f' <- \(a : Bool) (b : Bool). a and b;

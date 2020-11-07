@@ -32,6 +32,14 @@ isComparable (TFun _ _) = False
 isComparable (TRec _ m) = all isComparable m
 isComparable _ = True
 
+-- Duplication with isComparable.
+-- Does it make sense to have a type that is comparable,
+-- but not showable, or vice versa?
+isShowable :: Type -> Bool
+isShowable (TFun _ _) = False
+isShowable (TRec _ m) = all isShowable m
+isShowable _ = True
+
 withParens :: String -> String -> [String] -> String
 withParens begin end l = begin ++ intercalate ", " l ++ end
 
