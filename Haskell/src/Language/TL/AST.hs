@@ -71,7 +71,7 @@ instance Show ArithOp where
   show Divide = "/"
   show Remainder = "%"
 
-arithOp :: ArithOp -> forall a. Integral a => a -> a -> a
+arithOp :: Integral a => ArithOp -> a -> a -> a
 arithOp Add = (+)
 arithOp Subtract = (-)
 arithOp Multiply = (*)
@@ -106,7 +106,7 @@ instance Show CompOp where
   show Eq = "="
   show NEq = "<>"
 
-compOp :: CompOp -> forall a. Ord a => a -> a -> Bool
+compOp :: Ord a => CompOp -> a -> a -> Bool
 compOp Gt = (>)
 compOp GtEq = (>=)
 compOp Lt = (<)
