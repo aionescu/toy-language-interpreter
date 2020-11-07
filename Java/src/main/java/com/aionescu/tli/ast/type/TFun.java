@@ -1,11 +1,11 @@
 package com.aionescu.tli.ast.type;
 
 public final class TFun implements Type {
-  private final Type _in, _out;
+  public final Type in, out;
 
   public TFun(Type in, Type out) {
-    _in = in;
-    _out = out;
+    this.in = in;
+    this.out = out;
   }
 
   @Override
@@ -14,12 +14,12 @@ public final class TFun implements Type {
       return false;
 
     var fun = (TFun)rhs;
-    return _in.equals(fun._in) && _out.equals(fun._out);
+    return in.equals(fun.in) && out.equals(fun.out);
   }
 
   @Override
   public String toString() {
-    return String.format("(%s -> %s)", _in, _out);
+    return String.format("(%s -> %s)", in, out);
   }
 
   @Override

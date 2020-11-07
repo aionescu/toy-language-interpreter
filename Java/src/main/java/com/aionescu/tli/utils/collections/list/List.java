@@ -121,6 +121,10 @@ public abstract class List<A> {
     return match(List::nil, (h, t) -> List.cons(f.apply(h), t.map(f)));
   }
 
+  public final <B> List<B> bind(Function<A, List<B>> f) {
+    return match(List::nil, (h, t) -> f.apply(h).append(t.bind(f)));
+  }
+
   public final void iter(Consumer<A> f) {
     matchDo(() -> { }, (h, t) -> { f.accept(h); t.iter(f); });
   }
@@ -165,6 +169,10 @@ public abstract class List<A> {
           ? List.cons(v, this)
           : List.cons(a, as.insertSorted(f, v));
       });
+  }
+
+  public final List<A> mergeSorted(Comparator<A> f, List<A> vs) {
+    return vs.foldl((s, a) -> s.insertSorted(f, a), this);
   }
 
   public final <S> S foldl(BiFunction<S, A, S> f, S s) {

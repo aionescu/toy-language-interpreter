@@ -21,6 +21,11 @@ public abstract class Maybe<A> {
     public Nothing() { }
 
     @Override
+    public boolean equals(Object rhs) {
+      return rhs instanceof Nothing<?>;
+    }
+
+    @Override
     public <B> B match(Supplier<B> nothing, Function<A, B> just) {
       return nothing.get();
     }
@@ -39,6 +44,11 @@ public abstract class Maybe<A> {
     }
 
     @Override
+    public boolean equals(Object rhs) {
+      return rhs instanceof Just<?> && _val.equals(((Just<?>)rhs)._val);
+    }
+
+    @Override
     public <B> B match(Supplier<B> nothing, Function<A, B> just) {
       return just.apply(_val);
     }
@@ -50,6 +60,9 @@ public abstract class Maybe<A> {
   }
 
   private Maybe() { }
+
+  @Override
+  public abstract boolean equals(Object rhs);
 
   public abstract <B> B match(Supplier<B> nothing, Function<A, B> just);
   public abstract void matchDo(Runnable nothing, Consumer<A> just);

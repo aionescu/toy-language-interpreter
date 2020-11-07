@@ -5,12 +5,12 @@ import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class TRec<F extends Field<A>, A extends Comparable<A>> implements Type {
-  private final F _f;
-  private final Map<A, Type> _m;
+  public final F f;
+  public final Map<A, Type> m;
 
   public TRec(F f, Map<A, Type> m) {
-    _f = f;
-    _m = m;
+    this.f = f;
+    this.m = m;
   }
 
   @Override
@@ -19,20 +19,16 @@ public final class TRec<F extends Field<A>, A extends Comparable<A>> implements 
       return false;
 
     var rec = (TRec<?, ?>)rhs;
-    return _f.equals(rec._f) && _m.equals(rec._m);
+    return f.equals(rec.f) && m.equals(rec.m);
   }
 
   @Override
   public String toString() {
-    if (_f.equals(Field.fRec))
-      return _m.toString("{ ", " }", " : ");
-
-    var ts = _m.toList().map(Pair::snd_);
-    return ts.toString("(", ts.length() == 1 ? ",)" : ")");
+    return f.showFields(m, false, " : ");
   }
 
   @Override
   public boolean isComparable() {
-    return _m.toList().map(Pair::snd_).all(Type::isComparable);
+    return m.toList().map(Pair::snd_).all(Type::isComparable);
   }
 }
