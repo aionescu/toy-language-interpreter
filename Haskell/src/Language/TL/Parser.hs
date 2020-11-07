@@ -67,13 +67,13 @@ tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
     mkTup [a] False = a
     mkTup l _ = ctor l
 
-record :: Parser sep -> Parser a -> Parser (Map Ident a)
-record sep rhs = M.fromList <$> (unique =<< parens '{' '}' elems)
+record :: Ord f => Char -> Parser f -> Parser sep -> Parser a -> Parser (Map f a)
+record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
   where
     withTrailing = many (term <* comma)
     noTrailing = sepBy1 term comma
     elems = try withTrailing <|> noTrailing
-    term = liftA2 (,) (ident <* ws <* sep <* ws) (rhs <* ws)
+    term = liftA2 (,) (idx <* ws <* sep <* ws) (rhs <* ws)
 
     unique es =
       let es' = fst <$> es
@@ -92,7 +92,7 @@ ttup :: Parser Type
 ttup = tuple (TRec FTup . tupToRec) type'
 
 trec :: Parser Type
-trec = TRec FRec <$> record colon type'
+trec = TRec FRec <$> record '{' ident colon type'
 
 typeNoFun :: Parser Type
 typeNoFun = try trec <|> try ttup <|> primType
@@ -110,7 +110,7 @@ vtup :: Parser (Expr 'R)
 vtup = tuple (RecLit FTup . tupToRec) expr
 
 vrec :: Parser (Expr 'R)
-vrec = RecLit FRec <$> record arrow expr
+vrec = RecLit FRec <$> record '{' ident arrow expr
 
 lvalue :: Parser (Expr 'L)
 lvalue = try (member var) <|> var
@@ -156,17 +156,6 @@ opLogic =
   ]
   <* ws
 
-withBlock :: Ord a => Parser a -> Parser (Map a (Expr 'R))
-withBlock index = M.fromList <$> (unique =<< parens '|' '}' (sepBy update comma))
-  where
-    update = liftA2 (,) (index <* arrow) (expr <* ws)
-    unique es =
-      let es' = fst <$> es
-      in
-        if nub es' == es'
-          then pure es
-          else fail "Updates in a with-expression must be unique"
-
 lam :: Parser (Expr 'R)
 lam = char '\\' *> liftA2 mkLam (many1 param <* char '.' <* ws) expr
   where
@@ -181,7 +170,7 @@ exprNoWith :: Parser (Expr 'R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember
 
 withExpr :: Ord a => (Expr 'R -> Map a (Expr 'R) -> Expr 'R) -> Parser a -> Parser (Expr 'R)
-withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (withBlock index)
+withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (record '|' index arrow expr)
 
 exprNoOps :: Parser (Expr 'R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
