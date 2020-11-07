@@ -39,7 +39,7 @@ instance Show TypeError where
       go (ExpectedRecFound t) = "Expected tuple or record type, but found " ++ show t
       go (NoFieldInRec t FRec i) = "The record type " ++ show t ++ " has no field named " ++ i
       go (NoFieldInRec t FTup i) = "The tuple type " ++ show t ++ " does not have enough elements to be indexed by the index " ++ show i
-      go NeedRecordTypesForUnion = "Both operands of the \"|\" operator must be of record types"
+      go NeedRecordTypesForUnion = "Both operands of the \"&\" operator must be of record types"
       go (DuplicateIncompatibleField i) = "The field " ++ i ++ " appears twice in the union, but with different types"
       go (ExpectedFunFound t) = "Expected function type, but found " ++ show t
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
