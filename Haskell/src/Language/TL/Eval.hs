@@ -3,6 +3,7 @@
 
 module Language.TL.Eval(ProgState(..), traverseSteps_, finalState, showOut) where
 
+import Data.Functor(($>))
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 
@@ -121,7 +122,7 @@ evalStmt progState Nop = pure progState
 evalStmt progState (Decl _ _) = pure progState
 evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym expr
-  pure $ ProgState {sym =  M.insert ident v sym, .. }
+  pure $ ProgState { sym = M.insert ident v sym, .. }
 evalStmt progState (Assign (RecMember lhs f i) expr) =
   evalStmt progState (Assign lhs (RecWith lhs f $ M.singleton i expr))
 evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
@@ -148,13 +149,20 @@ smallStep ProgState { toDo = stmt : toDo, .. } = Just $ evalStmt ProgState{..} s
 
 traverseSteps_' :: Applicative f => (String -> f a) -> ProgState -> f ()
 traverseSteps_' f state =
-  f (show state) *> maybe (pure ()) (either ((() <$) . f . show) $ traverseSteps_' f) (smallStep state)
+  f (show state) *>
+    case smallStep state of
+      Nothing -> pure ()
+      Just (Left e) -> f (show e) $> ()
+      Just (Right state') -> traverseSteps_' f state'
 
 traverseSteps_ :: Applicative f => (String -> f a) -> Program -> f ()
 traverseSteps_ f = traverseSteps_' f . mkProgState
 
 finalState' :: ProgState -> Eval ProgState
-finalState' s = maybe (pure s) (>>= finalState') $ smallStep s
+finalState' s =
+  case smallStep s of
+    Nothing -> pure s
+    Just s' -> s' >>= finalState'
 
 finalState :: Program -> TLI ProgState
 finalState = toTLI . finalState' . mkProgState
