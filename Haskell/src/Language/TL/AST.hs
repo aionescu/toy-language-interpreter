@@ -164,7 +164,7 @@ instance Show Stmt where
   show (Print expr) = "print " ++ show expr
   show (If cond then' Nop) = "if " ++ show cond ++ " { " ++ show then' ++ " }"
   show (If cond then' else') =
-    "if " ++ show cond ++ " { " ++ show then' ++ " } else {" ++ show else' ++ " }"
+    "if " ++ show cond ++ " { " ++ show then' ++ " } else { " ++ show else' ++ " }"
   show (While cond body) = "while " ++ show cond ++ " { " ++ show body ++ " }"
   show (Compound a b) = show a ++ "; " ++ show b
 

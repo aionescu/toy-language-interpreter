@@ -3,6 +3,7 @@
 
 module Language.TL.Eval(ProgState(..), traverseSteps_, finalState, showOut) where
 
+import Data.List(intercalate)
 import Data.Functor(($>))
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
@@ -44,8 +45,11 @@ data ProgState =
   , out :: Out
   }
 
+showL :: Show a => [a] -> String
+showL l = "[" ++ intercalate ", " (show <$> l) ++ "]"
+
 instance Show ProgState where
-  show ProgState{..} = unlines ["toDo = " ++ show toDo, "sym = " ++ sym', "out = " ++ show (reverse out)]
+  show ProgState{..} = unlines ["toDo = " ++ showL toDo, "sym = " ++ sym', "out = " ++ showL (reverse out)]
     where
       sym' = withParens "{ " " }" (showVar <$> M.toList sym)
       showVar (ident, var) = ident ++ " <- " ++ show var
