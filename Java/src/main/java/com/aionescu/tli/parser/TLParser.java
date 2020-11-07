@@ -98,7 +98,7 @@ public final class TLParser {
     Parser<Stmt> decl = liftA2(Decl::new, ident.and_(colon), type);
 
     var arrow = ws._and(string("<-"))._and(ws);
-    Parser<Stmt> assign = liftA2(Assign::new, ident.and_(arrow), expr);
+    Parser<Stmt> assign = liftA2(Assign::new, ident.and_(arrow).map(Var::new), expr);
 
     var typeOrInfer = ch('_').map_(Maybe.<Type>nothing()).or(type.map(Maybe::just));
     Parser<Stmt> declAssign = liftA3(DeclAssign::new, ident.and_(colon), typeOrInfer.and_(arrow), expr);

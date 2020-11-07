@@ -5,6 +5,8 @@ import com.aionescu.tli.utils.control.Maybe;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
+import com.aionescu.tli.ast.expr.Var;
+import com.aionescu.tli.ast.expr.kind.ExprKind.L;
 import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.Type;
@@ -31,12 +33,12 @@ public final class DeclAssign implements Stmt {
     var type = _type.match(() -> _expr.typeCheck(sym), a -> a);
 
     var sym2 = new Decl(_ident, type).typeCheck(sym);
-    return new Assign(_ident, _expr).typeCheck(sym2);
+    return new Assign(new Var<L>(_ident), _expr).typeCheck(sym2);
   }
 
   @Override
   public ProgState eval(ProgState prog) {
-    var tail = prog.toDo.push(new Assign(_ident, _expr));
+    var tail = prog.toDo.push(new Assign(new Var<L>(_ident), _expr));
 
     return prog.withToDo(_type.match(
       () -> tail,

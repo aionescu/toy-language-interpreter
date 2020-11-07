@@ -12,31 +12,31 @@ import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
 import com.aionescu.tli.exn.typeck.UninitializedVariableException;
 
 public final class Var<K extends ExprKind> implements Expr<K> {
-  private final Ident _ident;
+  public final Ident ident;
 
   public Var(Ident ident) {
-    _ident = ident;
+    this.ident = ident;
   }
 
   @Override
   public String toString() {
-    return _ident.toString();
+    return ident.toString();
   }
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    var info = sym.lookup(_ident).match(
-      () -> { throw new UndeclaredVariableException(_ident); },
+    var info = sym.lookup(ident).match(
+      () -> { throw new UndeclaredVariableException(ident); },
       a -> a);
 
     if (info.state == VarState.UNINIT)
-      throw new UninitializedVariableException(_ident);
+      throw new UninitializedVariableException(ident);
 
     return info.type;
   }
 
   @Override
   public Val eval(Map<Ident, Val> sym) {
-    return sym.lookup(_ident).unwrap();
+    return sym.lookup(ident).unwrap();
   }
 }
