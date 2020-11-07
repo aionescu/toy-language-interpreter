@@ -11,6 +11,15 @@ import Language.TL.AST
 
 type Parser = Parsec String ()
 
+comma :: Parser ()
+comma = ws <* char ',' <* ws
+
+colon :: Parser ()
+colon = ws <* char ':' <* ws
+
+arrow :: Parser ()
+arrow = ws <* string "<-" <* ws
+
 shebang :: Parser ()
 shebang = try $ string "#!" *> manyTill anyChar (endOfLine $> ()) $> ()
 
@@ -26,41 +35,13 @@ comment = singleLine <|> multiLine
 ws :: Parser ()
 ws = spaces *> skipMany (comment *> spaces)
 
-number :: Parser Int
-number = read <$> many1 digit
-
-int :: Parser (Expr 'R)
-int = IntLit <$> (sign <*> number)
-  where
-    sign = option id (char '-' $> negate)
-
-bool :: Parser (Expr 'R)
-bool = BoolLit <$> choice [string "True" $> True, string "False" $> False]
-
-simpleLit :: Parser (Expr 'R)
-simpleLit = int <|> bool
-
-reserved :: [String]
-reserved = ["if", "else", "while", "and", "or"]
-
-ident :: Parser String
-ident = notReserved =<< liftA2 (:) fstChar (many sndChar)
-  where
-    fstChar = lower
-    sndChar = choice [letter, digit, char '\'']
-    notReserved ((`elem` reserved) -> True) = fail "Reserved identifier"
-    notReserved i = pure i
-
-var :: Parser (Expr a)
-var = Var <$> ident
-
 parens :: Char -> Char -> Parser a -> Parser a
 parens begin end = between (char begin *> ws) (char end *> ws)
 
 tuple :: ([a] -> a) -> Parser a -> Parser a
 tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
   where
-    withTrailing = (, True) <$> many (term <* ws <* comma)
+    withTrailing = (, True) <$> many (term <* comma)
     noTrailing = (, False) <$> sepBy1 term comma
     elems = try withTrailing <|> noTrailing
 
@@ -100,6 +81,34 @@ typeNoFun = try trec <|> try ttup <|> primType
 type' :: Parser Type
 type' = chainr1 typeNoFun $ try (ws *> string "->" *> ws $> TFun)
 
+number :: Parser Int
+number = read <$> many1 digit
+
+int :: Parser (Expr 'R)
+int = IntLit <$> (sign <*> number)
+  where
+    sign = option id (char '-' $> negate)
+
+bool :: Parser (Expr 'R)
+bool = BoolLit <$> choice [string "True" $> True, string "False" $> False]
+
+simpleLit :: Parser (Expr 'R)
+simpleLit = int <|> bool
+
+reserved :: [String]
+reserved = ["if", "else", "while", "and", "or"]
+
+ident :: Parser String
+ident = notReserved =<< liftA2 (:) fstChar (many sndChar)
+  where
+    fstChar = lower
+    sndChar = choice [letter, digit, char '\'']
+    notReserved ((`elem` reserved) -> True) = fail "Reserved identifier"
+    notReserved i = pure i
+
+var :: Parser (Expr a)
+var = Var <$> ident
+
 member :: Parser (Expr a) -> Parser (Expr a)
 member lhs = liftA2 (foldl' unroll) lhs (many $ char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
   where
@@ -114,9 +123,6 @@ vrec = RecLit FRec <$> record '{' ident arrow expr
 
 lvalue :: Parser (Expr 'L)
 lvalue = try (member var) <|> var
-
-comma :: Parser ()
-comma = char ',' *> ws
 
 opMul :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
 opMul =
@@ -195,12 +201,6 @@ expr = chainr1 termLogic opLogic
 
 print' :: Parser Stmt
 print' = Print <$> (string "print" <* ws *> expr)
-
-colon :: Parser ()
-colon = ws <* char ':' <* ws
-
-arrow :: Parser ()
-arrow = ws <* string "<-" <* ws
 
 decl :: Parser Stmt
 decl = liftA2 Decl (ident <* colon) type'
