@@ -18,7 +18,7 @@ public final class BoolLit implements Expr<R> {
 
   @Override
   public String toString() {
-    return String.valueOf(_val);
+    return _val ? "True" : "False";
   }
 
   @Override

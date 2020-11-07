@@ -12,9 +12,9 @@ import com.aionescu.tli.utils.collections.map.Map;
 
 public final class RecLit<F extends Field<A>, A extends Comparable<A>> implements Expr<R> {
   private final F _f;
-  private final Map<A, Expr<?>> _m;
+  private final Map<A, Expr<R>> _m;
 
-  public RecLit(F f, Map<A, Expr<?>> m) {
+  public RecLit(F f, Map<A, Expr<R>> m) {
     _f = f;
     _m = m;
   }

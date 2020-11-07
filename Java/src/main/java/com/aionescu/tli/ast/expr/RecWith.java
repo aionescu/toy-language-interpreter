@@ -16,9 +16,9 @@ import com.aionescu.tli.utils.collections.map.Map;
 public final class RecWith<F extends Field<A>, A extends Comparable<A>> implements Expr<R> {
   private final Expr<?> _lhs;
   private final F _f;
-  private final Map<A, Expr<?>> _m;
+  private final Map<A, Expr<R>> _m;
 
-  public RecWith(Expr<?> lhs, F f, Map<A, Expr<?>> m) {
+  public RecWith(Expr<?> lhs, F f, Map<A, Expr<R>> m) {
     _lhs = lhs;
     _f = f;
     _m = m;

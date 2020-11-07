@@ -14,6 +14,10 @@ public interface Map<K extends Comparable<K>, V> {
     return AssocListMap.empty();
   }
 
+  static <K extends Comparable<K>, V> Map<K, V> fromList(List<Pair<K, V>> list) {
+    return list.foldl((s, a) -> s.insert(a.fst, a.snd), empty());
+  }
+
   String toString(String begin, String end, String sep);
   List<Pair<K, V>> toList();
 
@@ -38,14 +42,20 @@ public interface Map<K extends Comparable<K>, V> {
   }
 
   static <K extends Comparable<K>, V extends Comparable<V>> int compare(Map<K, V> a, Map<K, V> b) {
-    var as = a.toList();
-    var bs = b.toList();
+    List<Pair<K, V>> as = a.toList();
+    List<Pair<K, V>> bs = b.toList();
 
-    var keyOrd = List.compare(as.map(Pair::fst_), bs.map(Pair::fst_));
+    List<K> asFst = as.map(p -> p.fst);
+    List<K> bsFst = bs.map(p -> p.fst);
+
+    var keyOrd = List.compare(asFst, bsFst);
+
+    List<V> asSnd = as.map(p -> p.snd);
+    List<V> bsSnd = bs.map(p -> p.snd);
 
     return
       keyOrd != 0
       ? keyOrd
-      : List.compare(as.map(Pair::snd_), bs.map(Pair::snd_));
+      : List.compare(asSnd, bsSnd);
   }
 }

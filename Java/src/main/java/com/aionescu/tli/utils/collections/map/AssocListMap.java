@@ -23,7 +23,7 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
 
   @Override
   public boolean equals(Object rhs) {
-    return rhs instanceof AssocListMap<?, ?> && _list.equals(((AssocListMap<?, ?>)rhs)._list);
+    return rhs instanceof Map<?, ?> && _list.equals((((Map<?, ?>)rhs).toList()));
   }
 
   @Override

@@ -27,6 +27,15 @@ public final class Pair<A, B> {
   }
 
   @Override
+  public boolean equals(Object rhs) {
+    if (!(rhs instanceof Pair<?, ?>))
+      return false;
+
+    var p = (Pair<?, ?>)rhs;
+    return fst.equals(p.fst) && snd.equals(p.snd);
+  }
+
+  @Override
   public String toString() {
     return String.format("(%s, %s)", fst, snd);
   }

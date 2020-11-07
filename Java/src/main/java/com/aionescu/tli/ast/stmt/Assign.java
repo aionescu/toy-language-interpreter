@@ -45,9 +45,9 @@ public final class Assign implements Stmt {
       var lhs = (RecMember<?, ?, L>)_lhs;
 
       if (lhs.f instanceof FRec)
-        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FRec)lhs.f, Map.<Ident, Expr<?>>empty().insert((Ident)lhs.idx, _rhs))).typeCheck(sym);
+        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FRec)lhs.f, Map.<Ident, Expr<R>>empty().insert((Ident)lhs.idx, _rhs))).typeCheck(sym);
       else if (lhs.f instanceof FTup)
-        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FTup)lhs.f, Map.<Integer, Expr<?>>empty().insert((Integer)lhs.idx, _rhs))).typeCheck(sym);
+        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FTup)lhs.f, Map.<Integer, Expr<R>>empty().insert((Integer)lhs.idx, _rhs))).typeCheck(sym);
       else
         throw new IllegalStateException("Is there a 3rd record kind?");
     } else
@@ -65,9 +65,9 @@ public final class Assign implements Stmt {
       var lhs = (RecMember<?, ?, L>)_lhs;
 
       if (lhs.f instanceof FRec)
-        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FRec)lhs.f, Map.<Ident, Expr<?>>empty().insert((Ident)lhs.idx, _rhs))).eval(prog);
+        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FRec)lhs.f, Map.<Ident, Expr<R>>empty().insert((Ident)lhs.idx, _rhs))).eval(prog);
       else if (lhs.f instanceof FTup)
-        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FTup)lhs.f, Map.<Integer, Expr<?>>empty().insert((Integer)lhs.idx, _rhs))).eval(prog);
+        return new Assign(lhs.lhs, new RecWith<>(lhs.lhs, (FTup)lhs.f, Map.<Integer, Expr<R>>empty().insert((Integer)lhs.idx, _rhs))).eval(prog);
       else
         throw new IllegalStateException("Is there a 3rd record kind?");
     } else

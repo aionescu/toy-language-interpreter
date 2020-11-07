@@ -1,5 +1,6 @@
 package com.aionescu.tli.utils.collections.list;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -63,14 +64,14 @@ public abstract class List<A> {
   @Override
   public final boolean equals(Object rhs) {
     @SuppressWarnings("unchecked")
-    var r = rhs instanceof List<?> && equals((List<A>)rhs);
+    var r = rhs instanceof List<?> && eq((List<A>)rhs);
     return r;
   }
 
-  private final boolean equals(List<A> rhs) {
+  private final boolean eq(List<A> rhs) {
     return match(rhs::isEmpty, (a, as) -> rhs.match(
       () -> false,
-      (b, bs) -> a.equals(b) && as.equals(bs)
+      (b, bs) -> a.equals(b) && as.eq(bs)
     ));
   }
 
@@ -89,6 +90,11 @@ public abstract class List<A> {
 
   public final int length() {
     return foldl((s, a) -> s + 1, 0);
+  }
+
+  @SafeVarargs
+  public static <A> List<A> of(A... as) {
+    return ofStream(Arrays.stream(as));
   }
 
   public static <A> List<A> ofStream(Stream<A> stream) {
@@ -143,6 +149,27 @@ public abstract class List<A> {
 
   public final boolean all(Predicate<A> f) {
     return foldl((s, a) -> s && f.test(a), true);
+  }
+
+  public final boolean allUnique() {
+    return all(a -> this.filter(e -> e.equals(a)).length() == 1);
+  }
+
+  public final List<Integer> range(int start, int end) {
+    return
+      start >= end
+      ? nil()
+      : List.cons(start, range(start + 1, end));
+  }
+
+  public final <B, C> List<C> zipWith(List<B> bs, BiFunction<A, B, C> f) {
+    return match(List::nil, (a, as) ->
+      bs.match(List::nil, (b, bs_) ->
+        cons(f.apply(a, b), as.zipWith(bs_, f))));
+  }
+
+  public final List<Pair<Integer, A>> indexed() {
+    return range(0, length()).zipWith(this, Pair::new);
   }
 
   public static <A extends Comparable<A>> int compare(List<A> as, List<A> bs) {

@@ -167,7 +167,7 @@ public interface Parser<A> {
   }
 
   public default <Sep> Parser<List<A>> sepBy(Parser<Sep> sep) {
-    return this.and(sep._and(this).many()).map(Pair.match(List::cons));
+    return this.and(sep._and(this).many()).map(Pair.match(List::cons)).option(List.nil());
   }
 
   public default <Sep> Parser<List<A>> sepBy1(Parser<Sep> sep) {
