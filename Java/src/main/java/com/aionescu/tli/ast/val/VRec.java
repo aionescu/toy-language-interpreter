@@ -4,42 +4,35 @@ import com.aionescu.tli.ast.Field;
 import com.aionescu.tli.exn.eval.InvalidComparisonException;
 import com.aionescu.tli.utils.collections.map.Map;
 
-public final class VRec<F extends Field<A>, A extends Comparable<A>> implements Val {
-  public final F f;
-  public final Map<A, Val> m;
+public final class VRec implements Val {
+  public final boolean isRec;
+  public final Map<Field, Val> fields;
 
-  public VRec(F f, Map<A, Val> m) {
-    this.f = f;
-    this.m = m;
+  public VRec(boolean isRec, Map<Field, Val> fields) {
+    this.isRec = isRec;
+    this.fields = fields;
   }
 
   @Override
   public boolean equals(Object rhs) {
-    if (!(rhs instanceof VRec<?, ?>))
-      return false;
-
-    var rec = (VRec<?, ?>)rhs;
-    return f.equals(rec.f) && m.equals(rec.m);
+    return rhs instanceof VRec && fields.equals(((VRec)rhs).fields);
   }
 
   @Override
   public String toString() {
-    return f.showFields(m, false, " <- ");
+    return Field.showFields(fields, isRec, false, " <- ");
   }
 
   @Override
   public int compareTo(Val rhs) {
-    if (!(rhs instanceof VRec<?, ?>))
+    if (!(rhs instanceof VRec))
       throw new InvalidComparisonException();
 
-    var rec = (VRec<?, ?>)rhs;
+    var rec = (VRec)rhs;
 
-    if (!f.equals(rec.f))
+    if (isRec != rec.isRec)
       throw new InvalidComparisonException();
 
-    @SuppressWarnings("unchecked")
-    var r = Map.compare(m, (Map<A, Val>)rec.m);
-
-    return r;
+    return Map.compare(fields, rec.fields);
   }
 }

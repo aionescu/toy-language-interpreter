@@ -172,6 +172,10 @@ public abstract class List<A> {
     return range(0, length()).zipWith(this, Pair::new);
   }
 
+  public final <I> List<Pair<I, A>> indexedWith(Function<Integer, I> f) {
+    return range(0, length()).map(f).zipWith(this, Pair::new);
+  }
+
   public static <A extends Comparable<A>> int compare(List<A> as, List<A> bs) {
     return as.match(
       () -> bs.isEmpty() ? 0 : -1,

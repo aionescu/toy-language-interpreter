@@ -2,7 +2,6 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.val.VBool;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.TBool;
@@ -10,10 +9,10 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class While implements Stmt {
-  private final Expr<R> _cond;
+  private final Expr _cond;
   private final Stmt _body;
 
-  public While(Expr<R> cond, Stmt body) {
+  public While(Expr cond, Stmt body) {
     _cond = cond;
     _body = body;
   }

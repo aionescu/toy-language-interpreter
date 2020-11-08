@@ -1,7 +1,6 @@
 package com.aionescu.tli.ast.expr;
 
 import com.aionescu.tli.ast.Ident;
-import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.type.TFun;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
@@ -11,12 +10,12 @@ import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.CantShadowException;
 import com.aionescu.tli.utils.collections.map.Map;
 
-public final class Lam implements Expr<R> {
+public final class Lam implements Expr {
   private final Ident _argName;
   private final Type _argType;
-  private final Expr<?> _body;
+  private final Expr _body;
 
-  public Lam(Ident argName, Type argType, Expr<?> body) {
+  public Lam(Ident argName, Type argType, Expr body) {
     _argName = argName;
     _argType = argType;
     _body = body;

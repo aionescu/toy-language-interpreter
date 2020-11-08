@@ -1,63 +1,92 @@
 package com.aionescu.tli.ast;
 
 import com.aionescu.tli.ast.type.Type;
+import com.aionescu.tli.exn.typeck.IllFormedASTException;
 import com.aionescu.tli.exn.typeck.NoFieldInRecException;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
-public abstract class Field<F extends Comparable<F>> {
-  public static final class FRec extends Field<Ident> {
-    private FRec() { }
+public abstract class Field implements Comparable<Field> {
+  public static final class RecField extends Field {
+    public final Ident f;
+
+    public RecField(Ident f) {
+      this.f = f;
+    }
 
     @Override
     public boolean equals(Object rhs) {
-      return rhs instanceof FRec;
+      return rhs instanceof RecField && f.equals(((RecField)rhs).f);
     }
 
     @Override
-    public <A> String showFields(Map<Ident, A> m, boolean isWithExpr, String sep) {
-      return m.toString(isWithExpr ? "| " : "{ ", " }", sep);
+    public String toString() {
+      return f.toString();
     }
 
     @Override
-    public void checkMember(Type trec, Map<Ident, Type> m, Ident idx, Type t) {
-      m.lookup(idx).matchDo(
-        () -> { throw new NoFieldInRecException(trec, this, idx); },
-        t_ -> t.expect(t_));
+    public int compareTo(Field rhs) {
+      if (!(rhs instanceof RecField))
+        throw new IllFormedASTException();
+
+      return f.compareTo(((RecField)rhs).f);
+    }
+
+    @Override
+    public boolean isRecField() {
+      return true;
     }
   }
 
-  public static final class FTup extends Field<Integer> {
-    private FTup() { }
+  public static final class TupField extends Field {
+    public final int f;
+
+    public TupField(int f) {
+      this.f = f;
+    }
 
     @Override
     public boolean equals(Object rhs) {
-      return rhs instanceof FTup;
+      return rhs instanceof TupField && f == ((TupField)rhs).f;
     }
 
     @Override
-    public <A> String showFields(Map<Integer, A> m, boolean isWithExpr, String sep) {
-      if (isWithExpr)
-        return m.toString("| ", " }", sep);
-
-      var l = m.toList().<A>map(Pair::snd_);
-      return l.toString("(", l.length() == 1 ? ",)" : ")");
+    public String toString() {
+      return String.valueOf(f);
     }
 
     @Override
-    public void checkMember(Type trec, Map<Integer, Type> m, Integer idx, Type t) {
-      m.lookup(idx).matchDo(
-        () -> { throw new NoFieldInRecException(trec, this, idx); },
-        t_ -> t.expect(t_));
+    public int compareTo(Field rhs) {
+      if (!(rhs instanceof TupField))
+        throw new IllFormedASTException();
+
+      return Integer.compare(f, ((TupField)rhs).f);
+    }
+
+    @Override
+    public boolean isRecField() {
+      return false;
     }
   }
-
-  public static final FRec fRec = new FRec();
-  public static final FTup fTup = new FTup();
 
   private Field() { }
 
-  public abstract <A> String showFields(Map<F, A> m, boolean isWithExpr, String sep);
+  public abstract boolean isRecField();
 
-  public abstract void checkMember(Type trec, Map<F, Type> m, F idx, Type t);
+  public static <A> String showFields(Map<Field, A> m, boolean isRec, boolean isWithExpr, String sep) {
+    if (isRec)
+      return m.toString(isWithExpr ? "| " : "{ ", " }", sep);
+
+    if (isWithExpr)
+        return m.toString("| ", " }", sep);
+
+    var l = m.toList().map(Pair::snd_);
+    return l.toString("(", l.length() == 1 ? ",)" : ")");
+  }
+
+  public static void checkMember(Type trec, Map<Field, Type> m, Field idx, Type t) {
+    m.lookup(idx).matchDo(
+      () -> { throw new NoFieldInRecException(trec, idx); },
+      t_ -> t.expect(t_));
+  }
 }

@@ -5,11 +5,10 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import com.aionescu.tli.ast.Ident;
+import com.aionescu.tli.ast.Field.RecField;
+import com.aionescu.tli.ast.Field.TupField;
 import com.aionescu.tli.ast.Field;
 import com.aionescu.tli.ast.expr.*;
-import com.aionescu.tli.ast.expr.kind.ExprKind;
-import com.aionescu.tli.ast.expr.kind.ExprKind.L;
-import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.stmt.*;
 import com.aionescu.tli.ast.type.TBool;
@@ -31,12 +30,15 @@ public final class TLParser {
   private static final Parser<Stmt> _parser;
   private static final Parser<Integer> _number;
   private static final Parser<Ident> _ident;
+  private static final Parser<Field> _recField;
+  private static final Parser<Field> _tupField;
+  private static final Parser<Expr> _var;
   private static final Parser<Unit> _ws;
   private static final Parser<Unit> _comma;
   private static final Parser<Unit> _colon;
   private static final Parser<Unit> _arrow;
-  private static final Parser<Expr<R>> _expr;
-  private static final Parser<Expr<R>> _exprNoWith;
+  private static final Parser<Expr> _expr;
+  private static final Parser<Expr> _exprNoWith;
 
   static {
     var multiLineFwdRef = Parser.<Unit>fwdRef();
@@ -58,9 +60,10 @@ public final class TLParser {
 
     Parser<Function<Integer, Integer>> sign = ch('-').map_(i -> -i);
     _number = digit.many1().map(List::asString).map(Integer::parseInt);
-    Parser<Expr<R>> int_ = ap(sign.option(i -> i), _number).map(IntLit::new);
+    _tupField = _number.map(TupField::new);
+    Parser<Expr> int_ = ap(sign.option(i -> i), _number).map(IntLit::new);
 
-    Parser<Expr<R>> bool_ = choice(
+    Parser<Expr> bool_ = choice(
       string("True").map_(true),
       string("False").map_(false)
     ).map(BoolLit::new);
@@ -75,6 +78,7 @@ public final class TLParser {
     var sndChar = letter.or(digit).or(ch('\''));
 
     _ident = liftA2(List::cons, fstChar, sndChar.many()).and_(_ws).map(List::asString).map(Ident::new).bind(notReserved);
+    _recField = _ident.map(RecField::new);
 
     var primType = choice(
       string("Int").map_(TInt.t),
@@ -83,35 +87,37 @@ public final class TLParser {
     var typeFwdRef = Parser.<Type>fwdRef();
     var type = typeFwdRef.fst;
 
-    Parser<Type> ttup = _tuple(a -> new TRec<>(Field.fTup, _tupToRec(a)), type);
-    Parser<Type> trec = _record('{', _ident, _colon, type).map(a -> new TRec<>(Field.fRec, a));
+    Parser<Type> ttup = _tuple(a -> new TRec(false, _tupToRec(a)), type);
+    Parser<Type> trec = _record('{', _recField, _colon, type).map(a -> new TRec(true, a));
 
     var typeNoFun = choice(trec, ttup, primType);
 
     var type_ = typeNoFun.chainr1(_ws._and(string("->"))._and(_ws).map_(TFun::new));
     typeFwdRef.snd.set(type_);
 
-    var exprFwdRef = Parser.<Expr<R>>fwdRef();
+    var exprFwdRef = Parser.<Expr>fwdRef();
     _expr = exprFwdRef.fst;
 
-    Parser<Expr<R>> vtup = _tuple(a -> new RecLit<>(Field.fTup, _tupToRec(a)), _expr);
-    Parser<Expr<R>> vrec = _record('{', _ident, _arrow, _expr).map(a -> new RecLit<>(Field.fRec, a));
+    Parser<Expr> vtup = _tuple(a -> new RecLit(false, _tupToRec(a)), _expr);
+    Parser<Expr> vrec = _record('{', _recField, _arrow, _expr).map(a -> new RecLit(true, a));
 
-    var lvalue = _member(TLParser.<L>_var()).or(_var());
+    _var = _ident.map(Var::new);
 
-    var opMul = Parser.<BinaryOperator<Expr<R>>>choice(
+    var lvalue = _member(_var).or(_var);
+
+    var opMul = Parser.<BinaryOperator<Expr>>choice(
       ch('*').map_((a, b) -> new Arith(a, Arith.Op.MUL, b)),
       ch('/').map_((a, b) -> new Arith(a, Arith.Op.DIV, b)),
       ch('%').map_((a, b) -> new Arith(a, Arith.Op.REM, b)),
       ch('&').map_(RecUnion::new)
     ).and_(_ws);
 
-    var opAdd = Parser.<BinaryOperator<Expr<R>>>choice(
+    var opAdd = Parser.<BinaryOperator<Expr>>choice(
       ch('+').map_((a, b) -> new Arith(a, Arith.Op.ADD, b)),
       ch('-').map_((a, b) -> new Arith(a, Arith.Op.SUB, b))
     ).and_(_ws);
 
-    var opComp = Parser.<BinaryOperator<Expr<R>>>choice(
+    var opComp = Parser.<BinaryOperator<Expr>>choice(
       string("<=").map_((a, b) -> new Comp(a, Comp.Op.LTE, b)),
       string(">=").map_((a, b) -> new Comp(a, Comp.Op.GTE, b)),
       string("<>").map_((a, b) -> new Comp(a, Comp.Op.NEQ, b)),
@@ -120,7 +126,7 @@ public final class TLParser {
       ch('=').map_((a, b) -> new Comp(a, Comp.Op.EQ, b))
     ).and_(_ws);
 
-    var opLogic = Parser.<BinaryOperator<Expr<R>>>choice(
+    var opLogic = Parser.<BinaryOperator<Expr>>choice(
       string("and").map_((a, b) -> new Logic(a, Logic.Op.AND, b)),
       string("or").map_((a, b) -> new Logic(a, Logic.Op.OR, b))
     ).and_(_ws);
@@ -128,15 +134,15 @@ public final class TLParser {
     var lamParam = _parens('(', ')', liftA2(Pair::new, _ident.and_(_colon), type));
     var lam = ch('\\')._and(liftA2(TLParser::_mkLam, lamParam.many1().and_(ch('.')).and_(_ws), _expr));
 
-    var exprNoMember = choice(lam, vrec, vtup, simpleLit, _var()).and_(_ws);
+    var exprNoMember = choice(lam, vrec, vtup, simpleLit, _var).and_(_ws);
     _exprNoWith = _member(exprNoMember).or(exprNoMember);
 
-    var withRecord = _withExpr((a, b) -> new RecWith<>(a, Field.fRec, b), _ident);
-    var withTup = _withExpr((a, b) -> new RecWith<>(a, Field.fTup, b), _number);
+    var withRecord = _withExpr((a, b) -> new RecWith(a, true, b), _recField);
+    var withTup = _withExpr((a, b) -> new RecWith(a, false, b), _tupField);
 
     var exprNoOps = withRecord.or(withTup).or(_exprNoWith);
 
-    Parser<Expr<R>> termMul = exprNoOps.chainl1(_ws.map_(App::new));
+    Parser<Expr> termMul = exprNoOps.chainl1(_ws.map_(App::new));
 
     var termAdd = termMul.chainl1(opMul);
     var termComp = termAdd.chainl1(opAdd);
@@ -176,10 +182,6 @@ public final class TLParser {
     _parser = shebang.option(Unit.UNIT)._and(_ws)._and(stmt).and_(eof);
   }
 
-  private static <K extends ExprKind> Parser<Expr<K>> _var() {
-    return _ident.map(Var::new);
-  }
-
   private static <A> Parser<A> _parens(char begin, char end, Parser<A> p) {
     return p.between(ch(begin).and_(_ws), ch(end).and_(_ws));
   }
@@ -207,29 +209,22 @@ public final class TLParser {
     return _parens(begin, '}', elems).bind(unique).map(Map::fromList);
   }
 
-  private static <A> Map<Integer, A> _tupToRec(List<A> as) {
-    return Map.fromList(as.indexed());
+  private static <A> Map<Field, A> _tupToRec(List<A> as) {
+    return Map.fromList(as.indexedWith(TupField::new));
   }
 
-  private static <K extends ExprKind> Expr<K> _unroll(Expr<K> lhs, Object idx) {
-    return
-      idx instanceof Ident
-      ? new RecMember<>(lhs, Field.fRec, (Ident)idx)
-      : new RecMember<>(lhs, Field.fTup, (Integer)idx);
+  private static Parser<Expr> _member(Parser<Expr> lhs) {
+    var idxs = ch('.')._and(_tupField.or(_recField)).and_(_ws).many();
+    return liftA2((a, b) -> b.foldl(RecMember::new, a), lhs, idxs);
   }
 
-  private static <K extends ExprKind> Parser<Expr<K>> _member(Parser<Expr<K>> lhs) {
-    var idxs = ch('.')._and(_number.map(a -> (Object)a).or(_ident.map(a -> (Object)a))).and_(_ws).many();
-    return liftA2((a, b) -> b.foldl(TLParser::_unroll, a), lhs, idxs);
-  }
-
-  private static Expr<R> _mkLam(List<Pair<Ident, Type>> l, Expr<R> e) {
+  private static Expr _mkLam(List<Pair<Ident, Type>> l, Expr e) {
     return l.match(
       () -> e,
       (a, as) -> new Lam(a.fst, a.snd, _mkLam(as, e)));
   }
 
-  private static <I extends Comparable<I>> Parser<Expr<R>> _withExpr(BiFunction<Expr<R>, Map<I, Expr<R>>, Expr<R>> ctor, Parser<I> idx) {
+  private static <I extends Comparable<I>> Parser<Expr> _withExpr(BiFunction<Expr, Map<I, Expr>, Expr> ctor, Parser<I> idx) {
     return liftA2(ctor, ch('{')._and(_ws)._and(_exprNoWith).and_(_ws), _record('|', idx, _arrow, _expr));
   }
 

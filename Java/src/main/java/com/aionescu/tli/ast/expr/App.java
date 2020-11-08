@@ -1,7 +1,6 @@
 package com.aionescu.tli.ast.expr;
 
 import com.aionescu.tli.ast.Ident;
-import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 import com.aionescu.tli.ast.type.TFun;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
@@ -10,10 +9,10 @@ import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.ExpectedFunFoundException;
 import com.aionescu.tli.utils.collections.map.Map;
 
-public final class App implements Expr<R> {
-  private final Expr<?> _fn, _arg;
+public final class App implements Expr {
+  private final Expr _fn, _arg;
 
-  public App(Expr<?> fn, Expr<?> arg) {
+  public App(Expr fn, Expr arg) {
     _fn = fn;
     _arg = arg;
   }

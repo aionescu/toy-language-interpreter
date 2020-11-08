@@ -2,7 +2,7 @@ a : { x : Int, y : Int };
 a <- { x <- 2, y <- 3 };
 
 -- Inferred: b : { a : Bool };
-b : _ <- { a <- True };
+b : _ <- { a <- True, };
 
 -- Record union (left-biased)
 -- Inferred: c : { a : Bool, x : Int, y : Int }

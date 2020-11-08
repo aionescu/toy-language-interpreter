@@ -7,9 +7,8 @@ import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.map.Map;
 
 import com.aionescu.tli.ast.Ident;
-import com.aionescu.tli.ast.expr.kind.ExprKind.R;
 
-public final class BoolLit implements Expr<R> {
+public final class BoolLit implements Expr {
   private final boolean _val;
 
   public BoolLit(boolean val) {

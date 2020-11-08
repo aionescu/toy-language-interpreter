@@ -4,31 +4,27 @@ import com.aionescu.tli.ast.Field;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
-public final class TRec<F extends Field<A>, A extends Comparable<A>> implements Type {
-  public final F f;
-  public final Map<A, Type> m;
+public final class TRec implements Type {
+  public boolean isRec;
+  public final Map<Field, Type> fields;
 
-  public TRec(F f, Map<A, Type> m) {
-    this.f = f;
-    this.m = m;
+  public TRec(boolean isRec, Map<Field, Type> fields) {
+    this.isRec = isRec;
+    this.fields = fields;
   }
 
   @Override
   public boolean equals(Object rhs) {
-    if (!(rhs instanceof TRec<?, ?>))
-      return false;
-
-    var rec = (TRec<?, ?>)rhs;
-    return f.equals(rec.f) && m.equals(rec.m);
+    return rhs instanceof TRec && fields.equals(((TRec)rhs).fields);
   }
 
   @Override
   public String toString() {
-    return f.showFields(m, false, " : ");
+    return Field.showFields(fields, isRec, false, " : ");
   }
 
   @Override
   public boolean isComparable() {
-    return m.toList().map(Pair::snd_).all(Type::isComparable);
+    return fields.toList().map(Pair::snd_).all(Type::isComparable);
   }
 }
