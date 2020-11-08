@@ -1,11 +1,13 @@
 package com.aionescu.tli.ast.val;
 
+import java.math.BigInteger;
+
 import com.aionescu.tli.exn.eval.InvalidComparisonException;
 
 public final class VInt implements Val {
-  public final int val;
+  public final BigInteger val;
 
-  public VInt(int val) {
+  public VInt(BigInteger val) {
     this.val = val;
   }
 
@@ -19,6 +21,6 @@ public final class VInt implements Val {
     if (!(rhs instanceof VInt))
       throw new InvalidComparisonException();
 
-    return Integer.compare(val, ((VInt)rhs).val);
+    return val.compareTo(((VInt)rhs).val);
   }
 }

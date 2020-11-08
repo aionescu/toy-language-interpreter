@@ -1,5 +1,6 @@
 package com.aionescu.tli.parser;
 
+import java.math.BigInteger;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -28,8 +29,6 @@ import com.aionescu.tli.utils.Unit;
 
 public final class TLParser {
   private static final Parser<Stmt> _parser;
-  private static final Parser<Integer> _number;
-  private static final Parser<Ident> _ident;
   private static final Parser<Field> _recField;
   private static final Parser<Field> _tupField;
   private static final Parser<Expr> _var;
@@ -58,10 +57,10 @@ public final class TLParser {
     _colon = _ws.and_(ch(':'))._and(_ws);
     _arrow = _ws.and_(string("<-"))._and(_ws);
 
-    Parser<Function<Integer, Integer>> sign = ch('-').map_(i -> -i);
-    _number = digit.many1().map(List::asString).map(Integer::parseInt);
-    _tupField = _number.map(TupField::new);
-    Parser<Expr> int_ = ap(sign.option(i -> i), _number).map(IntLit::new);
+    Parser<Function<BigInteger, BigInteger>> sign = ch('-').map_(BigInteger::negate);
+    var number = digit.many1().map(List::asString);
+    _tupField = number.map(Integer::parseInt).map(TupField::new);
+    Parser<Expr> int_ = ap(sign.option(i -> i), number.map(BigInteger::new)).map(IntLit::new);
 
     Parser<Expr> bool_ = choice(
       string("True").map_(true),
@@ -77,8 +76,8 @@ public final class TLParser {
     var fstChar = lower;
     var sndChar = letter.or(digit).or(ch('\''));
 
-    _ident = liftA2(List::cons, fstChar, sndChar.many()).and_(_ws).map(List::asString).map(Ident::new).bind(notReserved);
-    _recField = _ident.map(RecField::new);
+    var ident = liftA2(List::cons, fstChar, sndChar.many()).and_(_ws).map(List::asString).map(Ident::new).bind(notReserved);
+    _recField = ident.map(RecField::new);
 
     var primType = choice(
       string("Int").map_(TInt.t),
@@ -101,7 +100,7 @@ public final class TLParser {
     Parser<Expr> vtup = _tuple(a -> new RecLit(false, _tupToRec(a)), _expr);
     Parser<Expr> vrec = _record('{', _recField, _arrow, _expr).map(a -> new RecLit(true, a));
 
-    _var = _ident.map(Var::new);
+    _var = ident.map(Var::new);
 
     var lvalue = _member(_var).or(_var);
 
@@ -131,7 +130,7 @@ public final class TLParser {
       string("or").map_((a, b) -> new Logic(a, Logic.Op.OR, b))
     ).and_(_ws);
 
-    var lamParam = _parens('(', ')', liftA2(Pair::new, _ident.and_(_colon), type));
+    var lamParam = _parens('(', ')', liftA2(Pair::new, ident.and_(_colon), type));
     var lam = ch('\\')._and(liftA2(TLParser::_mkLam, lamParam.many1().and_(ch('.')).and_(_ws), _expr));
 
     var exprNoMember = choice(lam, vrec, vtup, simpleLit, _var).and_(_ws);
@@ -154,13 +153,13 @@ public final class TLParser {
     Parser<Stmt> print = string("print").and_(_ws)._and(_expr).map(Print::new);
 
     var colon = _ws._and(ch(':'))._and(_ws);
-    Parser<Stmt> decl = liftA2(Decl::new, _ident.and_(colon), type);
+    Parser<Stmt> decl = liftA2(Decl::new, ident.and_(colon), type);
 
     var arrow = _ws._and(string("<-"))._and(_ws);
     Parser<Stmt> assign = liftA2(Assign::new, lvalue.and_(arrow), _expr);
 
     var typeOrInfer = ch('_').map_(Maybe.<Type>nothing()).or(type.map(Maybe::just));
-    Parser<Stmt> declAssign = liftA3(DeclAssign::new, _ident.and_(colon), typeOrInfer.and_(arrow), _expr);
+    Parser<Stmt> declAssign = liftA3(DeclAssign::new, ident.and_(colon), typeOrInfer.and_(arrow), _expr);
 
     var stmtFwdRef = Parser.<Stmt>fwdRef();
     var stmt = stmtFwdRef.fst;

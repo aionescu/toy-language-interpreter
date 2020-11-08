@@ -2,6 +2,8 @@ package com.aionescu.tli.ast.expr;
 
 import com.aionescu.tli.utils.collections.map.Map;
 
+import java.math.BigInteger;
+
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
@@ -57,16 +59,16 @@ public final class Arith implements Expr {
     var rhs = ((VInt)_rhs.eval(sym)).val;
 
     return new VInt(switch (_op) {
-      case ADD -> lhs + rhs;
-      case SUB -> lhs - rhs;
-      case MUL -> lhs * rhs;
-      case DIV -> switch (rhs) {
+      case ADD -> lhs.add(rhs);
+      case SUB -> lhs.subtract(rhs);
+      case MUL -> lhs.multiply(rhs);
+      case DIV -> switch (rhs.compareTo(BigInteger.ZERO)) {
         case 0 -> throw new DivisionByZeroException();
-        default -> lhs / rhs;
+        default -> lhs.divide(rhs);
       };
-      case REM -> switch (rhs) {
+      case REM -> switch (rhs.compareTo(BigInteger.ZERO)) {
         case 0 -> throw new DivisionByZeroException();
-        default -> lhs % rhs;
+        default -> lhs.remainder(rhs);
       };
     });
   }

@@ -81,7 +81,7 @@ typeNoFun = try trec <|> try ttup <|> primType
 type' :: Parser Type
 type' = chainr1 typeNoFun $ try (ws *> string "->" *> ws $> TFun)
 
-number :: Parser Int
+number :: (Read a, Num a) => Parser a
 number = read <$> many1 digit
 
 int :: Parser (Expr 'R)

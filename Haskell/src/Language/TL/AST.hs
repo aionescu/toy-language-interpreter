@@ -126,7 +126,7 @@ compOp NEq = (/=)
 data ExprKind = L | R
 
 data Expr :: ExprKind -> * where
-  IntLit :: Int -> Expr 'R
+  IntLit :: Integer -> Expr 'R
   BoolLit :: Bool -> Expr 'R
   Var :: Ident -> Expr a
   Arith :: Expr a -> ArithOp -> Expr b -> Expr 'R

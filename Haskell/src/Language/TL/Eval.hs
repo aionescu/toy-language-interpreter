@@ -11,7 +11,7 @@ import qualified Data.Map.Strict as M
 import Language.TL.AST
 
 data Val
-  = VInt Int
+  = VInt Integer
   | VBool Bool
   | forall f. VRec (Field f) (Map f Val)
   | VFun (Val -> Eval Val)

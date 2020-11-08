@@ -6,12 +6,14 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.utils.collections.map.Map;
 
+import java.math.BigInteger;
+
 import com.aionescu.tli.ast.Ident;
 
 public final class IntLit implements Expr {
-  private final int _val;
+  private final BigInteger _val;
 
-  public IntLit(int val) {
+  public IntLit(BigInteger val) {
     _val = val;
   }
 
