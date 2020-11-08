@@ -16,12 +16,14 @@ deriving instance Eq (Field f)
 data Type
   = TInt
   | TBool
+  | TStr
   | forall f. TRec (Field f) (Map f Type)
   | TFun Type Type
 
 instance Eq Type where
   TInt == TInt = True
   TBool == TBool = True
+  TStr == TStr = True
   TRec FRec a == TRec FRec b = a == b
   TRec FTup a == TRec FTup b = a == b
   TFun a b == TFun a' b' = a == a' && b == b'
@@ -39,6 +41,11 @@ isShowable :: Type -> Bool
 isShowable (TFun _ _) = False
 isShowable (TRec _ m) = all isShowable m
 isShowable _ = True
+
+isDefaultable :: Type -> Bool
+isDefaultable (TFun _ _) = False
+isDefaultable (TRec _ m) = all isShowable m
+isDefaultable _ = True
 
 withParens :: String -> String -> [String] -> String
 withParens begin end l = begin ++ intercalate ", " l ++ end
@@ -62,6 +69,7 @@ showFields False FTup _ m =
 instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
+  show TStr = "Str"
   show (TRec f m) = showFields False f ":" m
   show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
 
@@ -126,8 +134,10 @@ compOp NEq = (/=)
 data ExprKind = L | R
 
 data Expr :: ExprKind -> * where
+  Default :: Type -> Expr 'R
   IntLit :: Integer -> Expr 'R
   BoolLit :: Bool -> Expr 'R
+  StrLit :: String -> Expr 'R
   Var :: Ident -> Expr a
   Arith :: Expr a -> ArithOp -> Expr b -> Expr 'R
   Logic :: Expr a -> LogicOp -> Expr b -> Expr 'R
@@ -140,8 +150,10 @@ data Expr :: ExprKind -> * where
   App :: Expr a -> Expr b -> Expr 'R
 
 instance Show (Expr a) where
+  show (Default t) = "default " ++ show t
   show (IntLit i) = show i
   show (BoolLit b) = show b
+  show (StrLit s) = show s
   show (Var ident) = ident
   show (Arith a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"

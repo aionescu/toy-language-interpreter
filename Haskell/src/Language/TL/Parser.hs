@@ -1,7 +1,7 @@
 module Language.TL.Parser(parse) where
 
 import Data.List(nub, foldl')
-import Data.Functor(($>))
+import Data.Functor((<&>), ($>))
 import Control.Applicative(liftA2, liftA3)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
@@ -64,7 +64,7 @@ record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
           else fail "Fields in a record must be unique"
 
 primType :: Parser Type
-primType = choice [string "Int" $> TInt, string "Bool" $> TBool]
+primType = choice [string "Int" $> TInt, string "Bool" $> TBool, string "Str" $> TStr]
 
 tupToRec :: [a] -> Map Int a
 tupToRec = M.fromList . zip [0..]
@@ -92,11 +92,30 @@ int = IntLit <$> (sign <*> number)
 bool :: Parser (Expr 'R)
 bool = BoolLit <$> choice [string "True" $> True, string "False" $> False]
 
+str :: Parser (Expr 'R)
+str = StrLit <$> between quote quote (many ch)
+  where
+    unescape '\\' = '\\'
+    unescape '"' = '"'
+    unescape '0' = '\0'
+    unescape 'n' = '\n'
+    unescape 'r' = '\r'
+    unescape 'v' = '\v'
+    unescape 't' = '\t'
+    unescape 'b' = '\b'
+    unescape 'f' = '\f'
+    unescape a = a
+
+    escaped = char '\\' *> oneOf "\\\"0nrvtbf" <&> unescape
+    regular = noneOf "\\\"\0\n\r\v\t\b\f"
+    ch = regular <|> escaped
+    quote = char '"'
+
 simpleLit :: Parser (Expr 'R)
-simpleLit = int <|> bool
+simpleLit = choice [try str, try int, bool]
 
 reserved :: [String]
-reserved = ["if", "else", "while", "and", "or"]
+reserved = ["if", "else", "while", "and", "or", "default"]
 
 ident :: Parser String
 ident = notReserved =<< liftA2 (:) fstChar (many sndChar)
@@ -169,8 +188,11 @@ lam = char '\\' *> liftA2 mkLam (many1 param <* char '.' <* ws) expr
     mkLam [] e = e
     mkLam ((i, t) : as) e = Lam i t $ mkLam as e
 
+default' :: Parser (Expr 'R)
+default' = string "default" *> ws *> type' <&> Default
+
 exprNoMember :: Parser (Expr 'R)
-exprNoMember = choice [try lam, try vrec, try vtup, try simpleLit, try var] <* ws
+exprNoMember = choice [try default', try lam, try vrec, try vtup, try simpleLit, try var] <* ws
 
 exprNoWith :: Parser (Expr 'R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember

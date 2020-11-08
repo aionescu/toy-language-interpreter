@@ -13,26 +13,36 @@ import Language.TL.AST
 data Val
   = VInt Integer
   | VBool Bool
+  | VStr String
   | forall f. VRec (Field f) (Map f Val)
   | VFun (Val -> Eval Val)
 
 instance Show Val where
   show (VInt i) = show i
   show (VBool b) = show b
+  show (VStr s) = show s
   show (VRec f m) = showFields False f "<-" m
   show (VFun _) = "<λ>"
 
 instance Ord Val where
   compare (VInt a) (VInt b) = compare a b
   compare (VBool a) (VBool b) = compare a b
+  compare (VStr a) (VStr b) = compare a b
   compare (VRec FRec a) (VRec FRec b) = compare a b
   compare (VRec FTup a) (VRec FTup b) = compare a b
   compare (VFun _) _ = error "Functions are not comparable. Did you run the typechecker?"
   compare _ (VFun _) = error "Functions are not comparable. Did you run the typechecker?"
-  compare _ _ = error "Type mismatch. Did you run the typechecker?"
+  compare _ _ = error "Type mismatch in comparison. Did you run the typechecker?"
 
 instance Eq Val where
   (==) = ((== EQ) .) . compare
+
+defaultVal :: Type -> Val
+defaultVal TInt = VInt 0
+defaultVal TBool = VBool False
+defaultVal TStr = VStr ""
+defaultVal (TRec f m) = VRec f (defaultVal <$> m)
+defaultVal (TFun _ _) = error "Functions are not defaultable. Did you run the typechecker?"
 
 type SymValTable = Map Ident Val
 type ToDo = [Stmt]
@@ -70,13 +80,18 @@ instance Show EvalError where
 type Eval a = Either EvalError a
 
 evalExpr :: SymValTable -> Expr a -> Eval Val
+evalExpr _ (Default t) = pure $ defaultVal t
 evalExpr _ (IntLit i) = pure $ VInt i
 evalExpr _ (BoolLit b) = pure $ VBool b
+evalExpr _ (StrLit s) = pure $ VStr s
 evalExpr sym (Var ident) = pure $ sym M.! ident
 evalExpr sym (Arith a op b) = do
   a' <- evalExpr sym a
   b' <- evalExpr sym b
   case (b', op) of
+    (VStr vb, Add) ->
+      case a' of
+        VStr va -> pure $ VStr $ va ++ vb
     (VInt 0, Divide) -> throw DivisionByZero
     (VInt 0, Remainder) -> throw DivisionByZero
     (VInt vb, _) ->

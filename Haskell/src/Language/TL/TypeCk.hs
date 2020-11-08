@@ -27,6 +27,9 @@ data TypeError
   | CantShadow Ident
   | TypeNotComparable Type
   | TypeNotShowable Type
+  | TypeNotDefaultable Type
+  | CanOnlyAppendStrings
+  | CanOnlyAddIntegers
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -46,6 +49,9 @@ instance Show TypeError where
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
       go (TypeNotComparable t) = "Values of type " ++ show t ++ " cannot be compared"
       go (TypeNotShowable t) = "Values of type " ++ show t ++ " cannot be represented as strings"
+      go (TypeNotDefaultable t) = "The type " ++ show t ++ " does not have a default value"
+      go CanOnlyAppendStrings = "Both operands of the append operation must be strings"
+      go CanOnlyAddIntegers = "Both operands of the addition operation must be integers"
 
 type TypeCk a = Either TypeError a
 
@@ -58,13 +64,29 @@ lookupVar :: Ident -> SymTypeTable -> TypeCk VarInfo
 lookupVar var sym = maybe (throw $ UndeclaredVar var) pure $ M.lookup var sym
 
 typeCheckExpr :: SymTypeTable -> Expr a -> TypeCk Type
+typeCheckExpr _ (Default t) = do
+  unless (isDefaultable t)
+    $ throw $ TypeNotDefaultable t
+  pure t
 typeCheckExpr _ (IntLit _) = pure TInt
 typeCheckExpr _ (BoolLit _) = pure TBool
+typeCheckExpr _ (StrLit _) = pure TStr
 typeCheckExpr sym (Var ident) = do
   (type', state) <- lookupVar ident sym
   case state of
     Uninit -> throw $ UninitializedVar ident
     Init -> pure type'
+typeCheckExpr sym (Arith a Add b) = do
+  ta <- typeCheckExpr sym a
+  tb <- typeCheckExpr sym b
+
+  case (ta, tb) of
+    (TInt, TInt) -> pure TInt
+    (TStr, TStr) -> pure TStr
+    _ -> throw $
+      if TStr `elem` [ta, tb]
+        then CanOnlyAppendStrings
+        else CanOnlyAddIntegers
 typeCheckExpr sym (Arith a _ b) = do
   ta <- typeCheckExpr sym a
   ta `mustBe` TInt
