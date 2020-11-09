@@ -23,7 +23,7 @@ public final class Lam implements Expr {
 
   @Override
   public String toString() {
-    return String.format("(\\(%s : %s). %s)", _argName, _argType, _body);
+    return String.format("((%s: %s) -> %s)", _argName, _argType, _body);
   }
 
   @Override

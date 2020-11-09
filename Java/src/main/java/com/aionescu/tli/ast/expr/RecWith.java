@@ -23,7 +23,7 @@ public final class RecWith implements Expr {
 
   @Override
   public String toString() {
-    return String.format("{ %s %s", _lhs, Field.showFields(_updates, _isRec, true, " <- "));
+    return String.format("{ %s %s", _lhs, Field.showFields(_updates, _isRec, true, " = "));
   }
 
   @Override

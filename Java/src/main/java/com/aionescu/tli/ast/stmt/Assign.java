@@ -24,7 +24,7 @@ public final class Assign implements Stmt {
 
   @Override
   public String toString() {
-    return String.format("%s <- %s", _lhs, _rhs);
+    return String.format("%s = %s", _lhs, _rhs);
   }
 
   @Override

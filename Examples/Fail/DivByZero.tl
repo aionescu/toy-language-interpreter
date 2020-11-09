@@ -1,7 +1,4 @@
-a : Int;
-a <- 2;
+let a = 2;
+let b = 0;
 
-b : Int;
-b <- 0;
-
-print a / b
+print a / b;

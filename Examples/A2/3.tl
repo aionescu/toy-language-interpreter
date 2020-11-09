@@ -1,12 +1,12 @@
-a : Bool;
-v : Int;
+let a: Bool;
+let v: Int;
 
-a <- True;
+a = True;
 
 if a {
-  v <- 2
+  v = 2;
 } else {
-  v <- 3
+  v = 3;
 };
 
-print v
+print v;

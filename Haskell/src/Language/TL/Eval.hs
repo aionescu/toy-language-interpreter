@@ -21,7 +21,7 @@ instance Show Val where
   show (VInt i) = show i
   show (VBool b) = show b
   show (VStr s) = show s
-  show (VRec f m) = showFields False f "<-" m
+  show (VRec f m) = showFields False f " = " m
   show (VFun _) = "<λ>"
 
 instance Ord Val where
@@ -62,7 +62,7 @@ instance Show ProgState where
   show ProgState{..} = unlines ["toDo = " ++ showL toDo, "sym = " ++ sym', "out = " ++ showL (reverse out)]
     where
       sym' = withParens "{ " " }" (showVar <$> M.toList sym)
-      showVar (ident, var) = ident ++ " <- " ++ show var
+      showVar (ident, var) = ident ++ " = " ++ show var
 
 mkProgState :: Stmt -> ProgState
 mkProgState stmt = ProgState { toDo = [stmt], sym = M.empty, out = [] }

@@ -1,11 +1,11 @@
-x : _ <- 100;
+let x = 100;
 
-r : _ <- 1;
-i : _ <- 1;
+let r = 1;
+let i = 1;
 
 while i <= x {
-  r <- i * r;
-  i <- i + 1
+  r = i * r;
+  i = i + 1;
 };
 
-print r
+print r;

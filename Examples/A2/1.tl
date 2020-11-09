@@ -1,3 +1,3 @@
-v : Int;
-v <- 2;
-print v
+let v: Int;
+v = 2;
+print v;

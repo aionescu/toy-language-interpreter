@@ -23,7 +23,7 @@ public final class DeclAssign implements Stmt {
 
   @Override
   public String toString() {
-    return String.format("%s : %s <- %s", _ident, _type.match(() -> "_", Object::toString), _expr);
+    return String.format("let %s%s = %s", _ident, _type.match(() -> "", a -> ": " + a), _expr);
   }
 
   @Override

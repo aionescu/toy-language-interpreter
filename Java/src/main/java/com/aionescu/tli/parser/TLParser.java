@@ -36,7 +36,7 @@ public final class TLParser {
   private static final Parser<Unit> _ws;
   private static final Parser<Unit> _comma;
   private static final Parser<Unit> _colon;
-  private static final Parser<Unit> _arrow;
+  private static final Parser<Unit> _equals;
   private static final Parser<Expr> _expr;
   private static final Parser<Expr> _exprNoWith;
 
@@ -56,7 +56,7 @@ public final class TLParser {
 
     _comma = ch(',')._and(_ws);
     _colon = _ws.and_(ch(':'))._and(_ws);
-    _arrow = _ws.and_(string("<-"))._and(_ws);
+    _equals = _ws.and_(ch('='))._and(_ws);
 
     Parser<Function<BigInteger, BigInteger>> sign = ch('-').map_(BigInteger::negate);
     var number = digit.many1().map(List::asString);
@@ -77,7 +77,7 @@ public final class TLParser {
 
     var simpleLit = choice(str, int_, bool_);
 
-    var reserved = List.of("if", "else", "while", "and", "or", "default");
+    var reserved = List.of("if", "else", "while", "and", "or", "default", "let", "nop");
     Function<Ident, Parser<Ident>> notReserved =
       i -> reserved.find(e -> e.equals(i.name)).match(() -> Parser.pure(i), a -> Parser.fail());
 
@@ -107,7 +107,7 @@ public final class TLParser {
     _expr = exprFwdRef.fst;
 
     Parser<Expr> vtup = _tuple(a -> new RecLit(false, _tupToRec(a)), _expr);
-    Parser<Expr> vrec = _record('{', _recField, _arrow, _expr).map(a -> new RecLit(true, a));
+    Parser<Expr> vrec = _record('{', _recField, _equals, _expr).map(a -> new RecLit(true, a));
 
     _var = ident.map(Var::new);
 
@@ -128,10 +128,10 @@ public final class TLParser {
     var opComp = Parser.<BinaryOperator<Expr>>choice(
       string("<=").map_((a, b) -> new Comp(a, Comp.Op.LTE, b)),
       string(">=").map_((a, b) -> new Comp(a, Comp.Op.GTE, b)),
-      string("<>").map_((a, b) -> new Comp(a, Comp.Op.NEQ, b)),
+      string("==").map_((a, b) -> new Comp(a, Comp.Op.EQ, b)),
+      string("!=").map_((a, b) -> new Comp(a, Comp.Op.NEQ, b)),
       ch('<').map_((a, b) -> new Comp(a, Comp.Op.LT, b)),
-      ch('>').map_((a, b) -> new Comp(a, Comp.Op.GT, b)),
-      ch('=').map_((a, b) -> new Comp(a, Comp.Op.EQ, b))
+      ch('>').map_((a, b) -> new Comp(a, Comp.Op.GT, b))
     ).and_(_ws);
 
     var opLogic = Parser.<BinaryOperator<Expr>>choice(
@@ -140,7 +140,7 @@ public final class TLParser {
     ).and_(_ws);
 
     var lamParam = _parens('(', ')', liftA2(Pair::new, ident.and_(_colon), type));
-    var lam = ch('\\')._and(liftA2(TLParser::_mkLam, lamParam.many1().and_(ch('.')).and_(_ws), _expr));
+    var lam = liftA2(TLParser::_mkLam, lamParam.many1().and_(string("->")).and_(_ws), _expr);
 
     Parser<Expr> default_ = string("default")._and(_ws)._and(type).map(Default::new);
 
@@ -163,14 +163,12 @@ public final class TLParser {
 
     Parser<Stmt> print = string("print").and_(_ws)._and(_expr).map(Print::new);
 
-    var colon = _ws._and(ch(':'))._and(_ws);
-    Parser<Stmt> decl = liftA2(Decl::new, ident.and_(colon), type);
+    Parser<Stmt> decl = string("let")._and(_ws)._and(liftA2(Decl::new, ident.and_(_colon), type));
 
-    var arrow = _ws._and(string("<-"))._and(_ws);
-    Parser<Stmt> assign = liftA2(Assign::new, lvalue.and_(arrow), _expr);
+    Parser<Stmt> assign = liftA2(Assign::new, lvalue.and_(_equals), _expr);
 
-    var typeOrInfer = ch('_').map_(Maybe.<Type>nothing()).or(type.map(Maybe::just));
-    Parser<Stmt> declAssign = liftA3(DeclAssign::new, ident.and_(colon), typeOrInfer.and_(arrow), _expr);
+    var typeOrInfer = _colon._and(type.map(Maybe::just)).option(Maybe.nothing());
+    Parser<Stmt> declAssign = string("let")._and(_ws)._and(liftA3(DeclAssign::new, ident, typeOrInfer, _equals._and(_expr)));
 
     var stmtFwdRef = Parser.<Stmt>fwdRef();
     var stmt = stmtFwdRef.fst;
@@ -185,8 +183,10 @@ public final class TLParser {
     var whileCond = string("while")._and(_ws)._and(_expr).and_(_ws);
     Parser<Stmt> while_ = liftA2(While::new, whileCond, block);
 
-    var stmt_ = choice(while_, if_, declAssign, assign, decl, print).and_(_ws);
-    var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new)).option(Nop.nop);
+    Parser<Stmt> nop = string("nop").map_(Nop.nop);
+
+    var stmt_ = choice(while_, if_, declAssign, decl, assign, print, nop).and_(_ws).option(Nop.nop);
+    var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new));
     stmtFwdRef.snd.set(compound);
 
     _parser = shebang.option(Unit.UNIT)._and(_ws)._and(stmt).and_(eof);
@@ -235,7 +235,7 @@ public final class TLParser {
   }
 
   private static <I extends Comparable<I>> Parser<Expr> _withExpr(BiFunction<Expr, Map<I, Expr>, Expr> ctor, Parser<I> idx) {
-    return liftA2(ctor, ch('{')._and(_ws)._and(_exprNoWith).and_(_ws), _record('|', idx, _arrow, _expr));
+    return liftA2(ctor, ch('{')._and(_ws)._and(_exprNoWith).and_(_ws), _record('|', idx, _equals, _expr));
   }
 
   private static char _unescape(char c) {

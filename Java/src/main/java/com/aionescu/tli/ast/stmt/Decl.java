@@ -20,7 +20,7 @@ public final class Decl implements Stmt {
 
   @Override
   public String toString() {
-    return String.format("%s : %s", _ident, _type);
+    return String.format("let %s: %s", _ident, _type);
   }
 
   @Override

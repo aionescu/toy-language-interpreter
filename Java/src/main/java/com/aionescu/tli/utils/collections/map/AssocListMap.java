@@ -28,7 +28,7 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
 
   @Override
   public String toString() {
-    return toString("{ ", " }", " <- ");
+    return toString("{ ", " }", " = ");
   }
 
   @Override

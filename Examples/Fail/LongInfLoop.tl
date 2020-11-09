@@ -1,14 +1,13 @@
-i : Int;
-i <- 0;
+let i = 0;
 
 while i <= 5 {
   print i;
-  i <- i + 1;
+  i = i + 1;
 
   if i > 5 {
-    i <- 0
-  }
+    i = 0;
+  };
 };
 
 print 3;
-print 4
+print 4;

@@ -1,12 +1,12 @@
-a : _ <- default Int;
+let a = default Int;
 print a;
 
-b : _ <- default Str;
+let b = default Str;
 print b;
 
 -- Functions are not defaultable
---f : _ <- default Int -> Int;
+--let f = default Int -> Int;
 --print f;
 
-rec : _ <- default { a: Int, b: Str, c: (Int, Bool, (Str, Str)) };
-print rec
+let rec = default { a: Int, b: Str, c: (Int, Bool, (Str, Str)) };
+print rec;

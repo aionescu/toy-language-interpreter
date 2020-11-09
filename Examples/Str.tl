@@ -1,4 +1,4 @@
-a : Str <- "abc\n";
-b : _ <- "def";
+let a: Str = "abc\n";
+let b = "def";
 
-print a + b
+print a + b;

@@ -1,44 +1,43 @@
--- Inferred: f : Int -> Int
-f : _ <- \(a : Int). a + 2;
+-- Inferred: f: Int -> Int
+let f = (a: Int) -> a + 2;
 print f 2;
 -- print f; -- Cannot print functions
 
-f' : Bool -> Bool -> Bool;
-f' <- \(a : Bool) (b : Bool). a and b;
+let f': Bool -> Bool -> Bool;
+f' = (a : Bool) (b : Bool) -> a and b;
 
 print f' True False or True;
 
 -- Poor man's objects
-obj : { getX : () -> Int, getY : () -> Int };
-obj <- { getX <- \(a : ()). 2, getY <- \(a : ()). 3 };
--- No type inference for lambda args + No support for patterns = Horrible syntax
+let obj: { getX: () -> Int, getY: () -> Int };
+obj = { getX = (a: ()) -> 2, getY = (a: ()) -> 3 };
 
 print obj.getX ();
 print obj.getY ();
 
-addPoints : { x : Int, y : Int } -> { x : Int, y : Int } -> { x : Int, y : Int };
-addPoints <-
-  \(p : { x : Int, y : Int }) (p2 : { x : Int, y : Int }).
-    { x <- p.x + p2.x, y <- p.y + p2.y };
+-- Inferred: addPoints: { x: Int, y: Int } -> { x: Int, y: Int } -> { x: Int, y: Int };
+let addPoints =
+  (p : { x : Int, y : Int }) (p2 : { x : Int, y : Int }) ->
+    { x = p.x + p2.x, y = p.y + p2.y };
 
-print addPoints { x <- 1, y <- 2 } { x <- 3, y <- 2 };
+print addPoints { x = 1, y = 2 } { x = 3, y = 2 };
 
 -- Scope magic
-f'' : Int -> Int;
+let f'': Int -> Int;
 
 if True {- Imagine complex condition here -} {
-  a : _ <- 2;
-  f'' <- \(x : Int). x + a
+  let a = 2;
+  f'' = (x: Int) -> x + a;
   -- a goes out of scope here, but f'' still has access to it,
   -- because lambdas capture their current scope
 } else {
-  f'' <- \(x : Int). x - 2
+  f'' = (x : Int) -> x - 2;
 };
 
 print f 2;
 
 -- Higher order function
-run : (() -> Int) -> Int;
-run <- \(r : () -> Int). r ();
+let run: (() -> Int) -> Int;
+run = (r: () -> Int) -> r ();
 
-print run \(a : ()). 10
+print run (a: ()) -> 10;

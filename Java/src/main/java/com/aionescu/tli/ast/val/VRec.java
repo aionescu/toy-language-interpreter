@@ -15,7 +15,7 @@ public final class VRec extends Val {
 
   @Override
   public String toString() {
-    return Field.showFields(fields, isRec, false, " <- ");
+    return Field.showFields(fields, isRec, false, " = ");
   }
 
   @Override

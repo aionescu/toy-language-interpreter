@@ -25,8 +25,8 @@ public final class Comp implements Expr {
         case LTE -> "<=";
         case GT -> ">";
         case GTE -> ">=";
-        case EQ -> "=";
-        case NEQ -> "<>";
+        case EQ -> "==";
+        case NEQ -> "!=";
       };
     }
   }

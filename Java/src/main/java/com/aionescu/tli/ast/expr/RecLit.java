@@ -20,7 +20,7 @@ public final class RecLit implements Expr {
 
   @Override
   public String toString() {
-    return Field.showFields(_fields, _isRec, false, " <- ");
+    return Field.showFields(_fields, _isRec, false, " = ");
   }
 
   @Override

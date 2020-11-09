@@ -1,2 +1,1 @@
-a : Int;
-a <- True
+let a: Int = True;

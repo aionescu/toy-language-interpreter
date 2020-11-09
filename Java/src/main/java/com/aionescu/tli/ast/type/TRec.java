@@ -22,7 +22,7 @@ public final class TRec implements Type {
 
   @Override
   public String toString() {
-    return Field.showFields(fields, isRec, false, " : ");
+    return Field.showFields(fields, isRec, false, ": ");
   }
 
   @Override

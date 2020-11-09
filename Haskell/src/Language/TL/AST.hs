@@ -55,7 +55,7 @@ showF FRec ident = ident
 showF FTup idx = show idx
 
 showField :: Field f -> String -> (f, String) -> String
-showField f sep (i, s) = showF f i ++ " " ++ sep ++ " " ++ s
+showField f sep (i, s) = showF f i ++ sep ++ s
 
 showFields :: Show v => Bool -> Field f -> String -> Map f v -> String
 showFields False FRec sep m = withParens "{ " " }" (showField FRec sep <$> M.toList (show <$> m))
@@ -70,7 +70,7 @@ instance Show Type where
   show TInt = "Int"
   show TBool = "Bool"
   show TStr = "Str"
-  show (TRec f m) = showFields False f ":" m
+  show (TRec f m) = showFields False f ": " m
   show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
 
 data ArithOp
@@ -119,8 +119,8 @@ instance Show CompOp where
   show GtEq = ">="
   show Lt = "<"
   show LtEq = "<="
-  show Eq = "="
-  show NEq = "<>"
+  show Eq = "=="
+  show NEq = "!="
 
 compOp :: Ord a => CompOp -> a -> a -> Bool
 compOp Gt = (>)
@@ -158,11 +158,11 @@ instance Show (Expr a) where
   show (Arith a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Logic a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
   show (Comp a op b) = "(" ++ show a ++ " " ++ show op ++ " " ++ show b ++ ")"
-  show (RecLit f m) = showFields False f "<-" m
+  show (RecLit f m) = showFields False f " = " m
   show (RecMember e f i) = show e ++ "." ++ showF f i
-  show (RecWith lhs f updates) = "{ " ++ show lhs ++ showFields True f "<-" updates
+  show (RecWith lhs f updates) = "{ " ++ show lhs ++ showFields True f " = " updates
   show (RecUnion a b) = "(" ++ show a ++ " & " ++ show b ++ ")"
-  show (Lam i t e) = "(\\(" ++ i ++ " : " ++ show t ++ "). " ++ show e ++ ")"
+  show (Lam i t e) = "((" ++ i ++ ": " ++ show t ++ ") -> " ++ show e ++ ")"
   show (App f a) = "(" ++ show f ++ " " ++ show a ++ ")"
 
 data Stmt
@@ -176,11 +176,11 @@ data Stmt
   | Compound Stmt Stmt
 
 instance Show Stmt where
-  show Nop = ""
-  show (Decl ident type') = ident ++ " : " ++ show type'
-  show (Assign ident expr) = show ident ++ " <- " ++ show expr
-  show (DeclAssign ident Nothing expr) = ident ++ " : _ <- " ++ show expr
-  show (DeclAssign ident (Just type') expr) = ident ++ " : " ++ show type' ++ " <- " ++ show expr
+  show Nop = "nop"
+  show (Decl ident type') = "let " ++ ident ++ ": " ++ show type'
+  show (Assign ident expr) = show ident ++ " = " ++ show expr
+  show (DeclAssign ident Nothing expr) = "let " ++ ident ++ " = " ++ show expr
+  show (DeclAssign ident (Just type') expr) = "let " ++ ident ++ ": " ++ show type' ++ " = " ++ show expr
   show (Print expr) = "print " ++ show expr
   show (If cond then' Nop) = "if " ++ show cond ++ " { " ++ show then' ++ " }"
   show (If cond then' else') =

@@ -17,8 +17,8 @@ comma = ws <* char ',' <* ws
 colon :: Parser ()
 colon = ws <* char ':' <* ws
 
-arrow :: Parser ()
-arrow = ws <* string "<-" <* ws
+equals :: Parser ()
+equals = ws <* char '=' <* ws
 
 shebang :: Parser ()
 shebang = try $ string "#!" *> manyTill anyChar (endOfLine $> ()) $> ()
@@ -115,7 +115,7 @@ simpleLit :: Parser (Expr 'R)
 simpleLit = choice [try str, try int, bool]
 
 reserved :: [String]
-reserved = ["if", "else", "while", "and", "or", "default"]
+reserved = ["if", "else", "while", "and", "or", "default", "let", "nop"]
 
 ident :: Parser String
 ident = notReserved =<< liftA2 (:) fstChar (many sndChar)
@@ -138,7 +138,7 @@ vtup :: Parser (Expr 'R)
 vtup = tuple (RecLit FTup . tupToRec) expr
 
 vrec :: Parser (Expr 'R)
-vrec = RecLit FRec <$> record '{' ident arrow expr
+vrec = RecLit FRec <$> record '{' ident equals expr
 
 lvalue :: Parser (Expr 'L)
 lvalue = try (member var) <|> var
@@ -166,10 +166,10 @@ opComp =
   choice
   [ try $ string "<=" $> flip Comp LtEq
   , try $ string ">=" $> flip Comp GtEq
-  , try $ string "<>" $> flip Comp NEq
+  , try $ string "==" $> flip Comp Eq
+  , try $ string "!=" $> flip Comp NEq
   , char '<' $> flip Comp Lt
   , char '>' $> flip Comp Gt
-  , char '=' $> flip Comp Eq
   ]
   <* ws
 
@@ -182,7 +182,7 @@ opLogic =
   <* ws
 
 lam :: Parser (Expr 'R)
-lam = char '\\' *> liftA2 mkLam (many1 param <* char '.' <* ws) expr
+lam = liftA2 mkLam (many1 param <* string "->" <* ws) expr
   where
     param = parens '(' ')' $ liftA2 (,) (ident <* colon) type'
     mkLam [] e = e
@@ -198,7 +198,7 @@ exprNoWith :: Parser (Expr 'R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember
 
 withExpr :: Ord a => (Expr 'R -> Map a (Expr 'R) -> Expr 'R) -> Parser a -> Parser (Expr 'R)
-withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (record '|' index arrow expr)
+withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (record '|' index equals expr)
 
 exprNoOps :: Parser (Expr 'R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
@@ -225,14 +225,14 @@ print' :: Parser Stmt
 print' = Print <$> (string "print" <* ws *> expr)
 
 decl :: Parser Stmt
-decl = liftA2 Decl (ident <* colon) type'
+decl = string "let" *> ws *> liftA2 Decl (ident <* colon) type'
 
 assign :: Parser Stmt
-assign = liftA2 Assign (lvalue <* arrow) expr
+assign = liftA2 Assign (lvalue <* equals) expr
 
 declAssign :: Parser Stmt
 declAssign =
-  liftA3 DeclAssign (ident <* colon) ((char '_' $> Nothing <|> Just <$> type') <* arrow) expr
+  string "let" *> ws *> liftA3 DeclAssign ident (option Nothing $ Just <$> (try $ colon *> type')) (equals *> expr)
 
 block :: Parser Stmt
 block =
@@ -251,11 +251,14 @@ while = liftA2 While cond block
   where
     cond = string "while" *> ws *> expr <* ws
 
+nop :: Parser Stmt
+nop = string "nop" $> Nop
+
 stmt' :: Parser Stmt
-stmt' = choice [try while, try if', try declAssign, try assign, try decl, print'] <* ws
+stmt' = option Nop $ choice [try while, try if', try declAssign, try decl, try assign, try print', nop] <* ws
 
 stmt :: Parser Stmt
-stmt = option Nop $ stmt' `chainr1` (char ';' *> ws $> Compound)
+stmt = stmt' `chainr1` (char ';' *> ws $> Compound)
 
 program :: Parser Program
 program = option () shebang *> ws *> stmt <* eof
