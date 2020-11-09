@@ -16,6 +16,7 @@ import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.TFun;
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.TRec;
+import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
@@ -67,9 +68,16 @@ public final class TLParser {
       string("False").map_(false)
     ).map(BoolLit::new);
 
-    var simpleLit = int_.or(bool_);
+    var escaped = ch('\\')._and(oneOf("\\\"0nrvtbf")).map(TLParser::_unescape);
+    var regular = noneOf("\\\"\0\n\r\t\b\f");
+    var chr = regular.or(escaped);
+    var quote = ch('"');
 
-    var reserved = List.of("if", "else", "while", "and", "or");
+    Parser<Expr> str = chr.many().between(quote, quote).map(List::asString).map(StrLit::new);
+
+    var simpleLit = choice(str, int_, bool_);
+
+    var reserved = List.of("if", "else", "while", "and", "or", "default");
     Function<Ident, Parser<Ident>> notReserved =
       i -> reserved.find(e -> e.equals(i.name)).match(() -> Parser.pure(i), a -> Parser.fail());
 
@@ -81,7 +89,8 @@ public final class TLParser {
 
     var primType = choice(
       string("Int").map_(TInt.t),
-      string("Bool").map_(TBool.t));
+      string("Bool").map_(TBool.t),
+      string("Str").map_(TStr.t));
 
     var typeFwdRef = Parser.<Type>fwdRef();
     var type = typeFwdRef.fst;
@@ -133,7 +142,9 @@ public final class TLParser {
     var lamParam = _parens('(', ')', liftA2(Pair::new, ident.and_(_colon), type));
     var lam = ch('\\')._and(liftA2(TLParser::_mkLam, lamParam.many1().and_(ch('.')).and_(_ws), _expr));
 
-    var exprNoMember = choice(lam, vrec, vtup, simpleLit, _var).and_(_ws);
+    Parser<Expr> default_ = string("default")._and(_ws)._and(type).map(Default::new);
+
+    var exprNoMember = choice(default_, lam, vrec, vtup, simpleLit, _var).and_(_ws);
     _exprNoWith = _member(exprNoMember).or(exprNoMember);
 
     var withRecord = _withExpr((a, b) -> new RecWith(a, true, b), _recField);
@@ -227,6 +238,21 @@ public final class TLParser {
     return liftA2(ctor, ch('{')._and(_ws)._and(_exprNoWith).and_(_ws), _record('|', idx, _arrow, _expr));
   }
 
+  private static char _unescape(char c) {
+    return switch (c) {
+      case '\\' -> '\\';
+      case '"' -> '"';
+      case '0' -> '\0';
+      case 'n' -> '\n';
+      case 'r' -> '\r';
+      // Invalid in Java apparently
+      // case 'v' -> '\v';
+      case 't' -> '\t';
+      case 'b' -> '\b';
+      case 'f' -> '\f';
+      default -> c;
+    };
+  }
   public static Stmt parse(String code) {
     return _parser.parse(code);
   }

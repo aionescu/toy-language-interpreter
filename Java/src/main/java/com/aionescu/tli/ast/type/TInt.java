@@ -1,5 +1,10 @@
 package com.aionescu.tli.ast.type;
 
+import java.math.BigInteger;
+
+import com.aionescu.tli.ast.val.VInt;
+import com.aionescu.tli.ast.val.Val;
+
 public final class TInt implements Type {
   public static final TInt t = new TInt();
 
@@ -18,5 +23,20 @@ public final class TInt implements Type {
   @Override
   public boolean isComparable() {
     return true;
+  }
+
+  @Override
+  public boolean isShowable() {
+    return true;
+  }
+
+  @Override
+  public boolean isDefaultable() {
+    return true;
+  }
+
+  @Override
+  public Val defaultValue() {
+    return new VInt(BigInteger.ZERO);
   }
 }

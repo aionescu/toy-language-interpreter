@@ -24,7 +24,7 @@ public final class While implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    _cond.typeCheck(sym).expect(TBool.t);
+    _cond.typeCheck(sym).mustBe(TBool.t);
     _body.typeCheck(sym);
     return sym;
   }

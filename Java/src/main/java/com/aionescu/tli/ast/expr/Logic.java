@@ -39,8 +39,8 @@ public final class Logic implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    _lhs.typeCheck(sym).expect(TBool.t);
-    _rhs.typeCheck(sym).expect(TBool.t);
+    _lhs.typeCheck(sym).mustBe(TBool.t);
+    _rhs.typeCheck(sym).mustBe(TBool.t);
     return TBool.t;
   }
 

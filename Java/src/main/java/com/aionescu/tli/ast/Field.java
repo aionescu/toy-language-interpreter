@@ -87,6 +87,6 @@ public abstract class Field implements Comparable<Field> {
   public static void checkMember(Type trec, Map<Field, Type> m, Field idx, Type t) {
     m.lookup(idx).matchDo(
       () -> { throw new NoFieldInRecException(trec, idx); },
-      t_ -> t.expect(t_));
+      t_ -> t.mustBe(t_));
   }
 }

@@ -4,18 +4,13 @@ import com.aionescu.tli.ast.Field;
 import com.aionescu.tli.exn.eval.InvalidComparisonException;
 import com.aionescu.tli.utils.collections.map.Map;
 
-public final class VRec implements Val {
+public final class VRec extends Val {
   public final boolean isRec;
   public final Map<Field, Val> fields;
 
   public VRec(boolean isRec, Map<Field, Val> fields) {
     this.isRec = isRec;
     this.fields = fields;
-  }
-
-  @Override
-  public boolean equals(Object rhs) {
-    return rhs instanceof VRec && fields.equals(((VRec)rhs).fields);
   }
 
   @Override

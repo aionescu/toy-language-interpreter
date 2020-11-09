@@ -97,6 +97,14 @@ public interface Parser<A> {
     return s -> s.startsWith(string) ? Result.of(string, s.substring(string.length())) : Result.fail();
   }
 
+  public static Parser<Character> oneOf(String cs) {
+    return satisfy(c -> cs.indexOf(c) != -1);
+  }
+
+  public static Parser<Character> noneOf(String cs) {
+    return satisfy(c -> cs.indexOf(c) == -1);
+  }
+
   public default Parser<A> option(A a) {
     return s -> this.run(s).match(() -> Result.of(a, s), Result::of);
   }

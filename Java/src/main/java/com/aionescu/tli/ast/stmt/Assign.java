@@ -36,7 +36,7 @@ public final class Assign implements Stmt {
         () -> { throw new UndeclaredVariableException(ident); },
         a -> a);
 
-      _rhs.typeCheck(sym).expect(info.type);
+      _rhs.typeCheck(sym).mustBe(info.type);
       return sym.insert(ident, new VarInfo(info.type, VarState.INIT));
     } else if (_lhs instanceof RecMember) {
       var lhs = (RecMember)_lhs;

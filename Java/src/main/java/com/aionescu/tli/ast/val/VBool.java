@@ -2,7 +2,7 @@ package com.aionescu.tli.ast.val;
 
 import com.aionescu.tli.exn.eval.InvalidComparisonException;
 
-public final class VBool implements Val {
+public final class VBool extends Val {
   public final boolean val;
 
   public VBool(boolean val) {

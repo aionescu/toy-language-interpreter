@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import com.aionescu.tli.exn.eval.InvalidComparisonException;
 
-public final class VInt implements Val {
+public final class VInt extends Val {
   public final BigInteger val;
 
   public VInt(BigInteger val) {

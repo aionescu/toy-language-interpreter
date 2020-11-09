@@ -1,6 +1,8 @@
 package com.aionescu.tli.ast.type;
 
 import com.aionescu.tli.ast.Field;
+import com.aionescu.tli.ast.val.VRec;
+import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.map.Map;
 
@@ -26,5 +28,20 @@ public final class TRec implements Type {
   @Override
   public boolean isComparable() {
     return fields.toList().map(Pair::snd_).all(Type::isComparable);
+  }
+
+  @Override
+  public boolean isShowable() {
+    return fields.toList().map(Pair::snd_).all(Type::isShowable);
+  }
+
+  @Override
+  public boolean isDefaultable() {
+    return fields.toList().map(Pair::snd_).all(Type::isDefaultable);
+  }
+
+  @Override
+  public Val defaultValue() {
+    return new VRec(isRec, fields.map(Type::defaultValue));
   }
 }

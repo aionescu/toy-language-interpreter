@@ -155,7 +155,7 @@ public abstract class List<A> {
     return all(a -> this.filter(e -> e.equals(a)).length() == 1);
   }
 
-  public final List<Integer> range(int start, int end) {
+  public static List<Integer> range(int start, int end) {
     return
       start >= end
       ? nil()

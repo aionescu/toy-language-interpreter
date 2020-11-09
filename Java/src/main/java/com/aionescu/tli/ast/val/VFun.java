@@ -4,7 +4,7 @@ import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.exn.eval.InvalidComparisonException;
 
-public final class VFun implements Val {
+public final class VFun extends Val {
   public final UnaryOperator<Val> f;
 
   public VFun(UnaryOperator<Val> f) {

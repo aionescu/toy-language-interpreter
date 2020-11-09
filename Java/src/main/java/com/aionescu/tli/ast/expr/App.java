@@ -31,7 +31,7 @@ public final class App implements Expr {
       throw new ExpectedFunFoundException(fn);
 
     var tfun = (TFun)fn;
-    arg.expect(tfun.in);
+    arg.mustBe(tfun.in);
 
     return tfun.out;
   }

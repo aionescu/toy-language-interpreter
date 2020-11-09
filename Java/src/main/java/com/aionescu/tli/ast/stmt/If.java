@@ -26,7 +26,7 @@ public final class If implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    _cond.typeCheck(sym).expect(TBool.t);
+    _cond.typeCheck(sym).mustBe(TBool.t);
     var symT = _then.typeCheck(sym);
     var symE = _else.typeCheck(sym);
 
