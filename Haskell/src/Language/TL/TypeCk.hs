@@ -2,7 +2,7 @@ module Language.TL.TypeCk(typeCheck) where
 
 import Data.Function(on)
 import Data.Functor(($>))
-import Control.Monad(unless)
+import Control.Monad(when)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 
@@ -25,9 +25,7 @@ data TypeError
   | DuplicateIncompatibleField Ident
   | ExpectedFunFound Type
   | CantShadow Ident
-  | TypeNotComparable Type
-  | TypeNotShowable Type
-  | TypeNotDefaultable Type
+  | TypeIsOpaque Type
   | CanOnlyAppendStrings
   | CanOnlyAddIntegers
 
@@ -47,9 +45,7 @@ instance Show TypeError where
       go (DuplicateIncompatibleField i) = "The field " ++ i ++ " appears twice in the union, but with different types"
       go (ExpectedFunFound t) = "Expected function type, but found " ++ show t
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
-      go (TypeNotComparable t) = "Values of type " ++ show t ++ " cannot be compared"
-      go (TypeNotShowable t) = "Values of type " ++ show t ++ " cannot be represented as strings"
-      go (TypeNotDefaultable t) = "The type " ++ show t ++ " does not have a default value"
+      go (TypeIsOpaque t) = "The type " ++ show t ++ " is opaque."
       go CanOnlyAppendStrings = "Both operands of the append operation must be strings"
       go CanOnlyAddIntegers = "Both operands of the addition operation must be integers"
 
@@ -65,8 +61,8 @@ lookupVar var sym = maybe (throw $ UndeclaredVar var) pure $ M.lookup var sym
 
 typeCheckExpr :: SymTypeTable -> Expr a -> TypeCk Type
 typeCheckExpr _ (Default t) = do
-  unless (isDefaultable t)
-    $ throw $ TypeNotDefaultable t
+  when (isOpaque t)
+    $ throw $ TypeIsOpaque t
   pure t
 typeCheckExpr _ (IntLit _) = pure TInt
 typeCheckExpr _ (BoolLit _) = pure TBool
@@ -103,8 +99,8 @@ typeCheckExpr sym (Comp a _ b) = do
   ta <- typeCheckExpr sym a
   tb <- typeCheckExpr sym b
   tb `mustBe` ta
-  unless (isComparable ta)
-    $ throw $ TypeNotComparable ta
+  when (isOpaque ta)
+    $ throw $ TypeIsOpaque ta
   pure TBool
 typeCheckExpr sym (RecLit f m) = TRec f <$> traverse (typeCheckExpr sym) m
 typeCheckExpr sym (RecMember lhs f i) = do
@@ -186,8 +182,8 @@ typeCheckStmt sym (DeclAssign ident Nothing expr) = do
   typeCheckStmt sym $ DeclAssign ident (Just t) expr
 typeCheckStmt sym (Print e) = do
   t <- typeCheckExpr sym e
-  unless (isShowable t)
-    $ throw $ TypeNotShowable t
+  when (isOpaque t)
+    $ throw $ TypeIsOpaque t
   pure sym
 typeCheckStmt sym (If cond then' else') = do
   tc <- typeCheckExpr sym cond
@@ -203,6 +199,24 @@ typeCheckStmt sym (While cond body) = do
 typeCheckStmt sym (Compound a b) = do
   sym2 <- typeCheckStmt sym a
   typeCheckStmt sym2 b
+typeCheckStmt sym (Open ident expr) = do
+  tf <- typeCheckExpr sym expr
+  tf `mustBe` TStr
+  (typ, _) <- lookupVar ident sym
+  typ `mustBe` TFile
+  pure $ M.insert ident (typ, Init) sym
+typeCheckStmt sym (Read ident t expr) = do
+  tf <- typeCheckExpr sym expr
+  tf `mustBe` TFile
+  (typ, _) <- lookupVar ident sym
+  typ `mustBe` t
+  when (isOpaque typ)
+    $ throw $ TypeIsOpaque typ
+  pure $ M.insert ident (typ, Init) sym
+typeCheckStmt sym (Close expr) = do
+  tf <- typeCheckExpr sym expr
+  tf `mustBe` TFile
+  pure sym
 
 typeCheck :: Program -> TLI Program
 typeCheck prog = toTLI $ prog <$ typeCheckStmt M.empty prog

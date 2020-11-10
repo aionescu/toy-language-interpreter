@@ -1,10 +1,12 @@
 module Main where
 
 import Data.Function((&))
+import Data.Functor ((<&>))
 
-import Language.TL.Parser
+import Language.TL.Parser(parse)
 import Language.TL.TypeCk
 import Language.TL.Eval
+import Language.TL.FS
 import Language.TL.Opts
 
 getCode :: String -> IO String
@@ -13,10 +15,12 @@ getCode path = readFile path
 
 run :: Opts -> IO ()
 run (Opts Run{..} path) = do
+  fs <- loadFS fsRoot
   code <- getCode path
 
   parse code
     >>= typeCheck
+    <&> mkProgState fs
     >>=
       (if smallStep
         then pure . traverseSteps_ putStrLn

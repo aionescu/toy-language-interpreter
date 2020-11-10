@@ -1,4 +1,4 @@
-module Language.TL.Parser(parse) where
+module Language.TL.Parser where
 
 import Data.List(nub, foldl')
 import Data.Functor((<&>), ($>))
@@ -64,7 +64,12 @@ record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
           else fail "Fields in a record must be unique"
 
 primType :: Parser Type
-primType = choice [string "Int" $> TInt, string "Bool" $> TBool, string "Str" $> TStr]
+primType = choice
+  [ string "Int" $> TInt
+  , string "Bool" $> TBool
+  , string "Str" $> TStr
+  , string "File" $> TFile
+  ]
 
 tupToRec :: [a] -> Map Int a
 tupToRec = M.fromList . zip [0..]
@@ -84,16 +89,22 @@ type' = chainr1 typeNoFun $ try (ws *> string "->" *> ws $> TFun)
 number :: (Read a, Num a) => Parser a
 number = read <$> many1 digit
 
-int :: Parser (Expr 'R)
-int = IntLit <$> (sign <*> number)
+intRaw :: Parser Integer
+intRaw = sign <*> number
   where
     sign = option id (char '-' $> negate)
 
-bool :: Parser (Expr 'R)
-bool = BoolLit <$> choice [string "True" $> True, string "False" $> False]
+int :: Parser (Expr 'R)
+int = IntLit <$> intRaw
 
-str :: Parser (Expr 'R)
-str = StrLit <$> between quote quote (many ch)
+boolRaw :: Parser Bool
+boolRaw = choice [string "True" $> True, string "False" $> False]
+
+bool :: Parser (Expr 'R)
+bool = BoolLit <$> boolRaw
+
+strRaw :: Parser String
+strRaw = between quote quote $ many ch
   where
     unescape '\\' = '\\'
     unescape '"' = '"'
@@ -111,11 +122,14 @@ str = StrLit <$> between quote quote (many ch)
     ch = regular <|> escaped
     quote = char '"'
 
+str :: Parser (Expr 'R)
+str = StrLit <$> strRaw
+
 simpleLit :: Parser (Expr 'R)
 simpleLit = choice [try str, try int, bool]
 
 reserved :: [String]
-reserved = ["if", "else", "while", "and", "or", "default", "let", "nop"]
+reserved = ["if", "else", "while", "and", "or", "default", "let", "nop", "open", "read", "close"]
 
 ident :: Parser String
 ident = notReserved =<< liftA2 (:) fstChar (many sndChar)
@@ -254,8 +268,28 @@ while = liftA2 While cond block
 nop :: Parser Stmt
 nop = string "nop" $> Nop
 
+open :: Parser Stmt
+open = liftA2 Open (string "open" *> ws *> ident) (equals *> expr)
+
+read' :: Parser Stmt
+read' = liftA3 Read (string "read" *> ws *> ident) (colon *> type') (equals *> expr)
+
+close :: Parser Stmt
+close = string "close" *> ws *> expr <&> Close
+
 stmt' :: Parser Stmt
-stmt' = option Nop $ choice [try while, try if', try declAssign, try decl, try assign, try print', nop] <* ws
+stmt' = option Nop $ choice
+  [ try while
+  , try if'
+  , try open
+  , try read'
+  , try close
+  , try declAssign
+  , try decl
+  , try assign
+  , try print'
+  , nop
+  ] <* ws
 
 stmt :: Parser Stmt
 stmt = stmt' `chainr1` (char ';' *> ws $> Compound)

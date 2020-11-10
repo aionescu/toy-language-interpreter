@@ -4,7 +4,7 @@ import Control.Applicative(liftA2)
 import Options.Generic
 
 data Cmd
-  = Run { smallStep :: Bool }
+  = Run { smallStep :: Bool, fsRoot :: Maybe String }
   | DumpAst { noTypeCheck :: Bool }
   deriving stock Generic
 

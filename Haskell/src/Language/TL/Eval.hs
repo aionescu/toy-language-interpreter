@@ -1,7 +1,7 @@
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
-module Language.TL.Eval(ProgState(..), traverseSteps_, finalState, showOut) where
+module Language.TL.Eval(Val(..), ProgState(..), traverseSteps_, finalState, showOut, mkProgState) where
 
 import Data.List(intercalate)
 import Data.Functor(($>))
@@ -16,6 +16,7 @@ data Val
   | VStr String
   | forall f. VRec (Field f) (Map f Val)
   | VFun (Val -> Eval Val)
+  | VFile String
 
 instance Show Val where
   show (VInt i) = show i
@@ -23,6 +24,7 @@ instance Show Val where
   show (VStr s) = show s
   show (VRec f m) = showFields False f " = " m
   show (VFun _) = "<λ>"
+  show (VFile name) = "File<" ++ show name ++ ">"
 
 instance Ord Val where
   compare (VInt a) (VInt b) = compare a b
@@ -30,9 +32,7 @@ instance Ord Val where
   compare (VStr a) (VStr b) = compare a b
   compare (VRec FRec a) (VRec FRec b) = compare a b
   compare (VRec FTup a) (VRec FTup b) = compare a b
-  compare (VFun _) _ = error "Functions are not comparable. Did you run the typechecker?"
-  compare _ (VFun _) = error "Functions are not comparable. Did you run the typechecker?"
-  compare _ _ = error "Type mismatch in comparison. Did you run the typechecker?"
+  compare _ _ = error "Opaque values in comparison. Did you run the typechecker?"
 
 instance Eq Val where
   (==) = ((== EQ) .) . compare
@@ -42,40 +42,73 @@ defaultVal TInt = VInt 0
 defaultVal TBool = VBool False
 defaultVal TStr = VStr ""
 defaultVal (TRec f m) = VRec f (defaultVal <$> m)
-defaultVal (TFun _ _) = error "Functions are not defaultable. Did you run the typechecker?"
+defaultVal _ = error "Opaque type in defaultVal. Did you run the typechecker?"
+
+valType :: Val -> Type
+valType (VInt _) = TInt
+valType (VBool _) = TBool
+valType (VStr _) = TStr
+valType (VRec f m) = TRec f (valType <$> m)
+valType _ = error "Opaque value in valType. Did you run the typechecker?"
 
 type SymValTable = Map Ident Val
 type ToDo = [Stmt]
 type Out = [Val]
+type FileTable = Map String [Val]
 
 data ProgState =
   ProgState
   { toDo :: ToDo
   , sym :: SymValTable
   , out :: Out
+  , open :: FileTable
+  , fs :: FileTable
   }
 
-showL :: Show a => [a] -> String
-showL l = "[" ++ intercalate ", " (show <$> l) ++ "]"
+showL :: (a -> String) -> [a] -> String
+showL fmt l = "[" ++ intercalate ", " (fmt <$> l) ++ "]"
 
 instance Show ProgState where
-  show ProgState{..} = unlines ["toDo = " ++ showL toDo, "sym = " ++ sym', "out = " ++ showL (reverse out)]
+  show ProgState{..} =
+    unlines
+      [ "fs = " ++ showM show (showL show) fs
+      , "open = " ++ showM show (showL show) open
+      , "toDo = " ++ showL show toDo
+      , "sym = " ++ showM id show sym
+      , "out = " ++ showL show (reverse out)
+      ]
     where
-      sym' = withParens "{ " " }" (showVar <$> M.toList sym)
-      showVar (ident, var) = ident ++ " = " ++ show var
+      showM fmt fmtL m = withParens "{ " " }" (showVar fmt fmtL <$> M.toList m)
+      showVar fmt fmtL (ident, var) = fmt ident ++ " = " ++ fmtL var
 
-mkProgState :: Stmt -> ProgState
-mkProgState stmt = ProgState { toDo = [stmt], sym = M.empty, out = [] }
+mkProgState :: FileTable -> Stmt -> ProgState
+mkProgState fs stmt = ProgState { toDo = [stmt], sym = M.empty, out = [], open = M.empty, fs }
 
 showOut :: ProgState -> String
 showOut = unlines . reverse . (show <$>) . out
 
-data EvalError = DivisionByZero
+data EvalError
+  = DivisionByZero
+  | FileDoesNotExist String
+  | FileAlreadyOpened String
+  | FileAlreadyClosed String
+  | FileNotOpened String
+  | ReadDifferentType String Type Type
+  | ReachedEOF String
 
 instance Show EvalError where
-  show te = "Eval error: " ++ go te ++ "."
+  show ee = "Eval error: " ++ go ee ++ "."
     where
       go DivisionByZero = "An attempt was made to divide by zero"
+      go (FileDoesNotExist f) = "The file " ++ show f ++ " does not exist in the filesystem."
+      go (FileAlreadyOpened f) = "The file " ++ show f ++ " has already been opened."
+      go (FileAlreadyClosed f) = "The file " ++ show f ++ " has been closed."
+      go (FileNotOpened f) = "The file " ++ show f ++ " has not been opened."
+      go (ReadDifferentType f found expected) =
+        "In file " ++ show f
+        ++ ", found a value of type " ++ show found
+        ++ ", but expected a value of type " ++ show expected
+      go (ReachedEOF f) = "There are no more values to read in file " ++ show f
 
 type Eval a = Either EvalError a
 
@@ -161,21 +194,47 @@ evalStmt ProgState{..} w@(While cond body) = do
     VBool c -> pure $ ProgState { toDo = if c then body : w : toDo else toDo, .. }
 evalStmt ProgState{..} (Compound a b) =
   pure $ ProgState { toDo = a : b : toDo, .. }
+evalStmt ProgState{..} (Open ident expr) = do
+  vf <- evalExpr sym expr
+  case vf of
+    VStr f ->
+      case M.lookup f fs of
+        Nothing -> throw $ FileDoesNotExist f
+        Just content ->
+          case M.lookup f open of
+            Just _ -> throw $ FileAlreadyOpened f
+            Nothing -> pure $ ProgState { sym = M.insert ident (VFile f) sym, open = M.insert f content open, .. }
+evalStmt ProgState{..} (Read ident t expr) = do
+  vf <- evalExpr sym expr
+  case vf of
+    VFile f ->
+      case M.lookup f open of
+        Nothing -> throw $ FileNotOpened f
+        Just [] -> throw $ ReachedEOF f
+        Just (c : cs) -> do
+          let tc = valType c
+          if tc /= t
+            then throw $ ReadDifferentType f tc t
+            else pure $ ProgState { sym = M.insert ident c sym, open = M.insert f cs open, .. }
+evalStmt ProgState{..} (Close expr) = do
+  vf <- evalExpr sym expr
+  case vf of
+    VFile f ->
+      case M.lookup f open of
+        Nothing -> throw $ FileAlreadyClosed f
+        Just _ -> pure $ ProgState { open = M.delete f open, .. }
 
 smallStep :: ProgState -> Maybe (Eval ProgState)
 smallStep ProgState { toDo = [] } = Nothing
 smallStep ProgState { toDo = stmt : toDo, .. } = Just $ evalStmt ProgState{..} stmt
 
-traverseSteps_' :: Applicative f => (String -> f a) -> ProgState -> f ()
-traverseSteps_' f state =
+traverseSteps_ :: Applicative f => (String -> f a) -> ProgState -> f ()
+traverseSteps_ f state =
   f (show state) *>
     case smallStep state of
       Nothing -> pure ()
       Just (Left e) -> f (show e) $> ()
-      Just (Right state') -> traverseSteps_' f state'
-
-traverseSteps_ :: Applicative f => (String -> f a) -> Program -> f ()
-traverseSteps_ f = traverseSteps_' f . mkProgState
+      Just (Right state') -> traverseSteps_ f state'
 
 finalState' :: ProgState -> Eval ProgState
 finalState' s =
@@ -183,5 +242,5 @@ finalState' s =
     Nothing -> pure s
     Just s' -> s' >>= finalState'
 
-finalState :: Program -> TLI ProgState
-finalState = toTLI . finalState' . mkProgState
+finalState :: ProgState -> TLI ProgState
+finalState = toTLI . finalState'
