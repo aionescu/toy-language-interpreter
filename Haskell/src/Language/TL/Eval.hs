@@ -266,7 +266,6 @@ evalStmt ProgState{..} (New i e) = do
     , crrHeapSize = succ crrHeapSize
     , ..
     }
-
 evalStmt ProgState{..} (WriteAt lhs rhs) = do
   vl <- evalExpr sym heap lhs
   vr <- evalExpr sym heap rhs
