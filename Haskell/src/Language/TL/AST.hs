@@ -19,6 +19,7 @@ data Type
   | TStr
   | forall f. TRec (Field f) (Map f Type)
   | TFun Type Type
+  | TRef Type
 
 instance Eq Type where
   TInt == TInt = True
@@ -27,9 +28,11 @@ instance Eq Type where
   TRec FRec a == TRec FRec b = a == b
   TRec FTup a == TRec FTup b = a == b
   TFun a b == TFun a' b' = a == a' && b == b'
+  TRef a == TRef b = a == b
   _ == _ = False
 
 isOpaque :: Type -> Bool
+isOpaque (TRef _) = True
 isOpaque (TFun _ _) = True
 isOpaque (TRec _ m) = any isOpaque m
 isOpaque _ = False
@@ -59,6 +62,7 @@ instance Show Type where
   show TStr = "Str"
   show (TRec f m) = showFields False f ": " m
   show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
+  show (TRef t) = "&" ++ show t
 
 data ArithOp
   = Add
@@ -135,6 +139,7 @@ data Expr :: ExprKind -> * where
   RecUnion :: Expr a -> Expr b -> Expr 'R
   Lam :: Ident -> Type -> Expr a -> Expr 'R
   App :: Expr a -> Expr b -> Expr 'R
+  Deref :: Expr 'R -> Expr 'R
 
 instance Show (Expr a) where
   show (Default t) = "default " ++ show t
@@ -151,6 +156,7 @@ instance Show (Expr a) where
   show (RecUnion a b) = "(" ++ show a ++ " & " ++ show b ++ ")"
   show (Lam i t e) = "((" ++ i ++ ": " ++ show t ++ ") -> " ++ show e ++ ")"
   show (App f a) = "(" ++ show f ++ " " ++ show a ++ ")"
+  show (Deref e) = "!" ++ show e
 
 data Stmt
   = Nop
@@ -164,6 +170,8 @@ data Stmt
   | Open (Expr 'R)
   | Read Ident Type (Expr 'R)
   | Close (Expr 'R)
+  | New Ident (Expr 'R)
+  | WriteAt (Expr 'R) (Expr 'R)
 
 instance Show Stmt where
   show Nop = "nop"
@@ -180,6 +188,8 @@ instance Show Stmt where
   show (Open f) = "open " ++ show f
   show (Read i t f) = "read " ++ i ++ ": " ++ show t ++ " = " ++ show f
   show (Close f) = "close " ++ show f
+  show (New i e) = i ++ " = new " ++ show e
+  show (WriteAt lhs rhs) = show lhs ++ " := " ++ show rhs
 
 type Program = Stmt
 

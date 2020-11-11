@@ -79,8 +79,11 @@ ttup = tuple (TRec FTup . tupToRec) type'
 trec :: Parser Type
 trec = TRec FRec <$> record '{' ident colon type'
 
+tref :: Parser Type
+tref = char '&' *> ws *> typeNoFun <&> TRef
+
 typeNoFun :: Parser Type
-typeNoFun = try trec <|> try ttup <|> primType
+typeNoFun = choice [try tref, try trec, try ttup, primType]
 
 type' :: Parser Type
 type' = chainr1 typeNoFun $ try (ws *> string "->" *> ws $> TFun)
@@ -204,8 +207,11 @@ lam = liftA2 mkLam (many1 param <* string "->" <* ws) expr
 default' :: Parser (Expr 'R)
 default' = string "default" *> ws *> type' <&> Default
 
+deref :: Parser (Expr 'R)
+deref = char '!' *> ws *> exprNoOps <&> Deref
+
 exprNoMember :: Parser (Expr 'R)
-exprNoMember = choice [try default', try lam, try vrec, try vtup, try simpleLit, try var] <* ws
+exprNoMember = choice [try deref, try default', try lam, try vrec, try vtup, try simpleLit, try var] <* ws
 
 exprNoWith :: Parser (Expr 'R)
 exprNoWith = try (member exprNoMember) <|> exprNoMember
@@ -276,9 +282,17 @@ read' = liftA3 Read ident (colon *> type') (equals *> string "read" *> ws *> exp
 close :: Parser Stmt
 close = string "close" *> ws *> expr <&> Close
 
+new :: Parser Stmt
+new = liftA2 New ident $ equals *> string "new" *> ws *> expr
+
+writeAt :: Parser Stmt
+writeAt = liftA2 WriteAt expr (string ":=" *> ws *> expr)
+
 stmt' :: Parser Stmt
 stmt' = option Nop $ choice
-  [ try while
+  [ try writeAt
+  , try new
+  , try while
   , try if'
   , try open
   , try read'

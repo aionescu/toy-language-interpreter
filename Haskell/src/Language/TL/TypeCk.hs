@@ -28,6 +28,7 @@ data TypeError
   | TypeIsOpaque Type
   | CanOnlyAppendStrings
   | CanOnlyAddIntegers
+  | ExpectedRefFound Type
 
 instance Show TypeError where
   show te = "Type error: " ++ go te ++ "."
@@ -45,11 +46,16 @@ instance Show TypeError where
       go (DuplicateIncompatibleField i) = "The field " ++ i ++ " appears twice in the union, but with different types"
       go (ExpectedFunFound t) = "Expected function type, but found " ++ show t
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
-      go (TypeIsOpaque t) = "The type " ++ show t ++ " is opaque."
+      go (TypeIsOpaque t) = "The type " ++ show t ++ " is opaque"
       go CanOnlyAppendStrings = "Both operands of the append operation must be strings"
       go CanOnlyAddIntegers = "Both operands of the addition operation must be integers"
+      go (ExpectedRefFound t) = "Expected reference type, but found type " ++ show t
 
 type TypeCk a = Either TypeError a
+
+unwrapTRef :: Type -> TypeCk Type
+unwrapTRef (TRef t) = pure t
+unwrapTRef t = throw $ ExpectedRefFound t
 
 mustBe :: Type -> Type -> TypeCk ()
 mustBe found expected
@@ -155,6 +161,7 @@ typeCheckExpr sym (App f a) = do
   case tf of
     TFun i o -> ta `mustBe` i $> o
     _ -> throw $ ExpectedFunFound tf
+typeCheckExpr sym (Deref e) = typeCheckExpr sym e >>= unwrapTRef
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b
@@ -214,6 +221,16 @@ typeCheckStmt sym (Read ident t expr) = do
 typeCheckStmt sym (Close expr) = do
   tf <- typeCheckExpr sym expr
   tf `mustBe` TStr
+  pure sym
+typeCheckStmt sym (New i e) = do
+  t <- typeCheckExpr sym e
+  (typ, _) <- lookupVar i sym
+  typ `mustBe` TRef t
+  pure $ M.insert i (typ, Init) sym
+typeCheckStmt sym (WriteAt lhs rhs) = do
+  tl <- unwrapTRef =<< typeCheckExpr sym lhs
+  tr <- typeCheckExpr sym rhs
+  tr `mustBe` tl
   pure sym
 
 typeCheck :: Program -> TLI Program

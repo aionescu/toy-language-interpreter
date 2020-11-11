@@ -1,6 +1,7 @@
 module Main where
 
 import Data.Function((&))
+import Options.Generic(unDefValue)
 
 import Language.TL.Parser(parse)
 import Language.TL.TypeCk
@@ -23,7 +24,7 @@ run (Opts Run{..} path) = do
       (if smallStep
         then pure . traverseSteps_ putStrLn
         else (putStrLn . showOut <$>) . finalState)
-      . mkProgState fs
+      . mkProgState fs (unDefValue maxHeap)
     & either putStrLn id
 
 run (Opts DumpAst{..} path) = do
