@@ -13,8 +13,9 @@ You can then either install the package globally running `cabal install`, or run
 Usage (assuming you `cabal install`ed the project):
 
 ```sh
-tli run <path> # Runs the program and displays the final output.
-tli run --small-step <path> # Runs and displays every intermediate program state.
+tli run [--fs-root <fspath>] <path> # Runs the program and displays the final output.
+tli run --small-step [--fs-root <fspath>] <path> # Runs and displays every intermediate program state.
+# If --fs-root is specified, the interpreter also loads <fspath> as the filesystem.
 
 tli dump-ast <path> # Parses, type-checks, then prints the AST of the program.
 tli dump-ast --no-type-check <path> # Prints the AST straight from the parser.
