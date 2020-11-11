@@ -135,8 +135,8 @@ typeCheckExpr sym (RecUnion a b) = do
   tb <- typeCheckExpr sym b
   case (ta, tb) of
     (TRec FRec as, TRec FRec bs) -> do
-      (TRec FRec) <$> M.traverseWithKey throwIfDup ((M.unionWith checkDup `on` (Just <$>)) as bs)
-    _ -> throw $ NeedRecordTypesForUnion
+      TRec FRec <$> M.traverseWithKey throwIfDup ((M.unionWith checkDup `on` (Just <$>)) as bs)
+    _ -> throw NeedRecordTypesForUnion
   where
     checkDup a' b'
       | a' == b' = a'
@@ -148,7 +148,7 @@ typeCheckExpr sym (RecUnion a b) = do
 typeCheckExpr sym (Lam i t e) = do
   case M.lookup i sym of
     Just _ -> throw $ CantShadow i
-    Nothing -> (TFun t) <$> typeCheckExpr (M.insert i (t, Init) sym) e
+    Nothing -> TFun t <$> typeCheckExpr (M.insert i (t, Init) sym) e
 typeCheckExpr sym (App f a) = do
   tf <- typeCheckExpr sym f
   ta <- typeCheckExpr sym a
@@ -199,15 +199,13 @@ typeCheckStmt sym (While cond body) = do
 typeCheckStmt sym (Compound a b) = do
   sym2 <- typeCheckStmt sym a
   typeCheckStmt sym2 b
-typeCheckStmt sym (Open ident expr) = do
+typeCheckStmt sym (Open expr) = do
   tf <- typeCheckExpr sym expr
   tf `mustBe` TStr
-  (typ, _) <- lookupVar ident sym
-  typ `mustBe` TFile
-  pure $ M.insert ident (typ, Init) sym
+  pure sym
 typeCheckStmt sym (Read ident t expr) = do
   tf <- typeCheckExpr sym expr
-  tf `mustBe` TFile
+  tf `mustBe` TStr
   (typ, _) <- lookupVar ident sym
   typ `mustBe` t
   when (isOpaque typ)
@@ -215,7 +213,7 @@ typeCheckStmt sym (Read ident t expr) = do
   pure $ M.insert ident (typ, Init) sym
 typeCheckStmt sym (Close expr) = do
   tf <- typeCheckExpr sym expr
-  tf `mustBe` TFile
+  tf `mustBe` TStr
   pure sym
 
 typeCheck :: Program -> TLI Program

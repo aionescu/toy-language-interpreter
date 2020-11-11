@@ -16,7 +16,6 @@ data Val
   | VStr String
   | forall f. VRec (Field f) (Map f Val)
   | VFun (Val -> Eval Val)
-  | VFile String
 
 instance Show Val where
   show (VInt i) = show i
@@ -24,7 +23,6 @@ instance Show Val where
   show (VStr s) = show s
   show (VRec f m) = showFields False f " = " m
   show (VFun _) = "<λ>"
-  show (VFile name) = "File<" ++ show name ++ ">"
 
 instance Ord Val where
   compare (VInt a) (VInt b) = compare a b
@@ -194,7 +192,7 @@ evalStmt ProgState{..} w@(While cond body) = do
     VBool c -> pure $ ProgState { toDo = if c then body : w : toDo else toDo, .. }
 evalStmt ProgState{..} (Compound a b) =
   pure $ ProgState { toDo = a : b : toDo, .. }
-evalStmt ProgState{..} (Open ident expr) = do
+evalStmt ProgState{..} (Open expr) = do
   vf <- evalExpr sym expr
   case vf of
     VStr f ->
@@ -203,11 +201,11 @@ evalStmt ProgState{..} (Open ident expr) = do
         Just content ->
           case M.lookup f open of
             Just _ -> throw $ FileAlreadyOpened f
-            Nothing -> pure $ ProgState { sym = M.insert ident (VFile f) sym, open = M.insert f content open, .. }
+            Nothing -> pure $ ProgState { open = M.insert f content open, .. }
 evalStmt ProgState{..} (Read ident t expr) = do
   vf <- evalExpr sym expr
   case vf of
-    VFile f ->
+    VStr f ->
       case M.lookup f open of
         Nothing -> throw $ FileNotOpened f
         Just [] -> throw $ ReachedEOF f
@@ -219,7 +217,7 @@ evalStmt ProgState{..} (Read ident t expr) = do
 evalStmt ProgState{..} (Close expr) = do
   vf <- evalExpr sym expr
   case vf of
-    VFile f ->
+    VStr f ->
       case M.lookup f open of
         Nothing -> throw $ FileAlreadyClosed f
         Just _ -> pure $ ProgState { open = M.delete f open, .. }

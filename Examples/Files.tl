@@ -1,15 +1,15 @@
-let f: File;
-open f = "a.txt";
+let f = "a.txt";
+open f;
 
 let a: Int;
-read a: Int = f;
+a: Int = read f;
 print a;
 
-read a: Int = f;
+a: Int = read f;
 print a;
 
 let b: { a: Int, b: Str };
-read b: { a: Int, b: Str } = f;
+b: { a: Int, b: Str } = read f;
 print b;
 
 close f;

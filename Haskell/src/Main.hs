@@ -1,7 +1,6 @@
 module Main where
 
 import Data.Function((&))
-import Data.Functor ((<&>))
 
 import Language.TL.Parser(parse)
 import Language.TL.TypeCk
@@ -20,11 +19,11 @@ run (Opts Run{..} path) = do
 
   parse code
     >>= typeCheck
-    <&> mkProgState fs
     >>=
       (if smallStep
         then pure . traverseSteps_ putStrLn
         else (putStrLn . showOut <$>) . finalState)
+      . mkProgState fs
     & either putStrLn id
 
 run (Opts DumpAst{..} path) = do

@@ -19,7 +19,6 @@ data Type
   | TStr
   | forall f. TRec (Field f) (Map f Type)
   | TFun Type Type
-  | TFile
 
 instance Eq Type where
   TInt == TInt = True
@@ -28,11 +27,9 @@ instance Eq Type where
   TRec FRec a == TRec FRec b = a == b
   TRec FTup a == TRec FTup b = a == b
   TFun a b == TFun a' b' = a == a' && b == b'
-  TFile == TFile = True
   _ == _ = False
 
 isOpaque :: Type -> Bool
-isOpaque TFile = True
 isOpaque (TFun _ _) = True
 isOpaque (TRec _ m) = any isOpaque m
 isOpaque _ = False
@@ -62,7 +59,6 @@ instance Show Type where
   show TStr = "Str"
   show (TRec f m) = showFields False f ": " m
   show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
-  show TFile = "File"
 
 data ArithOp
   = Add
@@ -165,7 +161,7 @@ data Stmt
   | If (Expr 'R) Stmt Stmt
   | While (Expr 'R) Stmt
   | Compound Stmt Stmt
-  | Open Ident (Expr 'R)
+  | Open (Expr 'R)
   | Read Ident Type (Expr 'R)
   | Close (Expr 'R)
 
@@ -181,7 +177,7 @@ instance Show Stmt where
     "if " ++ show cond ++ " { " ++ show then' ++ " } else { " ++ show else' ++ " }"
   show (While cond body) = "while " ++ show cond ++ " { " ++ show body ++ " }"
   show (Compound a b) = show a ++ "; " ++ show b
-  show (Open i f) = "open " ++ i ++ " = " ++ show f
+  show (Open f) = "open " ++ show f
   show (Read i t f) = "read " ++ i ++ ": " ++ show t ++ " = " ++ show f
   show (Close f) = "close " ++ show f
 

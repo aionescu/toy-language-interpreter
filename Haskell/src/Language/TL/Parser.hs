@@ -68,7 +68,6 @@ primType = choice
   [ string "Int" $> TInt
   , string "Bool" $> TBool
   , string "Str" $> TStr
-  , string "File" $> TFile
   ]
 
 tupToRec :: [a] -> Map Int a
@@ -217,8 +216,8 @@ withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (record '
 exprNoOps :: Parser (Expr 'R)
 exprNoOps = try withRecord <|> try withTup <|> exprNoWith
   where
-    withRecord = withExpr (flip RecWith FRec) ident
-    withTup = withExpr (flip RecWith FTup) number
+    withRecord = withExpr (`RecWith` FRec) ident
+    withTup = withExpr (`RecWith` FTup) number
 
 termMul :: Parser (Expr 'R)
 termMul = chainl1 exprNoOps (ws $> App)
@@ -246,7 +245,7 @@ assign = liftA2 Assign (lvalue <* equals) expr
 
 declAssign :: Parser Stmt
 declAssign =
-  string "let" *> ws *> liftA3 DeclAssign ident (option Nothing $ Just <$> (try $ colon *> type')) (equals *> expr)
+  string "let" *> ws *> liftA3 DeclAssign ident (option Nothing $ Just <$> try (colon *> type')) (equals *> expr)
 
 block :: Parser Stmt
 block =
@@ -269,10 +268,10 @@ nop :: Parser Stmt
 nop = string "nop" $> Nop
 
 open :: Parser Stmt
-open = liftA2 Open (string "open" *> ws *> ident) (equals *> expr)
+open = Open <$> (string "open" *> ws *> expr)
 
 read' :: Parser Stmt
-read' = liftA3 Read (string "read" *> ws *> ident) (colon *> type') (equals *> expr)
+read' = liftA3 Read ident (colon *> type') (equals *> string "read" *> ws *> expr)
 
 close :: Parser Stmt
 close = string "close" *> ws *> expr <&> Close
