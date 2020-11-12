@@ -24,7 +24,7 @@ run (Opts Run{..} path) = do
       (if smallStep
         then pure . traverseSteps_ putStrLn
         else (putStrLn . showOut <$>) . finalState)
-      . mkProgState fs (unDefValue maxHeap)
+      . mkProgState fs (mkGCStats (unDefValue gcThreshold) (unDefValue maxHeap))
     & either putStrLn id
 
 run (Opts DumpAst{..} path) = do

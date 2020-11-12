@@ -13,13 +13,6 @@ You can then either install the package globally running `cabal install`, or run
 Usage (assuming you `cabal install`ed the project):
 
 ```sh
-tli run [--fs-root <fspath>] <path> # Runs the program and displays the final output.
-tli run --small-step [--fs-root <fspath>] <path> # Runs and displays every intermediate program state.
-# If --fs-root is specified, the interpreter also loads <fspath> as the filesystem.
-
-tli dump-ast <path> # Parses, type-checks, then prints the AST of the program.
-tli dump-ast --no-type-check <path> # Prints the AST straight from the parser.
+tli run [--small-step] [--fs-root <path>] [--max-heap <int>] [--gc-threshold <int>] <path>
+tli dump-ast [--no-type-check] <path>
 ```
-
-If `-` is passed as the `<path>`, then the interpreter will read the code from stdin.
-e.g. `echo 'a : _ <- 2; print a' | tli run -`

@@ -4,7 +4,7 @@ import Control.Applicative(liftA2)
 import Options.Generic
 
 data Cmd
-  = Run { smallStep :: Bool, maxHeap :: Int <!> "512", fsRoot :: Maybe String }
+  = Run { smallStep :: Bool, maxHeap :: Int <!> "512", gcThreshold :: Int <!> "64", fsRoot :: Maybe String }
   | DumpAst { noTypeCheck :: Bool }
   deriving stock Generic
 

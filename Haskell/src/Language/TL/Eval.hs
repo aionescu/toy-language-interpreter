@@ -1,7 +1,7 @@
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
-module Language.TL.Eval(Val(..), ProgState(..), traverseSteps_, finalState, showOut, mkProgState) where
+module Language.TL.Eval(Val(..), ProgState(..), traverseSteps_, finalState, showOut, mkGCStats, mkProgState) where
 
 import Numeric(showHex)
 import Data.List(intercalate)
@@ -66,14 +66,37 @@ type Out = [Val]
 type FileTable = Map String [Val]
 type Heap = Map Addr Val
 
+data GCStats =
+  GCStats
+  { allocsSinceGC :: Int
+  , gcThreshold :: Int
+  , crrHeapSize :: Int
+  , maxHeapSize :: Int
+  }
+
+instance Show GCStats where
+  show GCStats{..} =
+    "{ allocs = "
+    ++ show allocsSinceGC ++ " / " ++ show gcThreshold
+    ++ ", heapSize = " ++ show crrHeapSize ++ " / " ++ show maxHeapSize
+    ++ " }"
+
+mkGCStats :: Int -> Int -> GCStats
+mkGCStats gcThreshold maxHeapSize =
+  GCStats
+  { allocsSinceGC = 0
+  , gcThreshold
+  , crrHeapSize = 0
+  , maxHeapSize
+  }
+
 data ProgState =
   ProgState
   { fs :: FileTable
   , open :: FileTable
   , toDo :: ToDo
   , sym :: SymValTable
-  , crrHeapSize :: Int
-  , maxHeapSize :: Int
+  , gcStats :: GCStats
   , heap :: Heap
   , out :: Out
   }
@@ -88,7 +111,8 @@ instance Show ProgState where
       , "open = " ++ showM show (showL show) open
       , "toDo = " ++ showL show toDo
       , "sym = " ++ showM id show sym
-      , "heap[" ++ show crrHeapSize ++ " / " ++ show maxHeapSize ++ "] = " ++ showM showH show heap
+      , "gcStats = " ++ show gcStats
+      , "heap = " ++ showM showH show heap
       , "out = " ++ showL show (reverse out)
       ]
     where
@@ -98,16 +122,15 @@ instance Show ProgState where
 showOut :: ProgState -> String
 showOut = unlines . reverse . (show <$>) . out
 
-mkProgState :: FileTable -> Int -> Stmt -> ProgState
-mkProgState fs maxHeapSize stmt =
+mkProgState :: FileTable -> GCStats -> Stmt -> ProgState
+mkProgState fs gcStats stmt =
   ProgState
   { fs
   , open = M.empty
   , toDo = [stmt]
   , sym = M.empty
   , out = []
-  , crrHeapSize = 0
-  , maxHeapSize
+  , gcStats
   , heap = M.empty
   }
 
@@ -253,17 +276,16 @@ evalStmt ProgState{..} (Close expr) = do
       case M.lookup f open of
         Nothing -> throw $ FileAlreadyClosed f
         Just _ -> pure $ ProgState { open = M.delete f open, .. }
-evalStmt ProgState{..} (New i e) = do
+evalStmt ProgState { gcStats = gcStats@GCStats { .. }, .. } (New i e) = do
   when (crrHeapSize == maxHeapSize)
     $ throw $ OutOfMemory maxHeapSize
   v <- evalExpr sym heap e
   let sym' = M.insert i (VRef crrHeapSize) sym
   let heap' = M.insert crrHeapSize v heap
-  pure $
+  pure $ runGC $
     ProgState
     { sym = sym'
-    , heap = M.restrictKeys heap' (getInnerAddrs heap' sym')
-    , crrHeapSize = succ crrHeapSize
+    , heap = heap'
     , ..
     }
 evalStmt ProgState{..} (WriteAt lhs rhs) = do
@@ -271,6 +293,27 @@ evalStmt ProgState{..} (WriteAt lhs rhs) = do
   vr <- evalExpr sym heap rhs
   case vl of
     VRef addr -> pure $ ProgState { heap = M.insert addr vr heap, .. }
+
+compactKeys :: [Addr] -> (Addr -> Addr)
+compactKeys keys = (M.!) $ M.fromList $ zip keys [0..]
+
+runGC :: ProgState -> ProgState
+runGC ProgState { gcStats = gcStats@GCStats { .. }, .. } =
+  if allocsSinceGC < gcThreshold
+    then ProgState { gcStats = gcStats { allocsSinceGC = succ allocsSinceGC, crrHeapSize = succ crrHeapSize }, .. }
+    else
+      let
+        heap' = M.restrictKeys heap (getInnerAddrs heap sym)
+        f = compactKeys $ M.keys heap'
+        heapCompacted = updateInnerAddrsScope f heap'
+        symCompacted = updateInnerAddrsScope f sym
+      in
+        ProgState
+        { gcStats = gcStats { allocsSinceGC = 0, crrHeapSize = M.size heapCompacted }
+        , sym = symCompacted
+        , heap = M.mapKeys f heapCompacted
+        , ..
+        }
 
 getInnerAddrsVal :: Val -> Set Addr
 getInnerAddrsVal (VRef a) = S.singleton a
@@ -293,6 +336,15 @@ getInnerAddrsAll heap acc set
 
 getInnerAddrs :: Foldable f => Heap -> f Val -> Set Addr
 getInnerAddrs heap = getInnerAddrsAll heap S.empty . getInnerAddrsScope
+
+updateInnerAddrsVal :: (Addr -> Addr) -> Val -> Val
+updateInnerAddrsVal f (VRef a) = VRef $ f a
+updateInnerAddrsVal f (VRec f' m) = VRec f' $ updateInnerAddrsScope f m
+updateInnerAddrsVal f (VFun sym fun) = VFun (updateInnerAddrsScope f sym) fun
+updateInnerAddrsVal _ v = v
+
+updateInnerAddrsScope :: Functor f => (Addr -> Addr) -> f Val -> f Val
+updateInnerAddrsScope f = (updateInnerAddrsVal f <$>)
 
 smallStep :: ProgState -> Maybe (Eval ProgState)
 smallStep ProgState { toDo = [] } = Nothing
