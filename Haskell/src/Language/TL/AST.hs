@@ -186,7 +186,7 @@ instance Show Stmt where
   show (While cond body) = "while " ++ show cond ++ " { " ++ show body ++ " }"
   show (Compound a b) = show a ++ "; " ++ show b
   show (Open f) = "open " ++ show f
-  show (Read i t f) = "read " ++ i ++ ": " ++ show t ++ " = " ++ show f
+  show (Read i t f) = i ++ ": " ++ show t ++ " = read " ++ show f
   show (Close f) = "close " ++ show f
   show (New i e) = i ++ " = new " ++ show e
   show (WriteAt lhs rhs) = show lhs ++ " := " ++ show rhs
