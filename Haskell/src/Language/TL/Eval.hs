@@ -152,10 +152,12 @@ instance Show EvalError where
       go (FileAlreadyOpened f) = "The file " ++ show f ++ " has already been opened."
       go (FileAlreadyClosed f) = "The file " ++ show f ++ " has been closed."
       go (FileNotOpened f) = "The file " ++ show f ++ " has not been opened."
+
       go (ReadDifferentType f found expected) =
         "In file " ++ show f
         ++ ", found a value of type " ++ show found
         ++ ", but expected a value of type " ++ show expected
+
       go (ReachedEOF f) = "There are no more values to read in file " ++ show f
       go (OutOfMemory size) = "Out of memory (heap size: " ++ show size ++ ")"
 
@@ -167,6 +169,7 @@ evalExpr _ _ (IntLit i) = pure $ VInt i
 evalExpr _ _ (BoolLit b) = pure $ VBool b
 evalExpr _ _ (StrLit s) = pure $ VStr s
 evalExpr sym _ (Var ident) = pure $ sym M.! ident
+
 evalExpr sym heap (Arith a op b) = do
   a' <- evalExpr sym heap a
   b' <- evalExpr sym heap b
@@ -179,6 +182,7 @@ evalExpr sym heap (Arith a op b) = do
     (VInt vb, _) ->
       case a' of
         VInt va -> pure $ VInt $ arithOp op va vb
+
 evalExpr sym heap (Logic a op b) = do
   a' <- evalExpr sym heap a
   case (a', op) of
@@ -188,16 +192,20 @@ evalExpr sym heap (Logic a op b) = do
       b' <- evalExpr sym heap b
       case b' of
         VBool vb -> pure $ VBool $ logicOp op va vb
+
 evalExpr sym heap (Comp a op b) = do
   a' <- evalExpr sym heap a
   b' <- evalExpr sym heap b
   pure $ VBool $ compOp op a' b'
+
 evalExpr sym heap (RecLit f m) = VRec f <$> traverse (evalExpr sym heap) m
+
 evalExpr sym heap (RecMember lhs f i) = do
   v <- evalExpr sym heap lhs
   case (v, f) of
     (VRec FRec m, FRec) -> pure $ m M.! i
     (VRec FTup m, FTup) -> pure $ m M.! i
+
 evalExpr sym heap (RecWith lhs f us) = do
   v <- evalExpr sym heap lhs
   vals <- traverse (evalExpr sym heap) us
@@ -206,17 +214,21 @@ evalExpr sym heap (RecWith lhs f us) = do
       pure $ VRec FRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
     (VRec FTup fs, FTup) ->
       pure $ VRec FTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
+
 evalExpr sym heap (RecUnion a b) = do
   ra <- evalExpr sym heap a
   rb <- evalExpr sym heap b
   case (ra, rb) of
     (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union a' b'
+
 evalExpr sym heap (Lam i _ e) = pure $ VFun sym \sym' a -> evalExpr (M.insert i a sym') heap e
+
 evalExpr sym heap (App f a) = do
   vf <- evalExpr sym heap f
   va <- evalExpr sym heap a
   case vf of
     VFun sym' f' -> f' sym' va
+
 evalExpr sym heap (Deref e) = do
   v <- evalExpr sym heap e
   case v of
@@ -225,28 +237,37 @@ evalExpr sym heap (Deref e) = do
 evalStmt :: ProgState -> Stmt -> Eval ProgState
 evalStmt progState Nop = pure progState
 evalStmt progState (Decl _ _) = pure progState
+
 evalStmt ProgState{..} (Assign (Var ident) expr) = do
   v <- evalExpr sym heap expr
   pure $ ProgState { sym = M.insert ident v sym, .. }
+
 evalStmt progState (Assign (RecMember lhs f i) expr) =
   evalStmt progState (Assign lhs (RecWith lhs f $ M.singleton i expr))
+
 evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
   pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
+
 evalStmt ProgState{..} (DeclAssign ident Nothing expr) =
   pure $ ProgState { toDo = Assign (Var ident) expr : toDo, .. }
+
 evalStmt ProgState{..} (Print expr) = do
   v <- evalExpr sym heap expr
   pure $ ProgState { out = v : out, .. }
+
 evalStmt ProgState{..} (If cond then' else') = do
   c' <- evalExpr sym heap cond
   case c' of
     VBool c -> pure $ ProgState { toDo = (if c then then' else else') : toDo, .. }
+
 evalStmt ProgState{..} w@(While cond body) = do
   c' <- evalExpr sym heap cond
   case c' of
     VBool c -> pure $ ProgState { toDo = if c then body : w : toDo else toDo, .. }
+
 evalStmt ProgState{..} (Compound a b) =
   pure $ ProgState { toDo = a : b : toDo, .. }
+
 evalStmt ProgState{..} (Open expr) = do
   vf <- evalExpr sym heap expr
   case vf of
@@ -257,6 +278,7 @@ evalStmt ProgState{..} (Open expr) = do
           case M.lookup f open of
             Just _ -> throw $ FileAlreadyOpened f
             Nothing -> pure $ ProgState { open = M.insert f content open, .. }
+
 evalStmt ProgState{..} (Read ident t expr) = do
   vf <- evalExpr sym heap expr
   case vf of
@@ -264,11 +286,12 @@ evalStmt ProgState{..} (Read ident t expr) = do
       case M.lookup f open of
         Nothing -> throw $ FileNotOpened f
         Just [] -> throw $ ReachedEOF f
-        Just (c : cs) -> do
+        Just (c : cs) ->
           let tc = valType c
-          if tc /= t
+          in if tc /= t
             then throw $ ReadDifferentType f tc t
             else pure $ ProgState { sym = M.insert ident c sym, open = M.insert f cs open, .. }
+
 evalStmt ProgState{..} (Close expr) = do
   vf <- evalExpr sym heap expr
   case vf of
@@ -276,18 +299,15 @@ evalStmt ProgState{..} (Close expr) = do
       case M.lookup f open of
         Nothing -> throw $ FileAlreadyClosed f
         Just _ -> pure $ ProgState { open = M.delete f open, .. }
+
 evalStmt ProgState { gcStats = gcStats@GCStats { .. }, .. } (New i e) = do
   when (crrHeapSize == maxHeapSize)
     $ throw $ OutOfMemory maxHeapSize
   v <- evalExpr sym heap e
   let sym' = M.insert i (VRef crrHeapSize) sym
   let heap' = M.insert crrHeapSize v heap
-  pure $ runGC $
-    ProgState
-    { sym = sym'
-    , heap = heap'
-    , ..
-    }
+  pure $ runGC $ ProgState { sym = sym', heap = heap', .. }
+
 evalStmt ProgState{..} (WriteAt lhs rhs) = do
   vl <- evalExpr sym heap lhs
   vr <- evalExpr sym heap rhs

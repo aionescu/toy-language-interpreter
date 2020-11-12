@@ -70,18 +70,20 @@ typeCheckExpr _ (Default t) = do
   when (isOpaque t)
     $ throw $ TypeIsOpaque t
   pure t
+
 typeCheckExpr _ (IntLit _) = pure TInt
 typeCheckExpr _ (BoolLit _) = pure TBool
 typeCheckExpr _ (StrLit _) = pure TStr
+
 typeCheckExpr sym (Var ident) = do
   (type', state) <- lookupVar ident sym
   case state of
     Uninit -> throw $ UninitializedVar ident
     Init -> pure type'
+
 typeCheckExpr sym (Arith a Add b) = do
   ta <- typeCheckExpr sym a
   tb <- typeCheckExpr sym b
-
   case (ta, tb) of
     (TInt, TInt) -> pure TInt
     (TStr, TStr) -> pure TStr
@@ -89,18 +91,21 @@ typeCheckExpr sym (Arith a Add b) = do
       if TStr `elem` [ta, tb]
         then CanOnlyAppendStrings
         else CanOnlyAddIntegers
+
 typeCheckExpr sym (Arith a _ b) = do
   ta <- typeCheckExpr sym a
   ta `mustBe` TInt
   tb <- typeCheckExpr sym b
   tb `mustBe` TInt
   pure TInt
+
 typeCheckExpr sym (Logic a _ b) = do
   ta <- typeCheckExpr sym a
   ta `mustBe` TBool
   tb <- typeCheckExpr sym b
   tb `mustBe` TBool
   pure TBool
+
 typeCheckExpr sym (Comp a _ b) = do
   ta <- typeCheckExpr sym a
   tb <- typeCheckExpr sym b
@@ -108,7 +113,9 @@ typeCheckExpr sym (Comp a _ b) = do
   when (isOpaque ta)
     $ throw $ TypeIsOpaque ta
   pure TBool
+
 typeCheckExpr sym (RecLit f m) = TRec f <$> traverse (typeCheckExpr sym) m
+
 typeCheckExpr sym (RecMember lhs f i) = do
   t <- typeCheckExpr sym lhs
   case (t, f) of
@@ -121,6 +128,7 @@ typeCheckExpr sym (RecMember lhs f i) = do
         Nothing -> throw $ NoFieldInRec t f i
         Just t' -> pure t'
     _ -> throw $ ExpectedRecFound t
+
 typeCheckExpr sym (RecWith lhs f us) = do
   t <- typeCheckExpr sym lhs
   tys <- traverse (typeCheckExpr sym) us
@@ -136,6 +144,7 @@ typeCheckExpr sym (RecWith lhs f us) = do
       case M.lookup i m of
         Nothing -> throw $ NoFieldInRec rec f' i
         Just t' -> t `mustBe` t'
+
 typeCheckExpr sym (RecUnion a b) = do
   ta <- typeCheckExpr sym a
   tb <- typeCheckExpr sym b
@@ -151,16 +160,19 @@ typeCheckExpr sym (RecUnion a b) = do
     throwIfDup :: Ident -> Maybe Type -> TypeCk Type
     throwIfDup ident Nothing = throw $ DuplicateIncompatibleField ident
     throwIfDup _ (Just t) = pure t
+
 typeCheckExpr sym (Lam i t e) = do
   case M.lookup i sym of
     Just _ -> throw $ CantShadow i
     Nothing -> TFun t <$> typeCheckExpr (M.insert i (t, Init) sym) e
+
 typeCheckExpr sym (App f a) = do
   tf <- typeCheckExpr sym f
   ta <- typeCheckExpr sym a
   case tf of
     TFun i o -> ta `mustBe` i $> o
     _ -> throw $ ExpectedFunFound tf
+
 typeCheckExpr sym (Deref e) = typeCheckExpr sym e >>= unwrapTRef
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
@@ -174,24 +186,30 @@ typeCheckStmt sym (Decl ident type') =
   case M.lookup ident sym of
     Just _ -> throw $ VarAlreadyDeclared ident
     Nothing -> pure $ M.insert ident (type', Uninit) sym
+
 typeCheckStmt sym (Assign (Var ident) expr) = do
   (typ, _) <- lookupVar ident sym
   typ2 <- typeCheckExpr sym expr
   typ2 `mustBe` typ
   pure $ M.insert ident (typ, Init) sym
+
 typeCheckStmt sym (Assign (RecMember lhs f i) expr) =
   typeCheckStmt sym $ Assign lhs $ RecWith lhs f $ M.singleton i expr
+
 typeCheckStmt sym (DeclAssign ident (Just type') expr) = do
   sym2 <- typeCheckStmt sym (Decl ident type')
   typeCheckStmt sym2 (Assign (Var ident) expr)
+
 typeCheckStmt sym (DeclAssign ident Nothing expr) = do
   t <- typeCheckExpr sym expr
   typeCheckStmt sym $ DeclAssign ident (Just t) expr
+
 typeCheckStmt sym (Print e) = do
   t <- typeCheckExpr sym e
   when (isOpaque t)
     $ throw $ TypeIsOpaque t
   pure sym
+
 typeCheckStmt sym (If cond then' else') = do
   tc <- typeCheckExpr sym cond
   tc `mustBe` TBool
@@ -199,17 +217,21 @@ typeCheckStmt sym (If cond then' else') = do
   elseTbl <- typeCheckStmt sym else'
   pure $
     M.intersectionWith mergeVarInfo thenTbl elseTbl `M.intersection` sym
+
 typeCheckStmt sym (While cond body) = do
   tc <- typeCheckExpr sym cond
   tc `mustBe` TBool
   typeCheckStmt sym body $> sym
+
 typeCheckStmt sym (Compound a b) = do
   sym2 <- typeCheckStmt sym a
   typeCheckStmt sym2 b
+
 typeCheckStmt sym (Open expr) = do
   tf <- typeCheckExpr sym expr
   tf `mustBe` TStr
   pure sym
+
 typeCheckStmt sym (Read ident t expr) = do
   tf <- typeCheckExpr sym expr
   tf `mustBe` TStr
@@ -218,15 +240,18 @@ typeCheckStmt sym (Read ident t expr) = do
   when (isOpaque typ)
     $ throw $ TypeIsOpaque typ
   pure $ M.insert ident (typ, Init) sym
+
 typeCheckStmt sym (Close expr) = do
   tf <- typeCheckExpr sym expr
   tf `mustBe` TStr
   pure sym
+
 typeCheckStmt sym (New i e) = do
   t <- typeCheckExpr sym e
   (typ, _) <- lookupVar i sym
   typ `mustBe` TRef t
   pure $ M.insert i (typ, Init) sym
+
 typeCheckStmt sym (WriteAt lhs rhs) = do
   tl <- unwrapTRef =<< typeCheckExpr sym lhs
   tr <- typeCheckExpr sym rhs
