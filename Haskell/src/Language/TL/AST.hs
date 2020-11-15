@@ -14,7 +14,7 @@ data Field :: * -> * where
 deriving instance Eq (Field f)
 
 data Type
-  = TInt
+  = TNum
   | TBool
   | TStr
   | forall f. TRec (Field f) (Map f Type)
@@ -22,7 +22,7 @@ data Type
   | TRef Type
 
 instance Eq Type where
-  TInt == TInt = True
+  TNum == TNum = True
   TBool == TBool = True
   TStr == TStr = True
   TRec FRec a == TRec FRec b = a == b
@@ -57,9 +57,9 @@ showFields False FTup _ m =
     l -> withParens "(" ")" (show <$> l)
 
 instance Show Type where
-  show TInt = "Int"
-  show TBool = "Bool"
-  show TStr = "Str"
+  show TNum = "num"
+  show TBool = "bool"
+  show TStr = "str"
   show (TRec f m) = showFields False f ": " m
   show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
   show (TRef t) = "&" ++ show t
@@ -126,7 +126,7 @@ data ExprKind = L | R
 
 data Expr :: ExprKind -> * where
   Default :: Type -> Expr 'R
-  IntLit :: Integer -> Expr 'R
+  NumLit :: Integer -> Expr 'R
   BoolLit :: Bool -> Expr 'R
   StrLit :: String -> Expr 'R
   Var :: Ident -> Expr a
@@ -143,7 +143,7 @@ data Expr :: ExprKind -> * where
 
 instance Show (Expr a) where
   show (Default t) = "default " ++ show t
-  show (IntLit i) = show i
+  show (NumLit i) = show i
   show (BoolLit b) = show b
   show (StrLit s) = show s
   show (Var ident) = ident
@@ -174,7 +174,7 @@ data Stmt
   | WriteAt (Expr 'R) (Expr 'R)
 
 instance Show Stmt where
-  show Nop = "nop"
+  show Nop = ""
   show (Decl ident type') = "let " ++ ident ++ ": " ++ show type'
   show (Assign ident expr) = show ident ++ " = " ++ show expr
   show (DeclAssign ident Nothing expr) = "let " ++ ident ++ " = " ++ show expr

@@ -1,4 +1,4 @@
-let r: &Int;
+let r: &num;
 r = new 2;
 
 let i = 2;

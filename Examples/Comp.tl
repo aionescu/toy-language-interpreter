@@ -14,6 +14,6 @@ print b' >= a';
 
 -- Doesn't typecheck: Can't compare functions
 {-
-let f = (x: Int) -> x + 1;
+let f = (x: num) -> x + 1;
 print f == f;
 -}

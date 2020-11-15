@@ -11,8 +11,8 @@ import Language.TL.Eval
 import System.Exit (exitSuccess)
 import System.FilePath (combine)
 
-vInt :: Parser Val
-vInt = VInt <$> intRaw
+vNum :: Parser Val
+vNum = VNum <$> intRaw
 
 vBool :: Parser Val
 vBool = VBool <$> boolRaw
@@ -27,7 +27,7 @@ vTup :: Parser Val
 vTup = tuple (VRec FTup . tupToRec) val
 
 val :: Parser Val
-val = choice [try vRec, try vTup, try vStr, try vBool, vInt]
+val = choice [try vRec, try vTup, try vStr, try vBool, vNum]
 
 line :: Parser Val
 line = ws *> val <* eof

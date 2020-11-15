@@ -27,7 +27,7 @@ data TypeError
   | CantShadow Ident
   | TypeIsOpaque Type
   | CanOnlyAppendStrings
-  | CanOnlyAddIntegers
+  | CanOnlyAddNumegers
   | ExpectedRefFound Type
 
 instance Show TypeError where
@@ -48,7 +48,7 @@ instance Show TypeError where
       go (CantShadow i) = "Lambda argument cannot shadow existing variable " ++ i
       go (TypeIsOpaque t) = "The type " ++ show t ++ " is opaque"
       go CanOnlyAppendStrings = "Both operands of the append operation must be strings"
-      go CanOnlyAddIntegers = "Both operands of the addition operation must be integers"
+      go CanOnlyAddNumegers = "Both operands of the addition operation must be integers"
       go (ExpectedRefFound t) = "Expected reference type, but found type " ++ show t
 
 type TypeCk a = Either TypeError a
@@ -71,7 +71,7 @@ typeCheckExpr _ (Default t) = do
     $ throw $ TypeIsOpaque t
   pure t
 
-typeCheckExpr _ (IntLit _) = pure TInt
+typeCheckExpr _ (NumLit _) = pure TNum
 typeCheckExpr _ (BoolLit _) = pure TBool
 typeCheckExpr _ (StrLit _) = pure TStr
 
@@ -85,19 +85,19 @@ typeCheckExpr sym (Arith a Add b) = do
   ta <- typeCheckExpr sym a
   tb <- typeCheckExpr sym b
   case (ta, tb) of
-    (TInt, TInt) -> pure TInt
+    (TNum, TNum) -> pure TNum
     (TStr, TStr) -> pure TStr
     _ -> throw $
       if TStr `elem` [ta, tb]
         then CanOnlyAppendStrings
-        else CanOnlyAddIntegers
+        else CanOnlyAddNumegers
 
 typeCheckExpr sym (Arith a _ b) = do
   ta <- typeCheckExpr sym a
-  ta `mustBe` TInt
+  ta `mustBe` TNum
   tb <- typeCheckExpr sym b
-  tb `mustBe` TInt
-  pure TInt
+  tb `mustBe` TNum
+  pure TNum
 
 typeCheckExpr sym (Logic a _ b) = do
   ta <- typeCheckExpr sym a

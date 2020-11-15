@@ -17,7 +17,7 @@ import Language.TL.AST
 type Addr = Int
 
 data Val
-  = VInt Integer
+  = VNum Integer
   | VBool Bool
   | VStr String
   | forall f. VRec (Field f) (Map f Val)
@@ -28,7 +28,7 @@ showH :: (Integral a, Show a) => a -> String
 showH a = "0x" ++ showHex a ""
 
 instance Show Val where
-  show (VInt i) = show i
+  show (VNum i) = show i
   show (VBool b) = show b
   show (VStr s) = show s
   show (VRec f m) = showFields False f " = " m
@@ -36,7 +36,7 @@ instance Show Val where
   show (VRef a) = showH a
 
 instance Ord Val where
-  compare (VInt a) (VInt b) = compare a b
+  compare (VNum a) (VNum b) = compare a b
   compare (VBool a) (VBool b) = compare a b
   compare (VStr a) (VStr b) = compare a b
   compare (VRec FRec a) (VRec FRec b) = compare a b
@@ -47,14 +47,14 @@ instance Eq Val where
   (==) = ((== EQ) .) . compare
 
 defaultVal :: Type -> Val
-defaultVal TInt = VInt 0
+defaultVal TNum = VNum 0
 defaultVal TBool = VBool False
 defaultVal TStr = VStr ""
 defaultVal (TRec f m) = VRec f (defaultVal <$> m)
 defaultVal _ = error "Opaque type in defaultVal. Did you run the typechecker?"
 
 valType :: Val -> Type
-valType (VInt _) = TInt
+valType (VNum _) = TNum
 valType (VBool _) = TBool
 valType (VStr _) = TStr
 valType (VRec f m) = TRec f (valType <$> m)
@@ -165,7 +165,7 @@ type Eval a = Either EvalError a
 
 evalExpr :: SymValTable -> Heap -> Expr a -> Eval Val
 evalExpr _ _ (Default t) = pure $ defaultVal t
-evalExpr _ _ (IntLit i) = pure $ VInt i
+evalExpr _ _ (NumLit i) = pure $ VNum i
 evalExpr _ _ (BoolLit b) = pure $ VBool b
 evalExpr _ _ (StrLit s) = pure $ VStr s
 evalExpr sym _ (Var ident) = pure $ sym M.! ident
@@ -177,11 +177,11 @@ evalExpr sym heap (Arith a op b) = do
     (VStr vb, Add) ->
       case a' of
         VStr va -> pure $ VStr $ va ++ vb
-    (VInt 0, Divide) -> throw DivisionByZero
-    (VInt 0, Remainder) -> throw DivisionByZero
-    (VInt vb, _) ->
+    (VNum 0, Divide) -> throw DivisionByZero
+    (VNum 0, Remainder) -> throw DivisionByZero
+    (VNum vb, _) ->
       case a' of
-        VInt va -> pure $ VInt $ arithOp op va vb
+        VNum va -> pure $ VNum $ arithOp op va vb
 
 evalExpr sym heap (Logic a op b) = do
   a' <- evalExpr sym heap a

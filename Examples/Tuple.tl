@@ -1,15 +1,15 @@
-let a: (Int, Int);
+let a: (num, num);
 a = (2, 2);
 print a;
 
-let b: (Bool, (Int, Bool)) = (False, (2, True));
+let b: (bool, (num, bool)) = (False, (2, True));
 print b;
 
-let c: (Int, Int) = (0, 0);
+let c: (num, num) = (0, 0);
 c.0 = 1;
 print c;
 
-let d: (Int, Int);
+let d: (num, num);
 d = (c.0, 2);
 -- Functional update
 d = { c | 1 = 2 }; -- same as above statement
@@ -19,13 +19,13 @@ print d;
 let e: () = ();
 print e;
 
--- f: (Int) == f: Int
+-- f: (num) == f: num
 -- To make a 1-tuple, add a trailing comma
-let f: (Int,) = (2,);
+let f: (num,) = (2,);
 print f;
 
 -- Nested assignment
-let g: ((((Int, Int), Int), Int), Int) = ((((0, 0), 0), 0), 0);
+let g: ((((num, num), num), num), num) = ((((0, 0), 0), 0), 0);
 g.0.0.0.0 = 1;
 print g;
 

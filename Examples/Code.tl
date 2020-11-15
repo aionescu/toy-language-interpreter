@@ -1,6 +1,6 @@
 #!/home/oldpug/.cabal/bin/tli run
 
-let a: Bool;
+let a: bool;
 a = True;
 
 if a and True or False {
@@ -9,7 +9,7 @@ if a and True or False {
   print 2;
 };
 
-let b: Int;
+let b: num;
 b{-Nested {- multiline -}
 
 
@@ -17,12 +17,12 @@ b{-Nested {- multiline -}
 print b;
 
 -- Single line comment
-let c: Int;
+let c: num;
 c = -1;
 print c;
 
 -- Declare-and-assign shorthand syntax
-let d: Int = 1 + 2 * 3;
+let d: num = 1 + 2 * 3;
 print d;
 
 -- If with no else branch
