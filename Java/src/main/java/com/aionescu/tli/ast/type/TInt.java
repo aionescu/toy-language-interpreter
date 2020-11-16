@@ -21,18 +21,8 @@ public final class TInt implements Type {
   }
 
   @Override
-  public boolean isComparable() {
-    return true;
-  }
-
-  @Override
-  public boolean isShowable() {
-    return true;
-  }
-
-  @Override
-  public boolean isDefaultable() {
-    return true;
+  public boolean isOpaque() {
+    return false;
   }
 
   @Override

@@ -26,18 +26,8 @@ public final class TRec implements Type {
   }
 
   @Override
-  public boolean isComparable() {
-    return fields.toList().map(Pair::snd_).all(Type::isComparable);
-  }
-
-  @Override
-  public boolean isShowable() {
-    return fields.toList().map(Pair::snd_).all(Type::isShowable);
-  }
-
-  @Override
-  public boolean isDefaultable() {
-    return fields.toList().map(Pair::snd_).all(Type::isDefaultable);
+  public boolean isOpaque() {
+    return fields.toList().map(Pair::snd_).any(Type::isOpaque);
   }
 
   @Override

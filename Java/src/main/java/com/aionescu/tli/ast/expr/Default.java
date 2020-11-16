@@ -15,7 +15,7 @@ public final class Default implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    _type.mustBeDefaultable();
+    _type.mustBeTransparent();
     return _type;
   }
 

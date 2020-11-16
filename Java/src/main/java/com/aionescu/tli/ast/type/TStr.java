@@ -19,17 +19,7 @@ public final class TStr implements Type {
   }
 
   @Override
-  public boolean isComparable() {
-    return true;
-  }
-
-  @Override
-  public boolean isShowable() {
-    return true;
-  }
-
-  @Override
-  public boolean isDefaultable() {
+  public boolean isOpaque() {
     return true;
   }
 
