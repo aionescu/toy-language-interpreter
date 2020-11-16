@@ -270,9 +270,6 @@ while = liftA2 While cond block
   where
     cond = string "while" *> ws *> expr <* ws
 
-nop :: Parser Stmt
-nop = string "nop" $> Nop
-
 open :: Parser Stmt
 open = Open <$> (string "open" *> ws *> expr)
 
@@ -301,7 +298,6 @@ stmt' = option Nop $ choice
   , try decl
   , try assign
   , try print'
-  , nop
   ] <* ws
 
 stmt :: Parser Stmt

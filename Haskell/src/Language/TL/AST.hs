@@ -174,7 +174,7 @@ data Stmt
   | WriteAt (Expr 'R) (Expr 'R)
 
 instance Show Stmt where
-  show Nop = "nop"
+  show Nop = ""
   show (Decl ident type') = "let " ++ ident ++ ": " ++ show type'
   show (Assign ident expr) = show ident ++ " = " ++ show expr
   show (DeclAssign ident Nothing expr) = "let " ++ ident ++ " = " ++ show expr
