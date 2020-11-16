@@ -200,3 +200,6 @@ throw = Left
 
 toTLI :: Show e => Either e a -> TLI a
 toTLI = first show
+
+(...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(...) = (.) . (.)
