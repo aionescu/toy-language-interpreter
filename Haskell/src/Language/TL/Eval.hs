@@ -148,10 +148,10 @@ instance Show EvalError where
   show ee = "Eval error: " ++ go ee ++ "."
     where
       go DivisionByZero = "An attempt was made to divide by zero"
-      go (FileDoesNotExist f) = "The file " ++ show f ++ " does not exist in the filesystem."
-      go (FileAlreadyOpened f) = "The file " ++ show f ++ " has already been opened."
-      go (FileAlreadyClosed f) = "The file " ++ show f ++ " has been closed."
-      go (FileNotOpened f) = "The file " ++ show f ++ " has not been opened."
+      go (FileDoesNotExist f) = "The file " ++ show f ++ " does not exist in the filesystem"
+      go (FileAlreadyOpened f) = "The file " ++ show f ++ " has already been opened"
+      go (FileAlreadyClosed f) = "The file " ++ show f ++ " has been closed"
+      go (FileNotOpened f) = "The file " ++ show f ++ " has not been opened"
 
       go (ReadDifferentType f found expected) =
         "In file " ++ show f

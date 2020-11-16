@@ -20,7 +20,7 @@ public final class TStr implements Type {
 
   @Override
   public boolean isOpaque() {
-    return true;
+    return false;
   }
 
   @Override

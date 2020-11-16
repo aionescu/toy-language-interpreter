@@ -1,7 +1,9 @@
 package com.aionescu.tli.ast.val;
 
 import com.aionescu.tli.ast.Field;
-import com.aionescu.tli.exn.eval.InvalidComparisonException;
+import com.aionescu.tli.ast.type.TRec;
+import com.aionescu.tli.ast.type.Type;
+import com.aionescu.tli.exn.eval.PanicException;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class VRec extends Val {
@@ -21,13 +23,18 @@ public final class VRec extends Val {
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VRec))
-      throw new InvalidComparisonException();
+      throw new PanicException();
 
     var rec = (VRec)rhs;
 
     if (isRec != rec.isRec)
-      throw new InvalidComparisonException();
+      throw new PanicException();
 
     return Map.compare(fields, rec.fields);
+  }
+
+  @Override
+  public Type type() {
+    return new TRec(isRec, fields.map(Val::type));
   }
 }

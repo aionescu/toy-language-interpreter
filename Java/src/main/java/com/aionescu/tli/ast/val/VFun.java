@@ -2,7 +2,8 @@ package com.aionescu.tli.ast.val;
 
 import java.util.function.UnaryOperator;
 
-import com.aionescu.tli.exn.eval.InvalidComparisonException;
+import com.aionescu.tli.ast.type.Type;
+import com.aionescu.tli.exn.eval.PanicException;
 
 public final class VFun extends Val {
   public final UnaryOperator<Val> f;
@@ -18,6 +19,11 @@ public final class VFun extends Val {
 
   @Override
   public int compareTo(Val arg0) {
-    throw new InvalidComparisonException();
+    throw new PanicException();
+  }
+
+  @Override
+  public Type type() {
+    throw new PanicException();
   }
 }

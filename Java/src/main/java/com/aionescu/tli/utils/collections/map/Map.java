@@ -22,6 +22,7 @@ public interface Map<K extends Comparable<K>, V> {
   List<Pair<K, V>> toList();
 
   Map<K, V> insert(K k, V v);
+  Map<K, V> delete(K k);
   Maybe<V> lookup(K k);
 
   Map<K, V> diff(Map<K, V> rhs);

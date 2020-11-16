@@ -47,6 +47,11 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   }
 
   @Override
+  public Map<K, V> delete(K k) {
+    return new AssocListMap<>(_list.filter(p -> p.fst.compareTo(k) != 0));
+  }
+
+  @Override
   public Maybe<V> lookup(K k) {
     return _list.find(p -> p.fst.compareTo(k) == 0).map(Pair::snd_);
   }

@@ -1,6 +1,8 @@
 package com.aionescu.tli.ast.val;
 
-import com.aionescu.tli.exn.eval.InvalidComparisonException;
+import com.aionescu.tli.ast.type.TStr;
+import com.aionescu.tli.ast.type.Type;
+import com.aionescu.tli.exn.eval.PanicException;
 
 public final class VStr extends Val {
   public final String val;
@@ -34,8 +36,13 @@ public final class VStr extends Val {
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VStr))
-      throw new InvalidComparisonException();
+      throw new PanicException();
 
     return val.compareTo(((VStr)rhs).val);
+  }
+
+  @Override
+  public Type type() {
+    return TStr.t;
   }
 }

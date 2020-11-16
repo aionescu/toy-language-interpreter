@@ -1,10 +1,10 @@
-let f = "Meta.txt";
+let f = "FS/Meta.txt";
 open f;
 
 f: Str = read f; -- o_O
 -- This actually leaks "Meta.txt" if you have no other reference to its name
 
-close "Meta.txt";
+close "FS/Meta.txt";
 
 open f;
 

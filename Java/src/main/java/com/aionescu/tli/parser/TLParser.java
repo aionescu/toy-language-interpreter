@@ -18,6 +18,12 @@ import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.TRec;
 import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.Type;
+import com.aionescu.tli.ast.val.VBool;
+import com.aionescu.tli.ast.val.VInt;
+import com.aionescu.tli.ast.val.VRec;
+import com.aionescu.tli.ast.val.VStr;
+import com.aionescu.tli.ast.val.Val;
+import com.aionescu.tli.exn.eval.IncorrectFileFormatException;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 import com.aionescu.tli.utils.control.Maybe;
@@ -39,6 +45,9 @@ public final class TLParser {
   private static final Parser<Unit> _equals;
   private static final Parser<Expr> _expr;
   private static final Parser<Expr> _exprNoWith;
+
+  private static final Parser<Val> _val;
+  private static final Parser<Val> _valLine;
 
   static {
     var multiLineFwdRef = Parser.<Unit>fwdRef();
@@ -63,17 +72,20 @@ public final class TLParser {
     _tupField = number.map(Integer::parseInt).map(TupField::new);
     Parser<Expr> int_ = ap(sign.option(i -> i), number.map(BigInteger::new)).map(IntLit::new);
 
-    Parser<Expr> bool_ = choice(
+    Parser<Boolean> boolRaw = choice(
       string("True").map_(true),
       string("False").map_(false)
-    ).map(BoolLit::new);
+    );
+
+    Parser<Expr> bool_ = boolRaw.map(BoolLit::new);
 
     var escaped = ch('\\')._and(oneOf("\\\"0nrvtbf")).map(TLParser::_unescape);
     var regular = noneOf("\\\"\0\n\r\t\b\f");
     var chr = regular.or(escaped);
     var quote = ch('"');
 
-    Parser<Expr> str = chr.many().between(quote, quote).map(List::asString).map(StrLit::new);
+    Parser<String> strRaw = chr.many().between(quote, quote).map(List::asString);
+    Parser<Expr> str = strRaw.map(StrLit::new);
 
     var simpleLit = choice(str, int_, bool_);
 
@@ -183,11 +195,32 @@ public final class TLParser {
     var whileCond = string("while")._and(_ws)._and(_expr).and_(_ws);
     Parser<Stmt> while_ = liftA2(While::new, whileCond, block);
 
-    var stmt_ = choice(while_, if_, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
+    Parser<Stmt> open = string("open")._and(_ws)._and(_expr).map(Open::new);
+    Parser<Stmt> read = Parser.liftA3(Read::new, ident, _colon._and(type), _equals._and(string("read")._and(_ws)._and(_expr)));
+    Parser<Stmt> close = string("close")._and(_ws)._and(_expr).map(Close::new);
+
+    var stmt_ = choice(while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
     var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new));
     stmtFwdRef.snd.set(compound);
 
     _parser = shebang.option(Unit.UNIT)._and(_ws)._and(stmt).and_(eof);
+
+    // Val parsers for reading files
+
+    var valFwdRef = Parser.<Val>fwdRef();
+    _val = valFwdRef.fst;
+
+    Parser<Val> vInt = number.map(BigInteger::new).map(VInt::new);
+    Parser<Val> vBool = boolRaw.map(VBool::new);
+    Parser<Val> vStr = strRaw.map(VStr::new);
+
+    Parser<Val> vRec = _record('{', _recField, _equals, _val).map(m -> new VRec(true, m));
+    Parser<Val> vTup = _tuple(a -> new VRec(false, _tupToRec(a)), _val);
+
+    var val = choice(vRec, vTup, vStr, vBool, vInt);
+    valFwdRef.snd.set(val);
+
+    _valLine = _ws._and(_val).and_(eof);
   }
 
   private static <A> Parser<A> _parens(char begin, char end, Parser<A> p) {
@@ -251,7 +284,14 @@ public final class TLParser {
       default -> c;
     };
   }
+
   public static Stmt parse(String code) {
     return _parser.parse(code);
+  }
+
+  public static Val parseValLine(String file, String line) {
+    return _valLine.run(line).match(
+      () -> { throw new IncorrectFileFormatException(file); },
+      (v, s) -> v);
   }
 }
