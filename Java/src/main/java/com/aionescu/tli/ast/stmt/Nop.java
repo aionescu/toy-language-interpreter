@@ -13,7 +13,7 @@ public final class Nop implements Stmt {
 
   @Override
   public String toString() {
-    return "nop";
+    return "{- nop -}";
   }
 
   @Override

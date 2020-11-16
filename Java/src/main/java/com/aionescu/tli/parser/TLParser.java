@@ -183,9 +183,7 @@ public final class TLParser {
     var whileCond = string("while")._and(_ws)._and(_expr).and_(_ws);
     Parser<Stmt> while_ = liftA2(While::new, whileCond, block);
 
-    Parser<Stmt> nop = string("nop").map_(Nop.nop);
-
-    var stmt_ = choice(while_, if_, declAssign, decl, assign, print, nop).and_(_ws).option(Nop.nop);
+    var stmt_ = choice(while_, if_, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
     var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new));
     stmtFwdRef.snd.set(compound);
 
