@@ -156,7 +156,7 @@ instance Show (Expr a) where
   show (RecUnion a b) = "(" ++ show a ++ " & " ++ show b ++ ")"
   show (Lam i t e) = "((" ++ i ++ ": " ++ show t ++ ") -> " ++ show e ++ ")"
   show (App f a) = "(" ++ show f ++ " " ++ show a ++ ")"
-  show (Deref e) = "!" ++ show e
+  show (Deref e) = "!(" ++ show e ++ ")"
 
 data Stmt
   = Nop

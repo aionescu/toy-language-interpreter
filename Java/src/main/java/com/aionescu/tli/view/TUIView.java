@@ -33,7 +33,14 @@ public final class TUIView implements View {
     return (view, arg) -> {
       try {
         m.invoke(view, arg);
-      } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      } catch (InvocationTargetException e) {
+        var cause = e.getCause();
+
+        if (cause instanceof RuntimeException)
+          throw (RuntimeException)cause;
+        else
+          cause.printStackTrace();
+      } catch (IllegalAccessException | IllegalArgumentException e) {
         e.printStackTrace();
       }
     };
@@ -129,6 +136,24 @@ public final class TUIView implements View {
   @Command(name = "unset-log-file", desc = "Unsets the log file, causing the repository to stop logging.")
   private void _unsetLogPath(String arg) {
     _controller.setLogPath(Maybe.nothing());
+  }
+
+  @Command(name = "set-gc-threshold", desc = "Sets the amount of allocations to perform before a collection occurs.")
+  private void _setGCThreshold(String arg) {
+    var gcThreshold = Integer.parseInt(arg);
+
+    var state = _controller.state();
+    var newState = state.withGCStats(state.gcStats.withGCThreshold(gcThreshold));
+    _controller.setState(newState);
+  }
+
+  @Command(name = "set-max-heap-size", desc = "Sets the maximum size of the heap.")
+  private void _setMaxHeapSize(String arg) {
+    var maxHeapSize = Integer.parseInt(arg);
+
+    var state = _controller.state();
+    var newState = state.withGCStats(state.gcStats.withMaxHeapSize(maxHeapSize));
+    _controller.setState(newState);
   }
 
   private void _dispatch(String cmd, String arg) {

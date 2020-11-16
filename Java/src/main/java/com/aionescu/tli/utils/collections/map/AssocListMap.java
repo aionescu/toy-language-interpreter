@@ -37,6 +37,11 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   }
 
   @Override
+  public String toString(Function<K, String> keyFmt) {
+    return _list.map(Pair.match((k, v) -> keyFmt.apply(k) + " = " + v)).toString("{ ", " }");
+  }
+
+  @Override
   public List<Pair<K, V>> toList() {
     return _list;
   }

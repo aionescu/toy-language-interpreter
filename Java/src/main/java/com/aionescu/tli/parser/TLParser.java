@@ -16,6 +16,7 @@ import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.TFun;
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.TRec;
+import com.aionescu.tli.ast.type.TRef;
 import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.val.VBool;
@@ -110,7 +111,13 @@ public final class TLParser {
     Parser<Type> ttup = _tuple(a -> new TRec(false, _tupToRec(a)), type);
     Parser<Type> trec = _record('{', _recField, _colon, type).map(a -> new TRec(true, a));
 
-    var typeNoFun = choice(trec, ttup, primType);
+    var typeNoFunFwdRef = Parser.<Type>fwdRef();
+    var typeNoFun = typeNoFunFwdRef.fst;
+
+    Parser<Type> tref = ch('&')._and(_ws)._and(typeNoFun).map(TRef::new);
+
+    var typeNoFun_ = choice(tref, trec, ttup, primType);
+    typeNoFunFwdRef.snd.set(typeNoFun_);
 
     var type_ = typeNoFun.chainr1(_ws._and(string("->"))._and(_ws).map_(TFun::new));
     typeFwdRef.snd.set(type_);
@@ -156,13 +163,19 @@ public final class TLParser {
 
     Parser<Expr> default_ = string("default")._and(_ws)._and(type).map(Default::new);
 
-    var exprNoMember = choice(default_, lam, vrec, vtup, simpleLit, _var).and_(_ws);
+    var exprNoOpsFwdRef = Parser.<Expr>fwdRef();
+    var exprNoOps = exprNoOpsFwdRef.fst;
+
+    Parser<Expr> deref = ch('!')._and(_ws)._and(exprNoOps).map(Deref::new);
+
+    var exprNoMember = choice(deref, default_, lam, vrec, vtup, simpleLit, _var).and_(_ws);
     _exprNoWith = _member(exprNoMember).or(exprNoMember);
 
     var withRecord = _withExpr((a, b) -> new RecWith(a, true, b), _recField);
     var withTup = _withExpr((a, b) -> new RecWith(a, false, b), _tupField);
 
-    var exprNoOps = withRecord.or(withTup).or(_exprNoWith);
+    var exprNoOps_ = withRecord.or(withTup).or(_exprNoWith);
+    exprNoOpsFwdRef.snd.set(exprNoOps_);
 
     Parser<Expr> termMul = exprNoOps.chainl1(_ws.map_(App::new));
 
@@ -199,7 +212,10 @@ public final class TLParser {
     Parser<Stmt> read = Parser.liftA3(Read::new, ident, _colon._and(type), _equals._and(string("read")._and(_ws)._and(_expr)));
     Parser<Stmt> close = string("close")._and(_ws)._and(_expr).map(Close::new);
 
-    var stmt_ = choice(while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
+    Parser<Stmt> new_ = Parser.liftA2(New::new, ident, _equals._and(string("new")._and(_ws)._and(_expr)));
+    Parser<Stmt> writeAt = Parser.liftA2(WriteAt::new, _expr, string(":=")._and(_ws)._and(_expr));
+
+    var stmt_ = choice(writeAt, new_, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
     var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new));
     stmtFwdRef.snd.set(compound);
 
