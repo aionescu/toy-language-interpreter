@@ -81,16 +81,14 @@ public final class TUIView implements View {
     }
   }
 
-  @Command(name = "run-all-steps", desc = "Runs the loaded program, displaying all intermediate states.")
-  private void _runSmallStep(String arg) {
+  private void _runSmallStep() {
     System.out.println(_controller.state());
 
     while (!_controller.done())
       System.out.println(_controller.oneStep());
   }
 
-  @Command(name = "run", desc = "Runs the loaded program, displaying its final output.")
-  private void _runBigStep(String arg) {
+  private void _runBigStep() {
     var state = _controller.state();
 
     try {
@@ -99,6 +97,14 @@ public final class TUIView implements View {
     } finally {
       _controller.setState(state);
     }
+  }
+
+  @Command(name = "run", desc = "Runs the loaded program. If --small-step is passed, displays all intermediate states.")
+  private void _run(String arg) {
+    if (arg.equals("--small-step"))
+      _runSmallStep();
+    else
+      _runBigStep();
   }
 
   @Command(name = "show-ast", desc = "Shows the AST of the loaded program.")
