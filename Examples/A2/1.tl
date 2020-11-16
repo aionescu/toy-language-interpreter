@@ -1,3 +1,3 @@
-let v: num;
+let v: Int;
 v = 2;
 print v;

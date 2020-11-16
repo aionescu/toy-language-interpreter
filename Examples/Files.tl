@@ -1,22 +1,22 @@
 let f = "Meta.txt";
 open f;
 
-f: str = read f; -- o_O
+f: Str = read f; -- o_O
 -- This actually leaks "Meta.txt" if you have no other reference to its name
 
 close "Meta.txt";
 
 open f;
 
-let a: num;
-a: num = read f;
+let a: Int;
+a: Int = read f;
 print a;
 
-a: num = read f;
+a: Int = read f;
 print a;
 
-let b: { a: num, b: str };
-b: { a: num, b: str } = read f;
+let b: { a: Int, b: Str };
+b: { a: Int, b: Str } = read f;
 print b;
 
 close f;

@@ -1,5 +1,5 @@
-let a: bool;
-let v: num;
+let a: Bool;
+let v: Int;
 
 a = True;
 

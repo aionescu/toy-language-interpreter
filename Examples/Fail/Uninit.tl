@@ -1,4 +1,4 @@
-let a: num;
+let a: Int;
 let b = 0;
 
 while a < 5 {

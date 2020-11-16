@@ -65,9 +65,9 @@ record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
 
 primType :: Parser Type
 primType = choice
-  [ string "num" $> TNum
-  , string "bool" $> TBool
-  , string "str" $> TStr
+  [ string "Int" $> TInt
+  , string "Bool" $> TBool
+  , string "Str" $> TStr
   ]
 
 tupToRec :: [a] -> Map Int a
@@ -97,7 +97,7 @@ intRaw = sign <*> number
     sign = option id (char '-' $> negate)
 
 int :: Parser (Expr 'R)
-int = NumLit <$> intRaw
+int = IntLit <$> intRaw
 
 boolRaw :: Parser Bool
 boolRaw = choice [string "True" $> True, string "False" $> False]
@@ -270,6 +270,9 @@ while = liftA2 While cond block
   where
     cond = string "while" *> ws *> expr <* ws
 
+nop :: Parser Stmt
+nop = string "nop" $> Nop
+
 open :: Parser Stmt
 open = Open <$> (string "open" *> ws *> expr)
 
@@ -298,6 +301,7 @@ stmt' = option Nop $ choice
   , try decl
   , try assign
   , try print'
+  , nop
   ] <* ws
 
 stmt :: Parser Stmt

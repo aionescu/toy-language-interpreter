@@ -17,4 +17,4 @@ instance ParseRecord Opts where
   parseRecord = liftA2 Opts parseRecord parseRecord
 
 getOpts :: IO Opts
-getOpts = getRecord "Toy Language Numerpreter"
+getOpts = getRecord "Toy Language Interpreter"

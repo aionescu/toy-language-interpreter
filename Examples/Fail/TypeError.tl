@@ -1,1 +1,1 @@
-let a: num = True;
+let a: Int = True;

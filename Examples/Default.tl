@@ -1,12 +1,12 @@
-let a = default num;
+let a = default Int;
 print a;
 
-let b = default str;
+let b = default Str;
 print b;
 
 -- Functions are not defaultable
---let f = default num -> num;
+--let f = default Int -> Int;
 --print f;
 
-let rec = default { a: num, b: str, c: (num, bool, (str, str)) };
+let rec = default { a: Int, b: Str, c: (Int, Bool, (Str, Str)) };
 print rec;

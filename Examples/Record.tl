@@ -1,17 +1,17 @@
-let a: { x: num, y: num };
+let a: { x: Int, y: Int };
 a = { x = 2, y = 3 };
 
--- Inferred: b: { a: bool }
+-- Inferred: b: { a: Bool }
 let b = { a = True, };
 
 -- Record union (left-biased)
--- Inferred: c: { a: bool, x: num, y: num }
+-- Inferred: c: { a: Bool, x: Int, y: Int }
 let c = a & b;
 c.a = False;
 print c;
 
 -- Mixed record/tuple member access
-let d: ({ a: ({ b: bool }, num) }, num);
+let d: ({ a: ({ b: Bool }, Int) }, Int);
 d = ({ a = ({ b = False }, 1) }, 0);
 d.0.a.0.b = True;
 print d.0.a.0.b;
@@ -23,8 +23,8 @@ print d;
 
 -- Field order doesn't matter
 -- Fields get sorted lexicographically
-let e: { a: num, b: bool } = { a = 0, b = False };
-let f: { b: bool, a: num } = e;
+let e: { a: Int, b: Bool } = { a = 0, b = False };
+let f: { b: Bool, a: Int } = e;
 print e;
 print f;
 
