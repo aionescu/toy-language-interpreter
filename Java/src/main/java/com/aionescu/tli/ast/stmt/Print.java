@@ -21,7 +21,7 @@ public final class Print implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    _expr.typeCheck(sym);
+    _expr.typeCheck(sym).mustBeTransparent();
     return sym;
   }
 

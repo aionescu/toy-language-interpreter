@@ -42,7 +42,9 @@ public final class Comp implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    _rhs.typeCheck(sym).mustBe(_lhs.typeCheck(sym));
+    var t = _rhs.typeCheck(sym);
+    t.mustBe(_lhs.typeCheck(sym));
+    t.mustBeTransparent();
     return TBool.t;
   }
 

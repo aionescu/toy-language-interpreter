@@ -13,6 +13,6 @@ public final class IncorrectFileFormatException extends EvalException {
 
   @Override
   public String getMessage() {
-    return String.format("The file %s contains invalid TL values.", _file);
+    return String.format("The file %s contains invalid Toy Language values.", _file);
   }
 }

@@ -17,7 +17,7 @@ public final class TRef implements Type {
 
   @Override
   public String toString() {
-    return String.format("&%s", inner);
+    return String.format("&(%s)", inner);
   }
 
   @Override
