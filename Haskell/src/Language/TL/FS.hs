@@ -41,8 +41,8 @@ processFile (f, s) = traverse (parseLine f) $ lines s
 loadFS :: Maybe String -> IO (Map String [Val])
 loadFS Nothing = pure M.empty
 loadFS (Just dir) = do
-  fs <- filter (not . (`elem` [".", ".."])) <$> getDirectoryContents dir
-  contents <- traverse readFile $ combine dir <$> fs
+  fs <- (combine dir <$> ) . filter (not . (`elem` [".", ".."])) <$> getDirectoryContents dir
+  contents <- traverse readFile fs
 
   let contents' = traverse processFile $ zip fs contents
 
