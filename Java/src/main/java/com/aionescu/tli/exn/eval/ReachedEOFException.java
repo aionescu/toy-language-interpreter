@@ -1,5 +1,7 @@
 package com.aionescu.tli.exn.eval;
 
+import com.aionescu.tli.ast.val.VStr;
+
 public final class ReachedEOFException extends EvalException {
   private final static long serialVersionUID = 1;
 
@@ -13,6 +15,6 @@ public final class ReachedEOFException extends EvalException {
 
   @Override
   public String getMessage() {
-    return String.format("There are no more values to read in file %s.", _file);
+    return String.format("There are no more values to read in file %s.", VStr.escapeString(_file));
   }
 }

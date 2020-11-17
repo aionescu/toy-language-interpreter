@@ -2,6 +2,7 @@ package com.aionescu.tli.ast.stmt;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -12,6 +13,7 @@ import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.exn.eval.FileAlreadyOpenedException;
+import com.aionescu.tli.exn.eval.FileDoesNotExistException;
 import com.aionescu.tli.parser.TLParser;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
@@ -46,6 +48,8 @@ public final class Open implements Stmt {
 
     try {
       contents = Files.readString(Path.of(str));
+    } catch (NoSuchFileException e) {
+      throw new FileDoesNotExistException(str);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

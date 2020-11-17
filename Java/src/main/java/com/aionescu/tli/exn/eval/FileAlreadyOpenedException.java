@@ -1,5 +1,7 @@
 package com.aionescu.tli.exn.eval;
 
+import com.aionescu.tli.ast.val.VStr;
+
 public final class FileAlreadyOpenedException extends EvalException {
   private final static long serialVersionUID = 1;
 
@@ -13,6 +15,6 @@ public final class FileAlreadyOpenedException extends EvalException {
 
   @Override
   public String getMessage() {
-    return String.format("The file %s has already been opened.", _file);
+    return String.format("The file %s has already been opened.", VStr.escapeString(_file));
   }
 }
