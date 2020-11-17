@@ -21,7 +21,7 @@ data Val
   | VBool Bool
   | VStr String
   | forall f. VRec (Field f) (Map f Val)
-  | VFun SymValTable (SymValTable -> Val -> Eval Val)
+  | VFun SymValTable (Heap -> SymValTable -> Val -> Eval Val)
   | VRef Addr
 
 showH :: (Integral a, Show a) => a -> String
@@ -32,7 +32,7 @@ instance Show Val where
   show (VBool b) = show b
   show (VStr s) = show s
   show (VRec f m) = showFields False f " = " m
-  show (VFun _ _) = "<λ>"
+  show VFun{} = "<λ>"
   show (VRef a) = showH a
 
 instance Ord Val where
@@ -221,13 +221,13 @@ evalExpr sym heap (RecUnion a b) = do
   case (ra, rb) of
     (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union a' b'
 
-evalExpr sym heap (Lam i _ e) = pure $ VFun sym \sym' a -> evalExpr (M.insert i a sym') heap e
+evalExpr sym _ (Lam i _ e) = pure $ VFun sym \heap' sym' a -> evalExpr (M.insert i a sym') heap' e
 
 evalExpr sym heap (App f a) = do
   vf <- evalExpr sym heap f
   va <- evalExpr sym heap a
   case vf of
-    VFun sym' f' -> f' sym' va
+    VFun sym' f' -> f' heap sym' va
 
 evalExpr sym heap (Deref e) = do
   v <- evalExpr sym heap e

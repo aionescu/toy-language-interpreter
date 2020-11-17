@@ -35,6 +35,6 @@ public final class Lam implements Expr {
 
   @Override
   public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
-    return new VFun(sym, (sym_, a) -> _body.eval(heap, sym_.insert(_argName, a)));
+    return new VFun(sym, (heap_, sym_, a) -> _body.eval(heap_, sym_.insert(_argName, a)));
   }
 }

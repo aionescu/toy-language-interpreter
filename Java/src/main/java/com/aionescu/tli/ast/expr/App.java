@@ -41,6 +41,6 @@ public final class App implements Expr {
     var fn = (VFun)_fn.eval(heap, sym);
     var arg = _arg.eval(heap, sym);
 
-    return fn.f.apply(fn.sym, arg);
+    return fn.f.apply(heap, fn.sym, arg);
   }
 }
