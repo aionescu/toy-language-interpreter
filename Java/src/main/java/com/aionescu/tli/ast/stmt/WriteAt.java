@@ -4,6 +4,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
+import com.aionescu.tli.ast.val.VRef;
 import com.aionescu.tli.utils.collections.map.Map;
 
 public final class WriteAt implements Stmt {
@@ -21,11 +22,18 @@ public final class WriteAt implements Stmt {
 
   @Override
   public Map<Ident, VarInfo> typeCheck(Map<Ident, VarInfo> sym) {
-    throw null;
+    var tl = _lhs.typeCheck(sym).unwrapTRef();
+    var tr = _rhs.typeCheck(sym);
+    tr.mustBe(tl);
+
+    return sym;
   }
 
   @Override
   public ProgState eval(ProgState prog) {
-    throw null;
+    var vl = ((VRef)_lhs.eval(prog.heap, prog.sym)).addr;
+    var vr = _rhs.eval(prog.heap, prog.sym);
+
+    return prog.withHeap(prog.heap.insert(vl, vr));
   }
 }

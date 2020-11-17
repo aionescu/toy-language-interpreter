@@ -49,7 +49,7 @@ public final class Assign implements Stmt {
   public ProgState eval(ProgState prog) {
     if (_lhs instanceof Var) {
       var ident = ((Var)_lhs).ident;
-      return prog.withSym(prog.sym.insert(ident, _rhs.eval(prog.sym)));
+      return prog.withSym(prog.sym.insert(ident, _rhs.eval(prog.heap, prog.sym)));
     } else {
       var lhs = (RecMember)_lhs;
       return new Assign(lhs.lhs, new RecWith(lhs.lhs, lhs.field.isRecField(), Map.<Field, Expr>empty().insert(lhs.field, _rhs))).eval(prog);

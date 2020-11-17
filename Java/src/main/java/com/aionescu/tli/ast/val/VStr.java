@@ -1,8 +1,11 @@
 package com.aionescu.tli.ast.val;
 
+import java.util.function.UnaryOperator;
+
 import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.eval.PanicException;
+import com.aionescu.tli.utils.collections.set.Set;
 
 public final class VStr extends Val {
   public final String val;
@@ -44,5 +47,15 @@ public final class VStr extends Val {
   @Override
   public Type type() {
     return TStr.t;
+  }
+
+  @Override
+  public Set<Integer> getInnerAddrs() {
+    return Set.empty();
+  }
+
+  @Override
+  public Val mapInnerAddrs(UnaryOperator<Integer> f) {
+    return this;
   }
 }

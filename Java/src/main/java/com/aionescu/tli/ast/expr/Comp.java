@@ -47,10 +47,10 @@ public final class Comp implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
 
-    var lhs = _lhs.eval(sym);
-    var rhs = _rhs.eval(sym);
+    var lhs = _lhs.eval(heap, sym);
+    var rhs = _rhs.eval(heap, sym);
     var ordering = lhs.compareTo(rhs);
 
     return new VBool(switch (_op) {

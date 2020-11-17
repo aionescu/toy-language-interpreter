@@ -8,6 +8,7 @@ import java.util.function.Function;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
 import com.aionescu.tli.utils.collections.list.List;
+import com.aionescu.tli.utils.collections.set.Set;
 import com.aionescu.tli.utils.control.Maybe;
 
 public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V> {
@@ -59,6 +60,14 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   @Override
   public Maybe<V> lookup(K k) {
     return _list.find(p -> p.fst.compareTo(k) == 0).map(Pair::snd_);
+  }
+
+  @Override
+  public Map<K, V> restrictKeys(Set<K> keys) {
+    var r = keys.toList();
+    var l = _list.filter(a -> r.any(k -> k.compareTo(a.fst) == 0));
+
+    return new AssocListMap<>(l);
   }
 
   @Override

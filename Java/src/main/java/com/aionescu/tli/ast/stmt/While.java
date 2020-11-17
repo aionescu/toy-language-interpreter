@@ -31,7 +31,7 @@ public final class While implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    var v = ((VBool)_cond.eval(prog.sym)).val;
+    var v = ((VBool)_cond.eval(prog.heap, prog.sym)).val;
     var toDo = v ? prog.toDo.push(this).push(_body) : prog.toDo;
 
     return prog.withToDo(toDo);

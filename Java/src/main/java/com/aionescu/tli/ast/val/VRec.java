@@ -1,10 +1,14 @@
 package com.aionescu.tli.ast.val;
 
+import java.util.function.UnaryOperator;
+
 import com.aionescu.tli.ast.Field;
+import com.aionescu.tli.ast.prog.GCStats;
 import com.aionescu.tli.ast.type.TRec;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.eval.PanicException;
 import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.collections.set.Set;
 
 public final class VRec extends Val {
   public final boolean isRec;
@@ -36,5 +40,15 @@ public final class VRec extends Val {
   @Override
   public Type type() {
     return new TRec(isRec, fields.map(Val::type));
+  }
+
+  @Override
+  public Set<Integer> getInnerAddrs() {
+    return GCStats.getInnerAddrsMap(fields);
+  }
+
+  @Override
+  public Val mapInnerAddrs(UnaryOperator<Integer> f) {
+    return new VRec(isRec, GCStats.mapInnerAddrsMap(f, fields));
   }
 }

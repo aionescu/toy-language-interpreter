@@ -42,8 +42,8 @@ public final class RecMember implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    var v = (VRec)lhs.eval(sym);
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var v = (VRec)lhs.eval(heap, sym);
     return v.fields.lookup(field).unwrap();
   }
 }

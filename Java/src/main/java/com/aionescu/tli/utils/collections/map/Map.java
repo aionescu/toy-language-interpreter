@@ -7,6 +7,7 @@ import java.util.function.Function;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
 import com.aionescu.tli.utils.collections.list.List;
+import com.aionescu.tli.utils.collections.set.Set;
 import com.aionescu.tli.utils.control.Maybe;
 
 public interface Map<K extends Comparable<K>, V> {
@@ -25,6 +26,8 @@ public interface Map<K extends Comparable<K>, V> {
   Map<K, V> insert(K k, V v);
   Map<K, V> delete(K k);
   Maybe<V> lookup(K k);
+
+  Map<K, V> restrictKeys(Set<K> keys);
 
   Map<K, V> diff(Map<K, V> rhs);
   Map<K, V> intersectWith(Map<K, V> rhs, BinaryOperator<V> f);

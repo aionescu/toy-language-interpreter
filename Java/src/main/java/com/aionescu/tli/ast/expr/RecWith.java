@@ -44,9 +44,9 @@ public final class RecWith implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    var vrec = (VRec)_lhs.eval(sym);
-    var vals = _updates.map(e -> e.eval(sym));
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var vrec = (VRec)_lhs.eval(heap, sym);
+    var vals = _updates.map(e -> e.eval(heap, sym));
 
     return new VRec(_isRec, vals.foldlWithKey((m, k, v) -> m.insert(k, v), vrec.fields));
   }

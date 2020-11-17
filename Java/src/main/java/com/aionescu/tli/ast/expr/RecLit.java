@@ -29,7 +29,7 @@ public final class RecLit implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    return new VRec(_isRec, _fields.map(e -> e.eval(sym)));
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    return new VRec(_isRec, _fields.map(e -> e.eval(heap, sym)));
   }
 }

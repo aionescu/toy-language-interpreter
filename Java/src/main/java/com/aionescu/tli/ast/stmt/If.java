@@ -40,7 +40,7 @@ public final class If implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    var v = ((VBool)_cond.eval(prog.sym)).val;
+    var v = ((VBool)_cond.eval(prog.heap, prog.sym)).val;
     var block = v ? _then : _else;
 
     return prog.withToDo(prog.toDo.push(block));

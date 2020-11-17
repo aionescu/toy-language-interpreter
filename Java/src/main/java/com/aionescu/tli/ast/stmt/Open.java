@@ -36,7 +36,7 @@ public final class Open implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    var str = ((VStr)_file.eval(prog.sym)).val;
+    var str = ((VStr)_file.eval(prog.heap, prog.sym)).val;
 
     prog.open.lookup(str).matchDo(
       () -> { },

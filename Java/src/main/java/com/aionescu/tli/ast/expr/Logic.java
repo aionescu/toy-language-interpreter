@@ -45,8 +45,8 @@ public final class Logic implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    var lhs = ((VBool)_lhs.eval(sym)).val;
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var lhs = ((VBool)_lhs.eval(heap, sym)).val;
 
     if (lhs == false && _op == Op.AND)
       return new VBool(false);
@@ -54,7 +54,7 @@ public final class Logic implements Expr {
     if (lhs == true && _op == Op.OR)
       return new VBool(true);
 
-    var rhs = ((VBool)_rhs.eval(sym)).val;
+    var rhs = ((VBool)_rhs.eval(heap, sym)).val;
 
     return new VBool(switch (_op) {
       case AND -> lhs && rhs;

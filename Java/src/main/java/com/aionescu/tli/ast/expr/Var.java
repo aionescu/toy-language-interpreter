@@ -35,7 +35,7 @@ public final class Var implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
     return sym.lookup(ident).unwrap();
   }
 }

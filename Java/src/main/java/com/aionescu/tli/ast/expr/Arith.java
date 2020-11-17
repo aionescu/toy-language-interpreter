@@ -81,9 +81,9 @@ public final class Arith implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    var lhsv = _lhs.eval(sym);
-    var rhsv = _rhs.eval(sym);
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var lhsv = _lhs.eval(heap, sym);
+    var rhsv = _rhs.eval(heap, sym);
 
     if (_op == Op.ADD && lhsv instanceof VStr) {
       return new VStr(((VStr)lhsv).val + ((VStr)rhsv).val);

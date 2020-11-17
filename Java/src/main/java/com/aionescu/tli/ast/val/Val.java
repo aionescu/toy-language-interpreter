@@ -1,6 +1,9 @@
 package com.aionescu.tli.ast.val;
 
+import java.util.function.UnaryOperator;
+
 import com.aionescu.tli.ast.type.Type;
+import com.aionescu.tli.utils.collections.set.Set;
 
 public abstract class Val implements Comparable<Val> {
   @Override
@@ -9,4 +12,7 @@ public abstract class Val implements Comparable<Val> {
   }
 
   public abstract Type type();
+
+  public abstract Set<Integer> getInnerAddrs();
+  public abstract Val mapInnerAddrs(UnaryOperator<Integer> f);
 }

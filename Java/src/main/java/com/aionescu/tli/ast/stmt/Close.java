@@ -29,7 +29,7 @@ public final class Close implements Stmt {
 
   @Override
   public ProgState eval(ProgState prog) {
-    var str = ((VStr)_file.eval(prog.sym)).val;
+    var str = ((VStr)_file.eval(prog.heap, prog.sym)).val;
 
     return prog.open.lookup(str).match(
       () -> { throw new FileNotOpenedException(str); },

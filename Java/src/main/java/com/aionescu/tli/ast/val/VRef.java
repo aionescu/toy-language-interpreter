@@ -1,8 +1,11 @@
 package com.aionescu.tli.ast.val;
 
+import java.util.function.UnaryOperator;
+
 import com.aionescu.tli.ast.prog.GCStats;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.eval.PanicException;
+import com.aionescu.tli.utils.collections.set.Set;
 
 public final class VRef extends Val {
   public final int addr;
@@ -24,5 +27,15 @@ public final class VRef extends Val {
   @Override
   public Type type() {
     throw new PanicException();
+  }
+
+  @Override
+  public Set<Integer> getInnerAddrs() {
+    return Set.singleton(addr);
+  }
+
+  @Override
+  public Val mapInnerAddrs(UnaryOperator<Integer> f) {
+    return new VRef(f.apply(addr));
   }
 }

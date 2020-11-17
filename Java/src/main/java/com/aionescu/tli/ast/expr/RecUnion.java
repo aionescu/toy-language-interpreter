@@ -56,9 +56,9 @@ public final class RecUnion implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    var as = ((VRec)_lhs.eval(sym)).fields;
-    var bs = ((VRec)_rhs.eval(sym)).fields;
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var as = ((VRec)_lhs.eval(heap, sym)).fields;
+    var bs = ((VRec)_rhs.eval(heap, sym)).fields;
 
     return new VRec(true, as.union(bs));
   }

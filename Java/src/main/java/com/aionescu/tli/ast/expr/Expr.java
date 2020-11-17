@@ -9,5 +9,5 @@ import com.aionescu.tli.ast.val.Val;
 
 public interface Expr {
   Type typeCheck(Map<Ident, VarInfo> sym);
-  Val eval(Map<Ident, Val> sym);
+  Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym);
 }

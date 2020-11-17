@@ -37,10 +37,10 @@ public final class App implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    var fn = (VFun)_fn.eval(sym);
-    var arg = _arg.eval(sym);
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var fn = (VFun)_fn.eval(heap, sym);
+    var arg = _arg.eval(heap, sym);
 
-    return fn.f.apply(arg);
+    return fn.f.apply(fn.sym, arg);
   }
 }

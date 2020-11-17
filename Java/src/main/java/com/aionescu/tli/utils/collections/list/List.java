@@ -168,6 +168,10 @@ public abstract class List<A> {
         cons(f.apply(a, b), as.zipWith(bs_, f))));
   }
 
+  public final <B> List<Pair<A, B>> zip(List<B> bs) {
+    return zipWith(bs, Pair::new);
+  }
+
   public final List<Pair<Integer, A>> indexed() {
     return range(0, length()).zipWith(this, Pair::new);
   }

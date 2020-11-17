@@ -325,8 +325,8 @@ runGC ProgState { gcStats = gcStats@GCStats { .. }, .. } =
       let
         heap' = M.restrictKeys heap (getInnerAddrs heap sym)
         f = compactKeys $ M.keys heap'
-        heapCompacted = updateInnerAddrsScope f heap'
-        symCompacted = updateInnerAddrsScope f sym
+        heapCompacted = mapInnerAddrsScope f heap'
+        symCompacted = mapInnerAddrsScope f sym
       in
         ProgState
         { gcStats = gcStats { allocsSinceGC = 0, crrHeapSize = M.size heapCompacted }
@@ -357,14 +357,14 @@ getInnerAddrsAll heap acc set
 getInnerAddrs :: Foldable f => Heap -> f Val -> Set Addr
 getInnerAddrs heap = getInnerAddrsAll heap S.empty . getInnerAddrsScope
 
-updateInnerAddrsVal :: (Addr -> Addr) -> Val -> Val
-updateInnerAddrsVal f (VRef a) = VRef $ f a
-updateInnerAddrsVal f (VRec f' m) = VRec f' $ updateInnerAddrsScope f m
-updateInnerAddrsVal f (VFun sym fun) = VFun (updateInnerAddrsScope f sym) fun
-updateInnerAddrsVal _ v = v
+mapInnerAddrsVal :: (Addr -> Addr) -> Val -> Val
+mapInnerAddrsVal f (VRef a) = VRef $ f a
+mapInnerAddrsVal f (VRec f' m) = VRec f' $ mapInnerAddrsScope f m
+mapInnerAddrsVal f (VFun sym fun) = VFun (mapInnerAddrsScope f sym) fun
+mapInnerAddrsVal _ v = v
 
-updateInnerAddrsScope :: Functor f => (Addr -> Addr) -> f Val -> f Val
-updateInnerAddrsScope f = (updateInnerAddrsVal f <$>)
+mapInnerAddrsScope :: Functor f => (Addr -> Addr) -> f Val -> f Val
+mapInnerAddrsScope f = (mapInnerAddrsVal f <$>)
 
 smallStep :: ProgState -> Maybe (Eval ProgState)
 smallStep ProgState { toDo = [] } = Nothing

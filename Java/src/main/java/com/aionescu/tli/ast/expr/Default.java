@@ -20,7 +20,7 @@ public final class Default implements Expr {
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
     return _type.defaultValue();
   }
 }

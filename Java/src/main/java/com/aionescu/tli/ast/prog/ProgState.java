@@ -43,6 +43,10 @@ public final class ProgState {
     return new ProgState(open, toDo, sym, gcStats, heap, out);
   }
 
+  public ProgState withHeap(Map<Integer, Val> heap) {
+    return new ProgState(open, toDo, sym, gcStats, heap, out);
+  }
+
   public ProgState withOut(List<Val> out) {
     return new ProgState(open, toDo, sym, gcStats, heap, out);
   }

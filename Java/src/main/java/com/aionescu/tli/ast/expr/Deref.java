@@ -3,6 +3,7 @@ package com.aionescu.tli.ast.expr;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
+import com.aionescu.tli.ast.val.VRef;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.utils.collections.map.Map;
 
@@ -20,11 +21,12 @@ public final class Deref implements Expr {
 
   @Override
   public Type typeCheck(Map<Ident, VarInfo> sym) {
-    throw null;
+    return _ref.typeCheck(sym).unwrapTRef();
   }
 
   @Override
-  public Val eval(Map<Ident, Val> sym) {
-    throw null;
+  public Val eval(Map<Integer, Val> heap, Map<Ident, Val> sym) {
+    var v = ((VRef)_ref.eval(heap, sym)).addr;
+    return heap.lookup(v).unwrap();
   }
 }
