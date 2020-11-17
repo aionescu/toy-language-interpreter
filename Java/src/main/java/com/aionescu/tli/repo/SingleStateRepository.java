@@ -34,9 +34,14 @@ public final class SingleStateRepository implements Repository {
 
   @Override
   public void oneStep() {
+    logState();
+
     _state = _state.toDo.pop().match(
       () -> { throw new EvaluationFinishedException(); },
       Pair.match((stmt, toDo) -> stmt.eval(_state.withToDo(toDo))));
+
+    if (done())
+      logState();
   }
 
   @Override

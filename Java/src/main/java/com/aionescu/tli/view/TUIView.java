@@ -96,14 +96,10 @@ public final class TUIView implements View {
   }
 
   private void _runBigStep() {
-    var state = _controller.state();
+    while (!_controller.done())
+      _controller.oneStep();
 
-    try {
-      _controller.allSteps();
-      System.out.println(_controller.state().output());
-    } finally {
-      _controller.setState(state);
-    }
+    System.out.println(_controller.state().output());
   }
 
   @Command(name = "run", desc = "Runs the loaded program. If --small-step is passed, displays all intermediate states.")

@@ -2,7 +2,6 @@ package com.aionescu.tli.controller;
 
 import com.aionescu.tli.ast.prog.ProgState;
 import com.aionescu.tli.repo.Repository;
-import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.control.Maybe;
 
 public final class Controller {
@@ -31,19 +30,6 @@ public final class Controller {
 
   public boolean done() {
     return _repo.done();
-  }
-
-  public List<ProgState> allSteps() {
-    if (done()) {
-      _repo.logState();
-      return List.singleton(state());
-    } else {
-      var current = state();
-      _repo.logState();
-      oneStep();
-
-      return List.cons(current, allSteps());
-    }
   }
 
   public void setLogPath(Maybe<String> path) {
