@@ -101,6 +101,10 @@ public abstract class List<A> {
     return stream.reduce(List.<A>nil(), (l, a) -> cons(a, l), List::append).reverse();
   }
 
+  public Stream<A> stream() {
+    return foldl((s, a) -> s.add(a), Stream.<A>builder()).build();
+  }
+
   private static String _asString(List<Character> chars, String acc) {
     return chars.match(() -> acc, (h, t) -> _asString(t, acc + h));
   }
@@ -208,6 +212,11 @@ public abstract class List<A> {
 
   public final List<A> mergeSorted(Comparator<A> f, List<A> vs) {
     return vs.foldl((s, a) -> s.insertSorted(f, a), this);
+  }
+
+  public final <B extends Comparable<B>> List<A> sortBy(Function<A, B> f) {
+    Comparator<A> c = (a, b) -> f.apply(a).compareTo(f.apply(b));
+    return foldl((s, a) -> s.insertSorted(c, a), nil());
   }
 
   public final <S> S foldl(BiFunction<S, A, S> f, S s) {

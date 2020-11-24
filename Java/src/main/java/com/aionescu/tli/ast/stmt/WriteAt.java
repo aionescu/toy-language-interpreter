@@ -2,7 +2,7 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VRef;
 import com.aionescu.tli.utils.collections.map.Map;
@@ -30,10 +30,13 @@ public final class WriteAt implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
-    var vl = ((VRef)_lhs.eval(prog.heap, prog.sym)).addr;
-    var vr = _rhs.eval(prog.heap, prog.sym);
+  public ThreadState eval(ThreadState prog) {
+    synchronized (prog.global) {
+      var vl = ((VRef)_lhs.eval(prog.global.get().heap, prog.sym)).addr;
+      var vr = _rhs.eval(prog.global.get().heap, prog.sym);
 
-    return prog.withHeap(prog.heap.insert(vl, vr));
+      prog.global.update(g -> g.withHeap(g.heap.insert(vl, vr)));
+      return prog;
+    }
   }
 }

@@ -15,6 +15,10 @@ public interface Set<A extends Comparable<A>> {
     return Set.<A>empty().insert(a);
   }
 
+  static <A extends Comparable<A>> Set<A> fromList(List<A> list) {
+    return list.foldl((s, a) -> s.insert(a), empty());
+  }
+
   List<A> toList();
   Map<A, Unit> toMap();
 

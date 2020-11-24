@@ -6,7 +6,7 @@ import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.expr.RecMember;
 import com.aionescu.tli.ast.expr.RecWith;
 import com.aionescu.tli.ast.expr.Var;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.exn.typeck.InvalidAssignmentException;
@@ -46,10 +46,10 @@ public final class Assign implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
+  public ThreadState eval(ThreadState prog) {
     if (_lhs instanceof Var) {
       var ident = ((Var)_lhs).ident;
-      return prog.withSym(prog.sym.insert(ident, _rhs.eval(prog.heap, prog.sym)));
+      return prog.withSym(prog.sym.insert(ident, _rhs.eval(prog.global.get().heap, prog.sym)));
     } else {
       var lhs = (RecMember)_lhs;
       return new Assign(lhs.lhs, new RecWith(lhs.lhs, lhs.field.isRecField(), Map.<Field, Expr>empty().insert(lhs.field, _rhs))).eval(prog);

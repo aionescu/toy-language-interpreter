@@ -3,7 +3,7 @@ package com.aionescu.tli.ast.stmt;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.val.VBool;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.type.varinfo.VarState;
@@ -39,8 +39,8 @@ public final class If implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
-    var v = ((VBool)_cond.eval(prog.heap, prog.sym)).val;
+  public ThreadState eval(ThreadState prog) {
+    var v = ((VBool)_cond.eval(prog.global.get().heap, prog.sym)).val;
     var block = v ? _then : _else;
 
     return prog.withToDo(prog.toDo.push(block));

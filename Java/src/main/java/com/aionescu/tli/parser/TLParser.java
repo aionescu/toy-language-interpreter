@@ -215,7 +215,9 @@ public final class TLParser {
     Parser<Stmt> new_ = Parser.liftA2(New::new, ident, _equals._and(string("new")._and(_ws)._and(_expr)));
     Parser<Stmt> writeAt = Parser.liftA2(WriteAt::new, _expr, string(":=")._and(_ws)._and(_expr));
 
-    var stmt_ = choice(writeAt, new_, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
+    Parser<Stmt> fork = string("fork")._and(_ws)._and(block).map(Fork::new);
+
+    var stmt_ = choice(fork, writeAt, new_, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
     var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new));
     stmtFwdRef.snd.set(compound);
 

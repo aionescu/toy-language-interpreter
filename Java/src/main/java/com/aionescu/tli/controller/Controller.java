@@ -1,8 +1,9 @@
 package com.aionescu.tli.controller;
 
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.repo.Repository;
 import com.aionescu.tli.utils.control.Maybe;
+import com.aionescu.tli.utils.control.Ref;
 
 public final class Controller {
   Repository _repo;
@@ -11,21 +12,16 @@ public final class Controller {
     _repo = repo;
   }
 
-  public ProgState state() {
+  public Ref<GlobalState> state() {
     return _repo.state();
   }
 
-  public void setState(ProgState state) {
+  public void setState(Ref<GlobalState> state) {
     _repo.setState(state);
   }
 
-  public void typeCheck() {
-    _repo.typeCheck();
-  }
-
-  public ProgState oneStep() {
+  public void oneStep() {
     _repo.oneStep();
-    return _repo.state();
   }
 
   public boolean done() {

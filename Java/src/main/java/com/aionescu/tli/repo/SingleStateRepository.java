@@ -5,40 +5,29 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import com.aionescu.tli.ast.Ident;
-import com.aionescu.tli.ast.prog.ProgState;
-import com.aionescu.tli.ast.type.varinfo.VarInfo;
-import com.aionescu.tli.exn.eval.EvaluationFinishedException;
-import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.utils.control.Maybe;
+import com.aionescu.tli.utils.control.Ref;
 
 public final class SingleStateRepository implements Repository {
-  private ProgState _state;
+  private Ref<GlobalState> _global = new Ref<>(GlobalState.empty);
   private Maybe<PrintWriter> _logFile = Maybe.nothing();
 
   @Override
-  public ProgState state() {
-    return _state;
+  public Ref<GlobalState> state() {
+    return _global;
   }
 
   @Override
-  public void setState(ProgState state) {
-    _state = state;
-  }
-
-  @Override
-  public void typeCheck() {
-    _state.toDo.foldl((sym, stmt) -> stmt.typeCheck(sym), Map.<Ident, VarInfo>empty());
+  public void setState(Ref<GlobalState> state) {
+    _global = state;
   }
 
   @Override
   public void oneStep() {
     logState();
 
-    _state = _state.toDo.pop().match(
-      () -> { throw new EvaluationFinishedException(); },
-      Pair.match((stmt, toDo) -> stmt.eval(_state.withToDo(toDo))));
+    GlobalState.eval(_global);
 
     if (done())
       logState();
@@ -46,7 +35,7 @@ public final class SingleStateRepository implements Repository {
 
   @Override
   public boolean done() {
-    return _state.toDo.isEmpty();
+    return _global.get().threads.isEmpty();
   }
 
   @Override
@@ -54,7 +43,7 @@ public final class SingleStateRepository implements Repository {
     _logFile.matchDo(
       () -> { },
       f -> {
-        f.write(_state.toString());
+        f.write(_global.get().toString());
         f.write("\n");
         f.flush();
       }

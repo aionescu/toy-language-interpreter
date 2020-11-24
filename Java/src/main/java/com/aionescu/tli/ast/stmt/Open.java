@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VStr;
@@ -37,30 +37,35 @@ public final class Open implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
-    var str = ((VStr)_file.eval(prog.heap, prog.sym)).val;
+  public ThreadState eval(ThreadState prog) {
+    synchronized (prog.global) {
+      var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
 
-    prog.open.lookup(str).matchDo(
-      () -> { },
-      a -> { throw new FileAlreadyOpenedException(str); });
+      var global = prog.global.get();
 
-    String contents;
+      global.open.lookup(str).matchDo(
+        () -> { },
+        a -> { throw new FileAlreadyOpenedException(str); });
 
-    try {
-      contents = Files.readString(Path.of(str));
-    } catch (NoSuchFileException e) {
-      throw new FileDoesNotExistException(str);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      String contents;
+
+      try {
+        contents = Files.readString(Path.of(str));
+      } catch (NoSuchFileException e) {
+        throw new FileDoesNotExistException(str);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      var vals =
+        List
+        .ofStream(
+          Arrays.stream(
+            contents.split("\n")))
+        .map(l -> TLParser.parseValLine(str, l));
+
+      prog.global.update(g -> g.withOpen(g.open.insert(str, vals)));
+      return prog;
     }
-
-    var vals =
-      List
-      .ofStream(
-        Arrays.stream(
-          contents.split("\n")))
-      .map(l -> TLParser.parseValLine(str, l));
-
-    return prog.withOpen(prog.open.insert(str, vals));
   }
 }

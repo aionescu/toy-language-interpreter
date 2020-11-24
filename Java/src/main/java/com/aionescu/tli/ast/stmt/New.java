@@ -2,8 +2,7 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.prog.GCStats;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.TRef;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.type.varinfo.VarState;
@@ -38,14 +37,25 @@ public final class New implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
-    if (prog.gcStats.crrHeapSize == prog.gcStats.maxHeapSize)
-      throw new OutOfMemoryException(prog.gcStats.maxHeapSize);
+  public ThreadState eval(ThreadState prog) {
+    synchronized (prog.global) {
+      var global = prog.global.get();
 
-    var v = _expr.eval(prog.heap, prog.sym);
-    var sym = prog.sym.insert(_ident, new VRef(prog.gcStats.crrHeapSize));
-    var heap = prog.heap.insert(prog.gcStats.crrHeapSize, v);
+      if (global.gcStats.crrHeapSize == global.gcStats.maxHeapSize)
+        throw new OutOfMemoryException(global.gcStats.maxHeapSize);
 
-    return GCStats.runGC(prog.withSym(sym).withHeap(heap));
+      var v = _expr.eval(global.heap, prog.sym);
+      var sym = prog.sym.insert(_ident, new VRef(global.gcStats.crrHeapSize));
+      var heap = global.heap.insert(global.gcStats.crrHeapSize, v);
+
+      prog.global.update(g ->
+        g.withGCStats(
+          g.gcStats
+            .withAllocsSinceGC(g.gcStats.allocsSinceGC + 1)
+            .withCrrHeapSize(g.gcStats.crrHeapSize + 1)));
+
+      prog.global.update(g -> g.withHeap(heap));
+      return prog.withSym(sym);
+    }
   }
 }

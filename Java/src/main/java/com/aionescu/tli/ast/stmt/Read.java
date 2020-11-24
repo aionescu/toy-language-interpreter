@@ -2,7 +2,7 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
@@ -45,22 +45,23 @@ public final class Read implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
-    var str = ((VStr)_file.eval(prog.heap, prog.sym)).val;
+  public ThreadState eval(ThreadState prog) {
+    synchronized (prog.global) {
+      var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
 
-    return prog.open.lookup(str).match(
-      () -> { throw new FileNotOpenedException(str); },
-      l -> l.match(
-        () -> { throw new ReachedEOFException(str); },
-        (c, cs) -> {
-          var tc = c.type();
-          if (!tc.equals(_type))
-            throw new ReadDifferentTypeException(str, tc, _type);
+      var global = prog.global.get();
+      return global.open.lookup(str).match(
+        () -> { throw new FileNotOpenedException(str); },
+        l -> l.match(
+          () -> { throw new ReachedEOFException(str); },
+          (c, cs) -> {
+            var tc = c.type();
+            if (!tc.equals(_type))
+              throw new ReadDifferentTypeException(str, tc, _type);
 
-          return
-            prog
-            .withSym(prog.sym.insert(_ident, c))
-            .withOpen(prog.open.insert(str, cs));
-        }));
+            prog.global.update(g -> g.withOpen(g.open.insert(str, cs)));
+            return prog.withSym(prog.sym.insert(_ident, c));
+          }));
+      }
   }
 }

@@ -6,7 +6,7 @@ import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.expr.Var;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 
@@ -35,7 +35,7 @@ public final class DeclAssign implements Stmt {
   }
 
   @Override
-  public ProgState eval(ProgState prog) {
+  public ThreadState eval(ThreadState prog) {
     var tail = prog.toDo.push(new Assign(new Var(_ident), _expr));
 
     return prog.withToDo(_type.match(

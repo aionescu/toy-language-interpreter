@@ -11,13 +11,12 @@ import java.util.function.BiConsumer;
 
 import com.aionescu.tli.exn.eval.EvalException;
 import com.aionescu.tli.exn.typeck.TypeCheckerException;
-import com.aionescu.tli.ast.prog.ProgState;
+import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.controller.*;
 import com.aionescu.tli.parser.TLParser;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
-import com.aionescu.tli.utils.collections.stack.Stack;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.uparsec.exn.UParsecException;
 
@@ -79,10 +78,11 @@ public final class TUIView implements View {
     try {
       var code = Files.readString(Path.of(arg));
       var ast = TLParser.parse(code);
-      var prog = ProgState.empty.withToDo(Stack.of(ast));
+      ast.typeCheck(Map.empty());
 
-      _controller.setState(prog);
-      _controller.typeCheck();
+      var global = GlobalState.initial(ast);
+
+      _controller.setState(global);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -91,15 +91,17 @@ public final class TUIView implements View {
   private void _runSmallStep() {
     System.out.println(_controller.state());
 
-    while (!_controller.done())
-      System.out.println(_controller.oneStep());
+    while (!_controller.done()) {
+      _controller.oneStep();
+      System.out.println(_controller.state().get());
+    }
   }
 
   private void _runBigStep() {
     while (!_controller.done())
       _controller.oneStep();
 
-    System.out.println(_controller.state().output());
+    System.out.println(_controller.state().get().output());
   }
 
   @Command(name = "run", desc = "Runs the loaded program. If --small-step is passed, displays all intermediate states.")
@@ -110,18 +112,18 @@ public final class TUIView implements View {
       _runBigStep();
   }
 
-  @Command(name = "show-ast", desc = "Shows the AST of the loaded program.")
-  private void _dumpAST(String arg) {
-    System.out.println(_controller.state().toDo);
+  @Command(name = "show-state", desc = "Shows the AST of the loaded program.")
+  private void _showState(String arg) {
+    System.out.println(_controller.state().get());
   }
 
   @Command(name = "parse", desc = "Reads a program from its argument, then parses, typechecks, and loads it.")
   private void _parseStdin(String arg) {
     var ast = TLParser.parse(arg);
-    var prog = ProgState.empty.withToDo(Stack.of(ast));
+    ast.typeCheck(Map.empty());
 
+    var prog = GlobalState.initial(ast);
     _controller.setState(prog);
-    _controller.typeCheck();
   }
 
   @Command(name = "set-log-file", desc = "Sets the log file to the specified path.")
@@ -137,19 +139,13 @@ public final class TUIView implements View {
   @Command(name = "set-gc-threshold", desc = "Sets the amount of allocations to perform before a collection occurs.")
   private void _setGCThreshold(String arg) {
     var gcThreshold = Integer.parseInt(arg);
-
-    var state = _controller.state();
-    var newState = state.withGCStats(state.gcStats.withGCThreshold(gcThreshold));
-    _controller.setState(newState);
+    _controller.state().update(s -> s.withGCStats(s.gcStats.withGCThreshold(gcThreshold)));;
   }
 
   @Command(name = "set-max-heap-size", desc = "Sets the maximum size of the heap.")
   private void _setMaxHeapSize(String arg) {
     var maxHeapSize = Integer.parseInt(arg);
-
-    var state = _controller.state();
-    var newState = state.withGCStats(state.gcStats.withMaxHeapSize(maxHeapSize));
-    _controller.setState(newState);
+    _controller.state().update(s -> s.withGCStats(s.gcStats.withMaxHeapSize(maxHeapSize)));
   }
 
   private void _dispatch(String cmd, String arg) {

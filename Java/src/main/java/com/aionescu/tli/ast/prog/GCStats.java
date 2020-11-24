@@ -7,6 +7,7 @@ import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 import com.aionescu.tli.utils.collections.set.Set;
+import com.aionescu.tli.utils.control.Ref;
 
 public final class GCStats {
   public final int allocsSinceGC, gcThreshold, crrHeapSize, maxHeapSize;
@@ -66,8 +67,12 @@ public final class GCStats {
     }
   }
 
-  public static <K extends Comparable<K>> Set<Integer> getInnerAddrs(Map<Integer, Val> heap, Map<K, Val> map) {
-    return getInnerAddrsAll(heap, Set.empty(), getInnerAddrsMap(map));
+  public static <K extends Comparable<K>> Set<Integer> getInnerAddrs(Map<Integer, Val> heap, Set<Integer> addrs) {
+    return getInnerAddrsAll(heap, Set.empty(), addrs);
+  }
+
+  public static Set<Integer> getInnerAddrsThreads(List<ThreadState> threads) {
+    return threads.map(t -> t.sym).map(s -> getInnerAddrsMap(s)).foldl((s, a) -> s.union(a), Set.<Integer>empty());
   }
 
   public static <K extends Comparable<K>> Map<K, Val> mapInnerAddrsMap(UnaryOperator<Integer> f, Map<K, Val> m) {
@@ -79,30 +84,32 @@ public final class GCStats {
     return i -> m.lookup(i).unwrap();
   }
 
-  public static ProgState runGC(ProgState prog) {
+  public static void runGC(Ref<GlobalState> global) {
+    var prog = global.get();
+
     var gcStats = prog.gcStats;
 
-    if (gcStats.allocsSinceGC < gcStats.gcThreshold) {
-      return prog.withGCStats(
+    if (gcStats.allocsSinceGC < gcStats.gcThreshold)
+      return;
+
+    var heap = prog.heap.restrictKeys(getInnerAddrs(prog.heap, getInnerAddrsThreads(prog.threads)));
+    var f = compactKeys(heap.toList().map(Pair::fst_));
+    var heapCompacted = mapInnerAddrsMap(f, heap);
+
+    var threadsCompacted = prog.threads.map(t -> t.withSym(mapInnerAddrsMap(f, t.sym)));
+
+    var heapMapped = Map.fromList(heapCompacted.toList().map(p -> Pair.of(f.apply(p.fst), p.snd)));
+    var heapSize = heapMapped.toList().length();
+
+    var newProg =
+      prog
+      .withThreads(threadsCompacted)
+      .withHeap(heapMapped)
+      .withGCStats(
         gcStats
-          .withAllocsSinceGC(gcStats.allocsSinceGC + 1)
-          .withCrrHeapSize(gcStats.crrHeapSize + 1));
-    } else {
-      var heap = prog.heap.restrictKeys(getInnerAddrs(prog.heap, prog.sym));
-      var f = compactKeys(heap.toList().map(Pair::fst_));
-      var heapCompacted = mapInnerAddrsMap(f, heap);
-      var symCompacted = mapInnerAddrsMap(f, prog.sym);
+          .withAllocsSinceGC(0)
+          .withCrrHeapSize(heapSize));
 
-      var heapMapped = Map.fromList(heapCompacted.toList().map(p -> Pair.of(f.apply(p.fst), p.snd)));
-      var heapSize = heapMapped.toList().length();
-
-      return prog
-        .withSym(symCompacted)
-        .withHeap(heapMapped)
-        .withGCStats(
-          gcStats
-            .withAllocsSinceGC(0)
-            .withCrrHeapSize(heapSize));
-    }
+    global.set(newProg);
   }
 }
