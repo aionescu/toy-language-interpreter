@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.function.BiConsumer;
 
@@ -173,6 +174,9 @@ public final class TUIView implements View {
           System.out.println("Type error: " + e.getMessage());
         } catch (EvalException e) {
           System.out.println("Evaluation error: " + e.getMessage());
+        } catch (NoSuchElementException e) {
+          System.out.println("EOF detected. Quitting.");
+          System.exit(0);
         } catch (Throwable e) {
           System.out.println("Something unexpected occurred:");
           e.printStackTrace();

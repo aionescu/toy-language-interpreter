@@ -63,16 +63,18 @@ public final class GlobalState {
   }
 
   public static void eval(Ref<GlobalState> global) {
-    var threads =
+    var oldThreads = global.get().threads;
+    global.update(g -> g.withThreads(List.nil()));
+
+    var evaledThreads =
       List.ofStream(
-        global.get().threads
+        oldThreads
         .stream()
         .parallel()
-        .map(ThreadState::eval));
+        .map(ThreadState::eval))
+      .sortBy(t -> t.id);
 
-    var newThreads = global.get().threads.filter(t -> !threads.any(t1 -> t1.id == t.id));
-
-    global.update(g -> g.withThreads(threads.append(newThreads).filter(ThreadState::isNotDone).sortBy(t -> t.id)));
+    global.update(g -> g.withThreads(evaledThreads.append(g.threads).filter(ThreadState::isNotDone)));
     GCStats.runGC(global);
   }
 
