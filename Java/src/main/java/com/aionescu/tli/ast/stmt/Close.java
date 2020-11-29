@@ -7,7 +7,7 @@ import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.exn.eval.FileNotOpenedException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Close implements Stmt {
   private final Expr _file;

@@ -1,4 +1,4 @@
-package com.aionescu.tli.utils.collections.stack;
+package com.aionescu.tli.utils.data.stack;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.control.Maybe;

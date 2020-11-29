@@ -1,8 +1,8 @@
 package com.aionescu.tli.ast.prog;
 
-import com.aionescu.tli.utils.collections.list.List;
-import com.aionescu.tli.utils.collections.map.Map;
-import com.aionescu.tli.utils.collections.stack.Stack;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.map.Map;
+import com.aionescu.tli.utils.data.stack.Stack;
 import com.aionescu.tli.utils.control.Ref;
 import com.aionescu.tli.ast.stmt.Stmt;
 import com.aionescu.tli.ast.val.VStr;

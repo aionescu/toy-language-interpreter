@@ -1,11 +1,11 @@
-package com.aionescu.tli.utils.collections.set;
+package com.aionescu.tli.utils.data.set;
 
 import java.util.function.Function;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.Unit;
-import com.aionescu.tli.utils.collections.list.List;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class UnitMapSet<A extends Comparable<A>> implements Set<A> {
   private final Map<A, Unit> _map;

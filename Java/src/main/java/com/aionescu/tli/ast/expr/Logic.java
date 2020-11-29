@@ -1,6 +1,6 @@
 package com.aionescu.tli.ast.expr;
 
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.TBool;

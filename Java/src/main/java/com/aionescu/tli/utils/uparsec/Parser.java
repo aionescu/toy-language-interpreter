@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
 import com.aionescu.tli.utils.Unit;
-import com.aionescu.tli.utils.collections.list.List;
+import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.uparsec.exn.FwdRefAlreadySetException;
 import com.aionescu.tli.utils.uparsec.exn.ParserStuckException;
 import com.aionescu.tli.utils.uparsec.exn.ParsingFailedException;

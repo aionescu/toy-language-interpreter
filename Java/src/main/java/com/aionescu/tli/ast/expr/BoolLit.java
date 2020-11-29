@@ -4,7 +4,7 @@ import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.*;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 import com.aionescu.tli.ast.Ident;
 

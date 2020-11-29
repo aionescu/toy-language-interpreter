@@ -9,7 +9,7 @@ import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.ast.val.VRef;
 import com.aionescu.tli.exn.eval.OutOfMemoryException;
 import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class New implements Stmt {
   private final Ident _ident;

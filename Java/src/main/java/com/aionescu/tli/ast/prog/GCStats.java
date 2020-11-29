@@ -4,9 +4,9 @@ import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.list.List;
-import com.aionescu.tli.utils.collections.map.Map;
-import com.aionescu.tli.utils.collections.set.Set;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.map.Map;
+import com.aionescu.tli.utils.data.set.Set;
 import com.aionescu.tli.utils.control.Ref;
 import com.aionescu.tli.utils.data.Foldable;
 

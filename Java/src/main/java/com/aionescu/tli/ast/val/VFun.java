@@ -7,8 +7,8 @@ import com.aionescu.tli.ast.prog.GCStats;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.eval.PanicException;
 import com.aionescu.tli.utils.TriFunction;
-import com.aionescu.tli.utils.collections.map.Map;
-import com.aionescu.tli.utils.collections.set.Set;
+import com.aionescu.tli.utils.data.map.Map;
+import com.aionescu.tli.utils.data.set.Set;
 
 public final class VFun extends Val {
   public final Map<Ident, Val> sym;

@@ -8,7 +8,7 @@ import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.ast.val.VFun;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.CantShadowException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Lam implements Expr {
   private final Ident _argName;

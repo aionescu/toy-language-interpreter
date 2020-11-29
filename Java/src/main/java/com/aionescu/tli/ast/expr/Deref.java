@@ -5,7 +5,7 @@ import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VRef;
 import com.aionescu.tli.ast.val.Val;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Deref implements Expr {
   private final Expr _ref;

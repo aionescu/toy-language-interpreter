@@ -15,8 +15,8 @@ import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.exn.eval.FileAlreadyOpenedException;
 import com.aionescu.tli.exn.eval.FileDoesNotExistException;
 import com.aionescu.tli.parser.TLParser;
-import com.aionescu.tli.utils.collections.list.List;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Open implements Stmt {
   private final Expr _file;

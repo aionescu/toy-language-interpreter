@@ -9,7 +9,7 @@ import com.aionescu.tli.ast.val.VRec;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.DuplicateIncompatibleFieldException;
 import com.aionescu.tli.exn.typeck.NeedRecordTypesForUnionException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.control.Maybe;
 
 public final class RecUnion implements Expr {

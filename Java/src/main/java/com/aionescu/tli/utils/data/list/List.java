@@ -1,4 +1,4 @@
-package com.aionescu.tli.utils.collections.list;
+package com.aionescu.tli.utils.data.list;
 
 import java.util.Arrays;
 import java.util.Comparator;

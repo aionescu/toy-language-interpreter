@@ -7,7 +7,7 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VFun;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.ExpectedFunFoundException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class App implements Expr {
   private final Expr _fn, _arg;

@@ -9,7 +9,7 @@ import com.aionescu.tli.ast.val.VRec;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.ExpectedRecFoundException;
 import com.aionescu.tli.exn.typeck.NoFieldInRecException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class RecMember implements Expr {
   public final Expr lhs;

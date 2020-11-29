@@ -4,7 +4,7 @@ import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.typeck.IllFormedASTException;
 import com.aionescu.tli.exn.typeck.NoFieldInRecException;
 import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public abstract class Field implements Comparable<Field> {
   public static final class RecField extends Field {

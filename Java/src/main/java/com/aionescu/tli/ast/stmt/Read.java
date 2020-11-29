@@ -12,7 +12,7 @@ import com.aionescu.tli.exn.eval.FileNotOpenedException;
 import com.aionescu.tli.exn.eval.ReachedEOFException;
 import com.aionescu.tli.exn.eval.ReadDifferentTypeException;
 import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Read implements Stmt {
   private final Ident _ident;

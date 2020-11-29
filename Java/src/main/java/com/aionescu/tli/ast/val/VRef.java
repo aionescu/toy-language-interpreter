@@ -5,7 +5,7 @@ import java.util.function.UnaryOperator;
 import com.aionescu.tli.ast.prog.GCStats;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.exn.eval.PanicException;
-import com.aionescu.tli.utils.collections.set.Set;
+import com.aionescu.tli.utils.data.set.Set;
 
 public final class VRef extends Val {
   public final int addr;

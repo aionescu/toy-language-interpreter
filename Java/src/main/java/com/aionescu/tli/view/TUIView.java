@@ -16,8 +16,8 @@ import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.controller.*;
 import com.aionescu.tli.parser.TLParser;
 import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.list.List;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.uparsec.exn.UParsecException;
 

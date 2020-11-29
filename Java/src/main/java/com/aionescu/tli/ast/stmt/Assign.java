@@ -11,7 +11,7 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.exn.typeck.InvalidAssignmentException;
 import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Assign implements Stmt {
   private final Expr _lhs;

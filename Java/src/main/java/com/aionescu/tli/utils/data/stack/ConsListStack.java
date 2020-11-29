@@ -1,7 +1,7 @@
-package com.aionescu.tli.utils.collections.stack;
+package com.aionescu.tli.utils.data.stack;
 
 import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.collections.list.List;
+import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.control.Maybe;
 
 public final class ConsListStack<A> implements Stack<A> {

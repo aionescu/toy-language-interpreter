@@ -1,4 +1,4 @@
-package com.aionescu.tli.utils.collections.map;
+package com.aionescu.tli.utils.data.map;
 
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -6,8 +6,8 @@ import java.util.function.Function;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
-import com.aionescu.tli.utils.collections.list.List;
-import com.aionescu.tli.utils.collections.set.Set;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.set.Set;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.Foldable;
 

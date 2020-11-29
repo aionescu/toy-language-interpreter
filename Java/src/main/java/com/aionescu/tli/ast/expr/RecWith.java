@@ -8,7 +8,7 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.val.VRec;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.ExpectedRecFoundException;
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class RecWith implements Expr {
   private final Expr _lhs;

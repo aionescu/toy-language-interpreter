@@ -1,6 +1,6 @@
 package com.aionescu.tli.ast.stmt;
 
-import com.aionescu.tli.utils.collections.map.Map;
+import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.control.Maybe;
 
 import com.aionescu.tli.ast.Ident;
