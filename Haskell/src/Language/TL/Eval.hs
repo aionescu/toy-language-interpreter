@@ -12,6 +12,11 @@ import qualified Data.Map.Strict as M
 import Data.Set(Set)
 import qualified Data.Set as S
 
+import Control.Monad.Reader(local, asks, ask, MonadReader, runReaderT)
+import Control.Monad.Except(throwError, MonadError)
+import Data.Bifunctor(Bifunctor(first))
+import Control.Monad.State (runStateT, modify, get, MonadState)
+
 import Language.TL.AST
 
 type Addr = Int
@@ -21,7 +26,7 @@ data Val
   | VBool Bool
   | VStr String
   | forall f. VRec (Field f) (Map f Val)
-  | VFun SymValTable (Heap -> SymValTable -> Val -> Eval Val)
+  | VFun SymValTable Ident (Expr 'R)
   | VRef Addr
 
 showH :: (Integral a, Show a) => a -> String
@@ -134,6 +139,11 @@ mkProgState fs gcStats stmt =
   , heap = M.empty
   }
 
+type EvalEnv = (SymValTable, Heap)
+
+evalEnv :: ProgState -> EvalEnv
+evalEnv ProgState{sym, heap} = (sym, heap)
+
 data EvalError
   = DivisionByZero
   | FileDoesNotExist String
@@ -163,156 +173,169 @@ instance Show EvalError where
 
 type Eval a = Either EvalError a
 
-evalExpr :: SymValTable -> Heap -> Expr a -> Eval Val
-evalExpr _ _ (Default t) = pure $ defaultVal t
-evalExpr _ _ (IntLit i) = pure $ VInt i
-evalExpr _ _ (BoolLit b) = pure $ VBool b
-evalExpr _ _ (StrLit s) = pure $ VStr s
-evalExpr sym _ (Var ident) = pure $ sym M.! ident
+evalExpr :: (MonadReader EvalEnv m, MonadError EvalError m) => Expr a -> m Val
+evalExpr (Default t) = pure $ defaultVal t
+evalExpr (IntLit i) = pure $ VInt i
+evalExpr (BoolLit b) = pure $ VBool b
+evalExpr (StrLit s) = pure $ VStr s
+evalExpr (Var ident) = asks $ (M.! ident) . fst
 
-evalExpr sym heap (Arith a op b) = do
-  a' <- evalExpr sym heap a
-  b' <- evalExpr sym heap b
+evalExpr (Arith a op b) = do
+  a' <- evalExpr a
+  b' <- evalExpr b
   case (b', op) of
     (VStr vb, Add) ->
       case a' of
         VStr va -> pure $ VStr $ va ++ vb
-    (VInt 0, Divide) -> throw DivisionByZero
-    (VInt 0, Remainder) -> throw DivisionByZero
+    (VInt 0, Divide) -> throwError DivisionByZero
+    (VInt 0, Remainder) -> throwError DivisionByZero
     (VInt vb, _) ->
       case a' of
         VInt va -> pure $ VInt $ arithOp op va vb
 
-evalExpr sym heap (Logic a op b) = do
-  a' <- evalExpr sym heap a
+evalExpr (Logic a op b) = do
+  a' <- evalExpr a
   case (a', op) of
     (VBool True, Or) -> pure a'
     (VBool False, And) -> pure a'
     (VBool va, _) -> do
-      b' <- evalExpr sym heap b
+      b' <- evalExpr b
       case b' of
         VBool vb -> pure $ VBool $ logicOp op va vb
 
-evalExpr sym heap (Comp a op b) = do
-  a' <- evalExpr sym heap a
-  b' <- evalExpr sym heap b
+evalExpr (Comp a op b) = do
+  a' <- evalExpr a
+  b' <- evalExpr b
   pure $ VBool $ compOp op a' b'
 
-evalExpr sym heap (RecLit f m) = VRec f <$> traverse (evalExpr sym heap) m
+evalExpr (RecLit f m) = VRec f <$> traverse evalExpr m
 
-evalExpr sym heap (RecMember lhs f i) = do
-  v <- evalExpr sym heap lhs
+evalExpr (RecMember lhs f i) = do
+  v <- evalExpr lhs
   case (v, f) of
     (VRec FRec m, FRec) -> pure $ m M.! i
     (VRec FTup m, FTup) -> pure $ m M.! i
 
-evalExpr sym heap (RecWith lhs f us) = do
-  v <- evalExpr sym heap lhs
-  vals <- traverse (evalExpr sym heap) us
+evalExpr (RecWith lhs f us) = do
+  v <- evalExpr lhs
+  vals <- traverse evalExpr us
   case (v, f) of
     (VRec FRec fs, FRec) ->
       pure $ VRec FRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
     (VRec FTup fs, FTup) ->
       pure $ VRec FTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
 
-evalExpr sym heap (RecUnion a b) = do
-  ra <- evalExpr sym heap a
-  rb <- evalExpr sym heap b
+evalExpr (RecUnion a b) = do
+  ra <- evalExpr a
+  rb <- evalExpr b
   case (ra, rb) of
     (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union a' b'
 
-evalExpr sym _ (Lam i _ e) = pure $ VFun sym \heap' sym' a -> evalExpr (M.insert i a sym') heap' e
+evalExpr (Lam i _ e) = do
+  (sym, _) <- ask
+  pure $ VFun sym i e
 
-evalExpr sym heap (App f a) = do
-  vf <- evalExpr sym heap f
-  va <- evalExpr sym heap a
+evalExpr (App f a) = do
+  vf <- evalExpr f
+  va <- evalExpr a
   case vf of
-    VFun sym' f' -> f' heap sym' va
+    VFun sym' i e -> local (first $ const $ M.insert i va sym') (evalExpr e)
 
-evalExpr sym heap (Deref e) = do
-  v <- evalExpr sym heap e
+evalExpr (Deref e) = do
+  v <- evalExpr e
   case v of
-    VRef addr -> pure $ heap M.! addr
+    VRef addr -> asks $ (M.! addr) . snd
 
-evalStmt :: ProgState -> Stmt -> Eval ProgState
-evalStmt progState Nop = pure progState
-evalStmt progState (Decl _ _) = pure progState
+evalExpr' :: (MonadState ProgState m, MonadError EvalError m) => Expr a -> m Val
+evalExpr' e = runReaderT (evalExpr e) . evalEnv =<< get
 
-evalStmt ProgState{..} (Assign (Var ident) expr) = do
-  v <- evalExpr sym heap expr
-  pure $ ProgState { sym = M.insert ident v sym, .. }
+evalStmt :: (MonadState ProgState m, MonadError EvalError m) => Stmt -> m ()
+evalStmt Nop = pure ()
+evalStmt (Decl _ _) = pure ()
 
-evalStmt progState (Assign (RecMember lhs f i) expr) =
-  evalStmt progState (Assign lhs (RecWith lhs f $ M.singleton i expr))
+evalStmt (Assign (Var ident) expr) = do
+  v <- evalExpr' expr
+  modify \p -> p { sym = M.insert ident v $ sym p }
 
-evalStmt ProgState{..} (DeclAssign ident (Just type') expr) =
-  pure $ ProgState { toDo = Decl ident type' : Assign (Var ident) expr : toDo, .. }
+evalStmt (Assign (RecMember lhs f i) expr) =
+  evalStmt (Assign lhs (RecWith lhs f $ M.singleton i expr))
 
-evalStmt ProgState{..} (DeclAssign ident Nothing expr) =
-  pure $ ProgState { toDo = Assign (Var ident) expr : toDo, .. }
+evalStmt (DeclAssign ident (Just type') expr) =
+  modify \p -> p { toDo = Decl ident type' : Assign (Var ident) expr : toDo p }
 
-evalStmt ProgState{..} (Print expr) = do
-  v <- evalExpr sym heap expr
-  pure $ ProgState { out = v : out, .. }
+evalStmt (DeclAssign ident Nothing expr) =
+  modify \p -> p { toDo = Assign (Var ident) expr : toDo p }
 
-evalStmt ProgState{..} (If cond then' else') = do
-  c' <- evalExpr sym heap cond
+evalStmt (Print expr) = do
+  v <- evalExpr' expr
+  modify \p -> p { out = v : out p }
+
+evalStmt (If cond then' else') = do
+  c' <- evalExpr' cond
   case c' of
-    VBool c -> pure $ ProgState { toDo = (if c then then' else else') : toDo, .. }
+    VBool c -> modify \p -> p { toDo = (if c then then' else else') : toDo p }
 
-evalStmt ProgState{..} w@(While cond body) = do
-  c' <- evalExpr sym heap cond
+evalStmt w@(While cond body) = do
+  c' <- evalExpr' cond
   case c' of
-    VBool c -> pure $ ProgState { toDo = if c then body : w : toDo else toDo, .. }
+    VBool c -> modify \p -> p { toDo = if c then body : w : toDo p else toDo p }
 
-evalStmt ProgState{..} (Compound a b) =
-  pure $ ProgState { toDo = a : b : toDo, .. }
+evalStmt (Compound a b) =
+  modify \p -> p { toDo = a : b : toDo p }
 
-evalStmt ProgState{..} (Open expr) = do
-  vf <- evalExpr sym heap expr
+evalStmt (Open expr) = do
+  ProgState{..} <- get
+  vf <- evalExpr' expr
   case vf of
     VStr f ->
       case M.lookup f fs of
-        Nothing -> throw $ FileDoesNotExist f
+        Nothing -> throwError $ FileDoesNotExist f
         Just content ->
           case M.lookup f open of
-            Just _ -> throw $ FileAlreadyOpened f
-            Nothing -> pure $ ProgState { open = M.insert f content open, .. }
+            Just _ -> throwError $ FileAlreadyOpened f
+            Nothing -> modify \p -> p { open = M.insert f content open }
 
-evalStmt ProgState{..} (Read ident t expr) = do
-  vf <- evalExpr sym heap expr
+evalStmt (Read ident t expr) = do
+  ProgState{..} <- get
+  vf <- evalExpr' expr
   case vf of
     VStr f ->
       case M.lookup f open of
-        Nothing -> throw $ FileNotOpened f
-        Just [] -> throw $ ReachedEOF f
+        Nothing -> throwError $ FileNotOpened f
+        Just [] -> throwError $ ReachedEOF f
         Just (c : cs) ->
           let tc = valType c
           in if tc /= t
-            then throw $ ReadDifferentType f tc t
-            else pure $ ProgState { sym = M.insert ident c sym, open = M.insert f cs open, .. }
+            then throwError $ ReadDifferentType f tc t
+            else modify \p -> p { sym = M.insert ident c sym, open = M.insert f cs open }
 
-evalStmt ProgState{..} (Close expr) = do
-  vf <- evalExpr sym heap expr
+evalStmt (Close expr) = do
+  ProgState{..} <- get
+  vf <- evalExpr' expr
   case vf of
     VStr f ->
       case M.lookup f open of
-        Nothing -> throw $ FileAlreadyClosed f
-        Just _ -> pure $ ProgState { open = M.delete f open, .. }
+        Nothing -> throwError $ FileAlreadyClosed f
+        Just _ -> modify \p -> p { open = M.delete f open }
 
-evalStmt ProgState { gcStats = gcStats@GCStats { .. }, .. } (New i e) = do
+evalStmt (New i e) = do
+  ProgState { gcStats = GCStats{..}, .. } <- get
+
   when (crrHeapSize == maxHeapSize)
-    $ throw $ OutOfMemory maxHeapSize
-  v <- evalExpr sym heap e
+    $ throwError $ OutOfMemory maxHeapSize
+
+  v <- evalExpr' e
   let sym' = M.insert i (VRef crrHeapSize) sym
   let heap' = M.insert crrHeapSize v heap
-  pure $ runGC $ ProgState { sym = sym', heap = heap', .. }
 
-evalStmt ProgState{..} (WriteAt lhs rhs) = do
-  vl <- evalExpr sym heap lhs
-  vr <- evalExpr sym heap rhs
+  -- This looks evil, it actually parses as `runGC $ p { .. }` :P
+  modify \p -> runGC p { sym = sym', heap = heap' }
+
+evalStmt (WriteAt lhs rhs) = do
+  vl <- evalExpr' lhs
+  vr <- evalExpr' rhs
   case vl of
-    VRef addr -> pure $ ProgState { heap = M.insert addr vr heap, .. }
+    VRef addr -> modify \p -> p { heap = M.insert addr vr $ heap p }
 
 compactKeys :: [Addr] -> (Addr -> Addr)
 compactKeys keys = (M.!) $ M.fromList $ zip keys [0..]
@@ -338,7 +361,7 @@ runGC ProgState { gcStats = gcStats@GCStats { .. }, .. } =
 getInnerAddrsVal :: Val -> Set Addr
 getInnerAddrsVal (VRef a) = S.singleton a
 getInnerAddrsVal (VRec _ m) = getInnerAddrsScope m
-getInnerAddrsVal (VFun sym _) = getInnerAddrsScope sym
+getInnerAddrsVal (VFun sym _ _) = getInnerAddrsScope sym
 getInnerAddrsVal _ = S.empty
 
 getInnerAddrsScope :: Foldable f => f Val -> Set Addr
@@ -360,27 +383,38 @@ getInnerAddrs heap = getInnerAddrsAll heap S.empty . getInnerAddrsScope
 mapInnerAddrsVal :: (Addr -> Addr) -> Val -> Val
 mapInnerAddrsVal f (VRef a) = VRef $ f a
 mapInnerAddrsVal f (VRec f' m) = VRec f' $ mapInnerAddrsScope f m
-mapInnerAddrsVal f (VFun sym fun) = VFun (mapInnerAddrsScope f sym) fun
+mapInnerAddrsVal f (VFun sym i e) = VFun (mapInnerAddrsScope f sym) i e
 mapInnerAddrsVal _ v = v
 
 mapInnerAddrsScope :: Functor f => (Addr -> Addr) -> f Val -> f Val
 mapInnerAddrsScope f = (mapInnerAddrsVal f <$>)
 
-smallStep :: ProgState -> Maybe (Eval ProgState)
-smallStep ProgState { toDo = [] } = Nothing
-smallStep ProgState { toDo = stmt : toDo, .. } = Just $ evalStmt ProgState{..} stmt
+smallStep :: (MonadState ProgState m, MonadError EvalError m) => m Bool
+smallStep = go =<< get
+  where
+    go ProgState { toDo = [] } = pure True
+    go ProgState { toDo = stmt : toDo } = do
+      modify \p -> p { toDo }
+      evalStmt stmt
+      pure False
+
+runSmallStep :: ProgState -> Maybe (Either EvalError ProgState)
+runSmallStep p = do
+  case runStateT smallStep p of
+      Left e -> Just $ Left e
+      Right (done, p') -> if done then Nothing else Just $ Right p'
 
 traverseSteps_ :: Applicative f => (String -> f a) -> ProgState -> f ()
 traverseSteps_ f state =
   f (show state) *>
-    case smallStep state of
+    case runSmallStep state of
       Nothing -> pure ()
       Just (Left e) -> f (show e) $> ()
       Just (Right state') -> traverseSteps_ f state'
 
 finalState' :: ProgState -> Eval ProgState
 finalState' s =
-  case smallStep s of
+  case runSmallStep s of
     Nothing -> pure s
     Just s' -> s' >>= finalState'
 

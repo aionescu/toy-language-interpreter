@@ -34,6 +34,7 @@ executable tli
     , parsec ^>= 3.1.14
     , containers ^>= 0.6.2
     , optparse-generic ^>= 1.4.4
+    , mtl ^>= 2.2.2
 
   ghc-options:
     -threaded

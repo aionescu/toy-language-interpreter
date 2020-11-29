@@ -137,7 +137,7 @@ data Expr :: ExprKind -> * where
   RecMember :: Expr a -> Field f -> f -> Expr a
   RecWith :: Expr a -> Field f -> Map f (Expr b) -> Expr 'R
   RecUnion :: Expr a -> Expr b -> Expr 'R
-  Lam :: Ident -> Type -> Expr a -> Expr 'R
+  Lam :: Ident -> Type -> Expr 'R -> Expr 'R
   App :: Expr a -> Expr b -> Expr 'R
   Deref :: Expr 'R -> Expr 'R
 

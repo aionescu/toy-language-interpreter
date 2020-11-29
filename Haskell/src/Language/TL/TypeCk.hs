@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Language.TL.TypeCk(typeCheck) where
 
 import Data.Function(on)
@@ -5,6 +7,9 @@ import Data.Functor(($>))
 import Control.Monad(when)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
+import Control.Monad.Reader(ReaderT, runReaderT, local, ask, MonadReader)
+import Control.Monad.State (StateT, runStateT, modify, put, get, MonadState)
+import Control.Monad.Except(throwError, MonadError)
 
 import Language.TL.AST
 
@@ -12,7 +17,7 @@ data VarState = Init | Uninit
   deriving Eq
 
 type VarInfo = (Type, VarState)
-type SymTypeTable = Map Ident VarInfo
+type TypeEnv = Map Ident VarInfo
 
 data TypeError
   = ExpectedFound Type Type
@@ -51,212 +56,227 @@ instance Show TypeError where
       go CanOnlyAddIntegers = "Both operands of the addition operation must be integers"
       go (ExpectedRefFound t) = "Expected reference type, but found type " ++ show t
 
-type TypeCk a = Either TypeError a
-
-unwrapTRef :: Type -> TypeCk Type
+unwrapTRef :: MonadError TypeError f => Type -> f Type
 unwrapTRef (TRef t) = pure t
-unwrapTRef t = throw $ ExpectedRefFound t
+unwrapTRef t = throwError $ ExpectedRefFound t
 
-mustBe :: Type -> Type -> TypeCk ()
+mustBe :: MonadError TypeError f => Type -> Type -> f ()
 mustBe found expected
   | found == expected = pure ()
-  | otherwise = throw $ ExpectedFound expected found
+  | otherwise = throwError $ ExpectedFound expected found
 
-lookupVar :: Ident -> SymTypeTable -> TypeCk VarInfo
-lookupVar var sym = maybe (throw $ UndeclaredVar var) pure $ M.lookup var sym
+lookupVar :: MonadError TypeError m => Ident -> Map Ident a -> m a
+lookupVar var sym = maybe (throwError $ UndeclaredVar var) pure $ M.lookup var sym
 
-typeCheckExpr :: SymTypeTable -> Expr a -> TypeCk Type
-typeCheckExpr _ (Default t) = do
+isolate :: MonadState s m => m a -> m (a, s)
+isolate m = do
+  s <- get
+  a <- m
+  s' <- get
+  put s
+  pure (a, s')
+
+typeCheckExpr :: (MonadReader TypeEnv m, MonadError TypeError m) => Expr a -> m Type
+typeCheckExpr (Default t) = do
   when (isOpaque t)
-    $ throw $ TypeIsOpaque t
+    $ throwError $ TypeIsOpaque t
   pure t
 
-typeCheckExpr _ (IntLit _) = pure TInt
-typeCheckExpr _ (BoolLit _) = pure TBool
-typeCheckExpr _ (StrLit _) = pure TStr
+typeCheckExpr (IntLit _) = pure TInt
+typeCheckExpr (BoolLit _) = pure TBool
+typeCheckExpr (StrLit _) = pure TStr
 
-typeCheckExpr sym (Var ident) = do
-  (type', state) <- lookupVar ident sym
+typeCheckExpr (Var ident) = do
+  (type', state) <- lookupVar ident =<< ask
   case state of
-    Uninit -> throw $ UninitializedVar ident
+    Uninit -> throwError $ UninitializedVar ident
     Init -> pure type'
 
-typeCheckExpr sym (Arith a Add b) = do
-  ta <- typeCheckExpr sym a
-  tb <- typeCheckExpr sym b
+typeCheckExpr (Arith a Add b) = do
+  ta <- typeCheckExpr a
+  tb <- typeCheckExpr b
   case (ta, tb) of
     (TInt, TInt) -> pure TInt
     (TStr, TStr) -> pure TStr
-    _ -> throw $
+    _ -> throwError $
       if TStr `elem` [ta, tb]
         then CanOnlyAppendStrings
         else CanOnlyAddIntegers
 
-typeCheckExpr sym (Arith a _ b) = do
-  ta <- typeCheckExpr sym a
+typeCheckExpr (Arith a _ b) = do
+  ta <- typeCheckExpr a
   ta `mustBe` TInt
-  tb <- typeCheckExpr sym b
+  tb <- typeCheckExpr b
   tb `mustBe` TInt
   pure TInt
 
-typeCheckExpr sym (Logic a _ b) = do
-  ta <- typeCheckExpr sym a
+typeCheckExpr (Logic a _ b) = do
+  ta <- typeCheckExpr a
   ta `mustBe` TBool
-  tb <- typeCheckExpr sym b
+  tb <- typeCheckExpr b
   tb `mustBe` TBool
   pure TBool
 
-typeCheckExpr sym (Comp a _ b) = do
-  ta <- typeCheckExpr sym a
-  tb <- typeCheckExpr sym b
+typeCheckExpr (Comp a _ b) = do
+  ta <- typeCheckExpr a
+  tb <- typeCheckExpr b
   tb `mustBe` ta
   when (isOpaque ta)
-    $ throw $ TypeIsOpaque ta
+    $ throwError $ TypeIsOpaque ta
   pure TBool
 
-typeCheckExpr sym (RecLit f m) = TRec f <$> traverse (typeCheckExpr sym) m
+typeCheckExpr (RecLit f m) = TRec f <$> traverse typeCheckExpr m
 
-typeCheckExpr sym (RecMember lhs f i) = do
-  t <- typeCheckExpr sym lhs
+typeCheckExpr (RecMember lhs f i) = do
+  t <- typeCheckExpr lhs
   case (t, f) of
     (TRec FRec m, FRec) ->
       case M.lookup i m of
-        Nothing -> throw $ NoFieldInRec t f i
+        Nothing -> throwError $ NoFieldInRec t f i
         Just t' -> pure t'
     (TRec FTup m, FTup) ->
       case M.lookup i m of
-        Nothing -> throw $ NoFieldInRec t f i
+        Nothing -> throwError $ NoFieldInRec t f i
         Just t' -> pure t'
-    _ -> throw $ ExpectedRecFound t
+    _ -> throwError $ ExpectedRecFound t
 
-typeCheckExpr sym (RecWith lhs f us) = do
-  t <- typeCheckExpr sym lhs
-  tys <- traverse (typeCheckExpr sym) us
+typeCheckExpr (RecWith lhs f us) = do
+  t <- typeCheckExpr lhs
+  tys <- traverse typeCheckExpr us
   case (t, f) of
     (TRec FRec m, FRec) -> do
       M.traverseWithKey (checkMember t f m) tys $> t
     (TRec FTup m, FTup) -> do
       M.traverseWithKey (checkMember t f m) tys $> t
-    _ -> throw $ ExpectedRecFound t
+    _ -> throwError $ ExpectedRecFound t
   where
-    checkMember :: Ord f => Type -> Field f -> Map f Type -> f -> Type -> TypeCk ()
+    checkMember :: (Ord f, MonadError TypeError m) => Type -> Field f -> Map f Type -> f -> Type -> m ()
     checkMember rec f' m i t =
       case M.lookup i m of
-        Nothing -> throw $ NoFieldInRec rec f' i
+        Nothing -> throwError $ NoFieldInRec rec f' i
         Just t' -> t `mustBe` t'
 
-typeCheckExpr sym (RecUnion a b) = do
-  ta <- typeCheckExpr sym a
-  tb <- typeCheckExpr sym b
+typeCheckExpr (RecUnion a b) = do
+  ta <- typeCheckExpr a
+  tb <- typeCheckExpr b
   case (ta, tb) of
     (TRec FRec as, TRec FRec bs) -> do
       TRec FRec <$> M.traverseWithKey throwIfDup ((M.unionWith checkDup `on` (Just <$>)) as bs)
-    _ -> throw NeedRecordTypesForUnion
+    _ -> throwError NeedRecordTypesForUnion
   where
     checkDup a' b'
       | a' == b' = a'
       | otherwise = Nothing
 
-    throwIfDup :: Ident -> Maybe Type -> TypeCk Type
-    throwIfDup ident Nothing = throw $ DuplicateIncompatibleField ident
+    throwIfDup :: MonadError TypeError m => Ident -> Maybe Type -> m Type
+    throwIfDup ident Nothing = throwError $ DuplicateIncompatibleField ident
     throwIfDup _ (Just t) = pure t
 
-typeCheckExpr sym (Lam i t e) = do
+typeCheckExpr (Lam i t e) = do
+  sym <- ask
   case M.lookup i sym of
-    Just _ -> throw $ CantShadow i
-    Nothing -> TFun t <$> typeCheckExpr (M.insert i (t, Init) sym) e
+    Just _ -> throwError $ CantShadow i
+    Nothing -> TFun t <$> local (M.insert i (t, Init)) (typeCheckExpr e)
 
-typeCheckExpr sym (App f a) = do
-  tf <- typeCheckExpr sym f
-  ta <- typeCheckExpr sym a
+typeCheckExpr (App f a) = do
+  tf <- typeCheckExpr f
+  ta <- typeCheckExpr a
   case tf of
     TFun i o -> ta `mustBe` i $> o
-    _ -> throw $ ExpectedFunFound tf
+    _ -> throwError $ ExpectedFunFound tf
 
-typeCheckExpr sym (Deref e) = typeCheckExpr sym e >>= unwrapTRef
+typeCheckExpr (Deref e) = typeCheckExpr e >>= unwrapTRef
 
 mergeVarInfo :: VarInfo -> VarInfo -> VarInfo
 mergeVarInfo a b
   | a == b = a
   | otherwise = (fst a, Uninit)
 
-typeCheckStmt :: SymTypeTable -> Stmt -> TypeCk SymTypeTable
-typeCheckStmt sym Nop = pure sym
-typeCheckStmt sym (Decl ident type') =
+hoistReader :: MonadState s m => ReaderT s m a -> m a
+hoistReader m = runReaderT m =<< get
+
+typeCheckExpr' :: (MonadState TypeEnv m, MonadError TypeError m) => Expr a -> m Type
+typeCheckExpr' = hoistReader . typeCheckExpr
+
+typeCheckStmt :: (MonadState TypeEnv m, MonadError TypeError m) => Stmt -> m ()
+typeCheckStmt Nop = pure ()
+
+typeCheckStmt (Decl ident type') = do
+  sym <- get
   case M.lookup ident sym of
-    Just _ -> throw $ VarAlreadyDeclared ident
-    Nothing -> pure $ M.insert ident (type', Uninit) sym
+    Just _ -> throwError $ VarAlreadyDeclared ident
+    Nothing -> modify $ M.insert ident (type', Uninit)
 
-typeCheckStmt sym (Assign (Var ident) expr) = do
-  (typ, _) <- lookupVar ident sym
-  typ2 <- typeCheckExpr sym expr
+typeCheckStmt (Assign (Var ident) expr) = do
+  (typ, _) <- lookupVar ident =<< get
+  typ2 <- typeCheckExpr' expr
   typ2 `mustBe` typ
-  pure $ M.insert ident (typ, Init) sym
+  modify $ M.insert ident (typ, Init)
 
-typeCheckStmt sym (Assign (RecMember lhs f i) expr) =
-  typeCheckStmt sym $ Assign lhs $ RecWith lhs f $ M.singleton i expr
+typeCheckStmt (Assign (RecMember lhs f i) expr) =
+  typeCheckStmt $ Assign lhs $ RecWith lhs f $ M.singleton i expr
 
-typeCheckStmt sym (DeclAssign ident (Just type') expr) = do
-  sym2 <- typeCheckStmt sym (Decl ident type')
-  typeCheckStmt sym2 (Assign (Var ident) expr)
+typeCheckStmt (DeclAssign ident (Just type') expr) = do
+  typeCheckStmt (Decl ident type')
+  typeCheckStmt (Assign (Var ident) expr)
 
-typeCheckStmt sym (DeclAssign ident Nothing expr) = do
-  t <- typeCheckExpr sym expr
-  typeCheckStmt sym $ DeclAssign ident (Just t) expr
+typeCheckStmt (DeclAssign ident Nothing expr) = do
+  t <- typeCheckExpr' expr
+  typeCheckStmt $ DeclAssign ident (Just t) expr
 
-typeCheckStmt sym (Print e) = do
-  t <- typeCheckExpr sym e
+typeCheckStmt (Print e) = do
+  t <- typeCheckExpr' e
   when (isOpaque t)
-    $ throw $ TypeIsOpaque t
-  pure sym
+    $ throwError $ TypeIsOpaque t
 
-typeCheckStmt sym (If cond then' else') = do
-  tc <- typeCheckExpr sym cond
+typeCheckStmt (If cond then' else') = do
+  tc <- typeCheckExpr' cond
   tc `mustBe` TBool
-  thenTbl <- typeCheckStmt sym then'
-  elseTbl <- typeCheckStmt sym else'
-  pure $
-    M.intersectionWith mergeVarInfo thenTbl elseTbl `M.intersection` sym
 
-typeCheckStmt sym (While cond body) = do
-  tc <- typeCheckExpr sym cond
+  (_, thenTbl) <- isolate $ typeCheckStmt then'
+  (_, elseTbl) <- isolate $ typeCheckStmt else'
+
+  modify (M.intersectionWith mergeVarInfo thenTbl elseTbl `M.intersection`)
+
+typeCheckStmt (While cond body) = do
+  tc <- typeCheckExpr' cond
   tc `mustBe` TBool
-  typeCheckStmt sym body $> sym
+  isolate (typeCheckStmt body) $> ()
 
-typeCheckStmt sym (Compound a b) = do
-  sym2 <- typeCheckStmt sym a
-  typeCheckStmt sym2 b
+typeCheckStmt (Compound a b) = do
+  typeCheckStmt a
+  typeCheckStmt b
 
-typeCheckStmt sym (Open expr) = do
-  tf <- typeCheckExpr sym expr
+typeCheckStmt (Open expr) = do
+  tf <- typeCheckExpr' expr
   tf `mustBe` TStr
-  pure sym
 
-typeCheckStmt sym (Read ident t expr) = do
-  tf <- typeCheckExpr sym expr
+typeCheckStmt (Read ident t expr) = do
+  tf <- typeCheckExpr' expr
   tf `mustBe` TStr
-  (typ, _) <- lookupVar ident sym
+  (typ, _) <- lookupVar ident =<< get
   typ `mustBe` t
   when (isOpaque typ)
-    $ throw $ TypeIsOpaque typ
-  pure $ M.insert ident (typ, Init) sym
+    $ throwError $ TypeIsOpaque typ
+  modify $ M.insert ident (typ, Init)
 
-typeCheckStmt sym (Close expr) = do
-  tf <- typeCheckExpr sym expr
+typeCheckStmt (Close expr) = do
+  tf <- typeCheckExpr' expr
   tf `mustBe` TStr
-  pure sym
 
-typeCheckStmt sym (New i e) = do
-  t <- typeCheckExpr sym e
-  (typ, _) <- lookupVar i sym
+typeCheckStmt (New i e) = do
+  t <- typeCheckExpr' e
+  (typ, _) <- lookupVar i =<< get
   typ `mustBe` TRef t
-  pure $ M.insert i (typ, Init) sym
+  modify $ M.insert i (typ, Init)
 
-typeCheckStmt sym (WriteAt lhs rhs) = do
-  tl <- unwrapTRef =<< typeCheckExpr sym lhs
-  tr <- typeCheckExpr sym rhs
+typeCheckStmt (WriteAt lhs rhs) = do
+  tl <- unwrapTRef =<< typeCheckExpr' lhs
+  tr <- typeCheckExpr' rhs
   tr `mustBe` tl
-  pure sym
+
+runTC :: StateT TypeEnv (Either TypeError) a -> TLI ()
+runTC m = toTLI $ runStateT m M.empty $> ()
 
 typeCheck :: Program -> TLI Program
-typeCheck prog = toTLI $ prog <$ typeCheckStmt M.empty prog
+typeCheck prog = runTC (typeCheckStmt prog) $> prog
