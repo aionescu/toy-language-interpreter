@@ -12,8 +12,9 @@ import java.util.stream.Stream;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.control.Maybe;
+import com.aionescu.tli.utils.data.Foldable;
 
-public abstract class List<A> {
+public abstract class List<A> implements Foldable<A> {
   private static final class Nil<A> extends List<A> {
     public Nil() { }
 
@@ -89,7 +90,7 @@ public abstract class List<A> {
   }
 
   public final int length() {
-    return foldl((s, a) -> s + 1, 0);
+    return foldL((s, a) -> s + 1, 0);
   }
 
   @SafeVarargs
@@ -102,7 +103,7 @@ public abstract class List<A> {
   }
 
   public Stream<A> stream() {
-    return foldl((s, a) -> s.add(a), Stream.<A>builder()).build();
+    return foldL((s, a) -> s.add(a), Stream.<A>builder()).build();
   }
 
   private static String _asString(List<Character> chars, String acc) {
@@ -116,7 +117,7 @@ public abstract class List<A> {
   public final String toString(String begin, String end) {
     return match(
       () -> begin + end,
-      (h, t) -> begin + h + t.foldl((s, a) -> s + ", " + a, "") + end);
+      (h, t) -> begin + h + t.foldL((s, a) -> s + ", " + a, "") + end);
   }
 
   public final Maybe<Pair<A, List<A>>> uncons() {
@@ -148,11 +149,11 @@ public abstract class List<A> {
   }
 
   public final boolean any(Predicate<A> f) {
-    return foldl((s, a) -> s || f.test(a), false);
+    return foldL((s, a) -> s || f.test(a), false);
   }
 
   public final boolean all(Predicate<A> f) {
-    return foldl((s, a) -> s && f.test(a), true);
+    return foldL((s, a) -> s && f.test(a), true);
   }
 
   public final boolean allUnique() {
@@ -211,20 +212,12 @@ public abstract class List<A> {
   }
 
   public final List<A> mergeSorted(Comparator<A> f, List<A> vs) {
-    return vs.foldl((s, a) -> s.insertSorted(f, a), this);
+    return vs.foldL((s, a) -> s.insertSorted(f, a), this);
   }
 
   public final <B extends Comparable<B>> List<A> sortBy(Function<A, B> f) {
     Comparator<A> c = (a, b) -> f.apply(a).compareTo(f.apply(b));
-    return foldl((s, a) -> s.insertSorted(c, a), nil());
-  }
-
-  public final <S> S foldl(BiFunction<S, A, S> f, S s) {
-    return match(() -> s, (h, t) -> t.foldl(f, f.apply(s, h)));
-  }
-
-  public final <S> S foldr(BiFunction<A, S, S> f, S s) {
-    return match(() -> s, (h, t) -> f.apply(h, t.foldr(f, s)));
+    return foldL((s, a) -> s.insertSorted(c, a), nil());
   }
 
   public final List<A> reverse() {
@@ -234,6 +227,16 @@ public abstract class List<A> {
   public final String unlines() {
     return match(
       () -> "",
-      (h, t) -> h.toString() + t.foldl((s, a) -> s + "\n" + a, ""));
+      (h, t) -> h.toString() + t.foldL((s, a) -> s + "\n" + a, ""));
+  }
+
+  @Override
+  public final <S> S foldL(BiFunction<S, A, S> f, S zero) {
+    return match(() -> zero, (h, t) -> t.foldL(f, f.apply(zero, h)));
+  }
+
+  @Override
+  public final <S> S foldR(BiFunction<A, S, S> f, S zero) {
+    return match(() -> zero, (h, t) -> f.apply(h, t.foldR(f, zero)));
   }
 }

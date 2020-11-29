@@ -9,14 +9,15 @@ import com.aionescu.tli.utils.TriFunction;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.set.Set;
 import com.aionescu.tli.utils.control.Maybe;
+import com.aionescu.tli.utils.data.Foldable;
 
-public interface Map<K extends Comparable<K>, V> {
+public interface Map<K extends Comparable<K>, V> extends Foldable<V> {
   static <K extends Comparable<K>, V> Map<K, V> empty() {
     return AssocListMap.empty();
   }
 
   static <K extends Comparable<K>, V> Map<K, V> fromList(List<Pair<K, V>> list) {
-    return list.foldl((s, a) -> s.insert(a.fst, a.snd), empty());
+    return list.foldL((s, a) -> s.insert(a.fst, a.snd), empty());
   }
 
   String toString(String begin, String end, String sep);
@@ -36,7 +37,7 @@ public interface Map<K extends Comparable<K>, V> {
   <W> Map<K, W> map(Function<V, W> f);
   <W> Map<K, W> mapWithKey(BiFunction<K, V, W> f);
 
-  <S> S foldlWithKey(TriFunction<S, K, V, S> f, S z);
+  <S> S foldLWithKey(TriFunction<S, K, V, S> f, S z);
 
   default Map<K, V> intersect(Map<K, V> rhs) {
     return intersectWith(rhs, (a, b) -> a);

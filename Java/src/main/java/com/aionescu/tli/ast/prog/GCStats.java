@@ -8,6 +8,7 @@ import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.collections.map.Map;
 import com.aionescu.tli.utils.collections.set.Set;
 import com.aionescu.tli.utils.control.Ref;
+import com.aionescu.tli.utils.data.Foldable;
 
 public final class GCStats {
   public final int allocsSinceGC, gcThreshold, crrHeapSize, maxHeapSize;
@@ -46,16 +47,12 @@ public final class GCStats {
     return new GCStats(allocsSinceGC, gcThreshold, crrHeapSize, maxHeapSize);
   }
 
-  public static Set<Integer> getInnerAddrsList(List<Val> l) {
-    return l.foldl((s, a) -> s.union(a.getInnerAddrs()), Set.empty());
-  }
-
-  public static <K extends Comparable<K>> Set<Integer> getInnerAddrsMap(Map<K, Val> m) {
-    return getInnerAddrsList(m.toList().map(Pair::snd_));
+  public static <F extends Foldable<Val>> Set<Integer> getInnerAddrsScope(F scope) {
+    return scope.foldL((s, a) -> s.union(a.getInnerAddrs()), Set.empty());
   }
 
   public static Set<Integer> getInnerAddrsDerefed(Map<Integer, Val> heap, Set<Integer> addrs) {
-    return getInnerAddrsList(addrs.toList().map(a -> heap.lookup(a).unwrap()));
+    return getInnerAddrsScope(addrs.toList().map(a -> heap.lookup(a).unwrap()));
   }
 
   public static Set<Integer> getInnerAddrsAll(Map<Integer, Val> heap, Set<Integer> acc, Set<Integer> set) {
@@ -72,7 +69,7 @@ public final class GCStats {
   }
 
   public static Set<Integer> getInnerAddrsThreads(List<ThreadState> threads) {
-    return threads.map(t -> t.sym).map(s -> getInnerAddrsMap(s)).foldl((s, a) -> s.union(a), Set.<Integer>empty());
+    return threads.map(t -> t.sym).map(s -> getInnerAddrsScope(s)).foldL((s, a) -> s.union(a), Set.<Integer>empty());
   }
 
   public static <K extends Comparable<K>> Map<K, Val> mapInnerAddrsMap(UnaryOperator<Integer> f, Map<K, Val> m) {

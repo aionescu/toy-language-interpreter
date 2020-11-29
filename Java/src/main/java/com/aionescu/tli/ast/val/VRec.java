@@ -44,7 +44,7 @@ public final class VRec extends Val {
 
   @Override
   public Set<Integer> getInnerAddrs() {
-    return GCStats.getInnerAddrsMap(fields);
+    return GCStats.getInnerAddrsScope(fields);
   }
 
   @Override

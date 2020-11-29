@@ -81,8 +81,18 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   }
 
   @Override
-  public <S> S foldlWithKey(TriFunction<S, K, V, S> f, S z) {
-    return _list.foldl((s, p) -> f.apply(s, p.fst, p.snd), z);
+  public <S> S foldLWithKey(TriFunction<S, K, V, S> f, S z) {
+    return _list.foldL((s, p) -> f.apply(s, p.fst, p.snd), z);
+  }
+
+  @Override
+  public <S> S foldL(BiFunction<S, V, S> f, S zero) {
+    return _list.map(Pair::snd_).foldL(f, zero);
+  }
+
+  @Override
+  public <S> S foldR(BiFunction<V, S, S> f, S zero) {
+    return _list.map(Pair::snd_).foldR(f, zero);
   }
 
   @Override

@@ -36,7 +36,7 @@ public final class VFun extends Val {
 
   @Override
   public Set<Integer> getInnerAddrs() {
-    return GCStats.getInnerAddrsMap(sym);
+    return GCStats.getInnerAddrsScope(sym);
   }
 
   @Override

@@ -197,10 +197,10 @@ public interface Parser<A> {
   }
 
   public default Parser<A> chainl1(Parser<BinaryOperator<A>> op) {
-    return liftA2((a, l) -> l.foldl((s, p) -> p.fst.apply(s, p.snd), a), this, op.and(this).many());
+    return liftA2((a, l) -> l.foldL((s, p) -> p.fst.apply(s, p.snd), a), this, op.and(this).many());
   }
 
   public default Parser<A> chainr1(Parser<BinaryOperator<A>> op) {
-    return liftA2((l, a) -> l.foldr((p, s) -> p.snd.apply(p.fst, s), a), this.and(op).many(), this);
+    return liftA2((l, a) -> l.foldR((p, s) -> p.snd.apply(p.fst, s), a), this.and(op).many(), this);
   }
 }

@@ -48,6 +48,6 @@ public final class RecWith implements Expr {
     var vrec = (VRec)_lhs.eval(heap, sym);
     var vals = _updates.map(e -> e.eval(heap, sym));
 
-    return new VRec(_isRec, vals.foldlWithKey((m, k, v) -> m.insert(k, v), vrec.fields));
+    return new VRec(_isRec, vals.foldLWithKey((m, k, v) -> m.insert(k, v), vrec.fields));
   }
 }

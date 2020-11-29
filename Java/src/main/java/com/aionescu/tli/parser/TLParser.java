@@ -274,7 +274,7 @@ public final class TLParser {
 
   private static Parser<Expr> _member(Parser<Expr> lhs) {
     var idxs = ch('.')._and(_tupField.or(_recField)).and_(_ws).many();
-    return liftA2((a, b) -> b.foldl(RecMember::new, a), lhs, idxs);
+    return liftA2((a, b) -> b.foldL(RecMember::new, a), lhs, idxs);
   }
 
   private static Expr _mkLam(List<Pair<Ident, Type>> l, Expr e) {

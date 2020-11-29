@@ -1,7 +1,5 @@
 package com.aionescu.tli.utils.collections.stack;
 
-import java.util.function.BiFunction;
-
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.collections.list.List;
 import com.aionescu.tli.utils.control.Maybe;
@@ -40,10 +38,5 @@ public final class ConsListStack<A> implements Stack<A> {
   @Override
   public boolean isEmpty() {
     return _list.isEmpty();
-  }
-
-  @Override
-  public <S> S foldl(BiFunction<S, A, S> f, S s) {
-    return _list.foldl(f, s);
   }
 }
