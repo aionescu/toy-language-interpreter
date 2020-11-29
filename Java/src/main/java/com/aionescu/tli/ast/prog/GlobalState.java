@@ -3,7 +3,7 @@ package com.aionescu.tli.ast.prog;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.stack.Stack;
-import com.aionescu.tli.utils.control.Ref;
+import java.util.concurrent.atomic.AtomicReference;
 import com.aionescu.tli.ast.stmt.Stmt;
 import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.ast.val.Val;
@@ -55,16 +55,15 @@ public final class GlobalState {
     return out.reverse().unlines();
   }
 
-  public static Ref<GlobalState> initial(Stmt stmt) {
-    var ref = new Ref<GlobalState>(GlobalState.empty);
-    ref.update(g -> g.withThreads(List.singleton(ThreadState.initial(ref, 0).withToDo(Stack.of(stmt)))).withNextID(1));
+  public static AtomicReference<GlobalState> initial(Stmt stmt) {
+    var ref = new AtomicReference<GlobalState>(GlobalState.empty);
+    ref.getAndUpdate(g -> g.withThreads(List.singleton(ThreadState.initial(ref, 0).withToDo(Stack.of(stmt)))).withNextID(1));
 
     return ref;
   }
 
-  public static void eval(Ref<GlobalState> global) {
-    var oldThreads = global.get().threads;
-    global.update(g -> g.withThreads(List.nil()));
+  public static void eval(AtomicReference<GlobalState> global) {
+    var oldThreads = global.getAndUpdate(g -> g.withThreads(List.nil())).threads;
 
     var evaledThreads =
       List.ofStream(
@@ -74,7 +73,7 @@ public final class GlobalState {
         .map(ThreadState::eval))
       .sortBy(t -> t.id);
 
-    global.update(g -> g.withThreads(evaledThreads.append(g.threads).filter(ThreadState::isNotDone)));
+    global.getAndUpdate(g -> g.withThreads(evaledThreads.append(g.threads).filter(ThreadState::isNotDone)));
     GCStats.runGC(global);
   }
 

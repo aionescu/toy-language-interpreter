@@ -38,24 +38,22 @@ public final class New implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    synchronized (prog.global) {
-      var global = prog.global.get();
+    var global = prog.global.get();
 
-      if (global.gcStats.crrHeapSize == global.gcStats.maxHeapSize)
-        throw new OutOfMemoryException(global.gcStats.maxHeapSize);
+    if (global.gcStats.crrHeapSize == global.gcStats.maxHeapSize)
+      throw new OutOfMemoryException(global.gcStats.maxHeapSize);
 
-      var v = _expr.eval(global.heap, prog.sym);
-      var sym = prog.sym.insert(_ident, new VRef(global.gcStats.crrHeapSize));
-      var heap = global.heap.insert(global.gcStats.crrHeapSize, v);
+    var v = _expr.eval(global.heap, prog.sym);
+    var sym = prog.sym.insert(_ident, new VRef(global.gcStats.crrHeapSize));
+    var heap = global.heap.insert(global.gcStats.crrHeapSize, v);
 
-      prog.global.update(g ->
-        g.withGCStats(
-          g.gcStats
-            .withAllocsSinceGC(g.gcStats.allocsSinceGC + 1)
-            .withCrrHeapSize(g.gcStats.crrHeapSize + 1)));
+    prog.global.getAndUpdate(g ->
+      g.withGCStats(
+        g.gcStats
+          .withAllocsSinceGC(g.gcStats.allocsSinceGC + 1)
+          .withCrrHeapSize(g.gcStats.crrHeapSize + 1)));
 
-      prog.global.update(g -> g.withHeap(heap));
-      return prog.withSym(sym);
-    }
+    prog.global.getAndUpdate(g -> g.withHeap(heap));
+    return prog.withSym(sym);
   }
 }

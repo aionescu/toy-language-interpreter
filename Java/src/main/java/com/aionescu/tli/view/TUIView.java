@@ -140,13 +140,13 @@ public final class TUIView implements View {
   @Command(name = "set-gc-threshold", desc = "Sets the amount of allocations to perform before a collection occurs.")
   private void _setGCThreshold(String arg) {
     var gcThreshold = Integer.parseInt(arg);
-    _controller.state().update(s -> s.withGCStats(s.gcStats.withGCThreshold(gcThreshold)));;
+    _controller.state().getAndUpdate(s -> s.withGCStats(s.gcStats.withGCThreshold(gcThreshold)));;
   }
 
   @Command(name = "set-max-heap-size", desc = "Sets the maximum size of the heap.")
   private void _setMaxHeapSize(String arg) {
     var maxHeapSize = Integer.parseInt(arg);
-    _controller.state().update(s -> s.withGCStats(s.gcStats.withMaxHeapSize(maxHeapSize)));
+    _controller.state().getAndUpdate(s -> s.withGCStats(s.gcStats.withMaxHeapSize(maxHeapSize)));
   }
 
   private void _dispatch(String cmd, String arg) {

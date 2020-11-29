@@ -2,11 +2,11 @@ package com.aionescu.tli.repo;
 
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.utils.control.Maybe;
-import com.aionescu.tli.utils.control.Ref;
+import java.util.concurrent.atomic.AtomicReference;
 
 public interface Repository {
-  Ref<GlobalState> state();
-  void setState(Ref<GlobalState> global);
+  AtomicReference<GlobalState> state();
+  void setState(AtomicReference<GlobalState> global);
 
   void oneStep();
   boolean done();

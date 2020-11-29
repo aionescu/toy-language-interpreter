@@ -29,14 +29,12 @@ public final class Close implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    synchronized (prog.global) {
-      var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
+    var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
 
-      prog.global.update(g -> g.open.lookup(str).match(
-        () -> { throw new FileNotOpenedException(str); },
-        f -> g.withOpen(g.open.delete(str))));
+    prog.global.getAndUpdate(g -> g.open.lookup(str).match(
+      () -> { throw new FileNotOpenedException(str); },
+      f -> g.withOpen(g.open.delete(str))));
 
-      return prog;
-    }
+    return prog;
   }
 }

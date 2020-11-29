@@ -8,15 +8,15 @@ import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.stack.Stack;
-import com.aionescu.tli.utils.control.Ref;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class ThreadState {
-  public final Ref<GlobalState> global;
+  public final AtomicReference<GlobalState> global;
   public final int id;
   public final Stack<Stmt> toDo;
   public final Map<Ident, Val> sym;
 
-  private ThreadState(Ref<GlobalState> global, int id, Stack<Stmt> toDo, Map<Ident, Val> sym) {
+  private ThreadState(AtomicReference<GlobalState> global, int id, Stack<Stmt> toDo, Map<Ident, Val> sym) {
     this.global = global;
     this.id = id;
     this.toDo = toDo;
@@ -41,7 +41,7 @@ public final class ThreadState {
     return !toDo.isEmpty();
   }
 
-  public static ThreadState initial(Ref<GlobalState> global, int id) {
+  public static ThreadState initial(AtomicReference<GlobalState> global, int id) {
     return new ThreadState(global, id, Stack.empty(), Map.empty());
   }
 

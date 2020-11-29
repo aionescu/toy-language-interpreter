@@ -7,19 +7,19 @@ import java.io.PrintWriter;
 
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.utils.control.Maybe;
-import com.aionescu.tli.utils.control.Ref;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class SingleStateRepository implements Repository {
-  private Ref<GlobalState> _global = new Ref<>(GlobalState.empty);
+  private AtomicReference<GlobalState> _global = new AtomicReference<>(GlobalState.empty);
   private Maybe<PrintWriter> _logFile = Maybe.nothing();
 
   @Override
-  public Ref<GlobalState> state() {
+  public AtomicReference<GlobalState> state() {
     return _global;
   }
 
   @Override
-  public void setState(Ref<GlobalState> state) {
+  public void setState(AtomicReference<GlobalState> state) {
     _global = state;
   }
 

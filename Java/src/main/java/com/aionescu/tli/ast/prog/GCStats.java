@@ -7,7 +7,7 @@ import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.set.Set;
-import com.aionescu.tli.utils.control.Ref;
+import java.util.concurrent.atomic.AtomicReference;
 import com.aionescu.tli.utils.data.Foldable;
 
 public final class GCStats {
@@ -81,7 +81,7 @@ public final class GCStats {
     return i -> m.lookup(i).unwrap();
   }
 
-  public static void runGC(Ref<GlobalState> global) {
+  public static void runGC(AtomicReference<GlobalState> global) {
     var prog = global.get();
 
     var gcStats = prog.gcStats;

@@ -31,12 +31,10 @@ public final class WriteAt implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    synchronized (prog.global) {
-      var vl = ((VRef)_lhs.eval(prog.global.get().heap, prog.sym)).addr;
-      var vr = _rhs.eval(prog.global.get().heap, prog.sym);
+    var vl = ((VRef)_lhs.eval(prog.global.get().heap, prog.sym)).addr;
+    var vr = _rhs.eval(prog.global.get().heap, prog.sym);
 
-      prog.global.update(g -> g.withHeap(g.heap.insert(vl, vr)));
-      return prog;
-    }
+    prog.global.getAndUpdate(g -> g.withHeap(g.heap.insert(vl, vr)));
+    return prog;
   }
 }

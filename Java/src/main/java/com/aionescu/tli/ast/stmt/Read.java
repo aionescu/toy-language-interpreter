@@ -46,22 +46,20 @@ public final class Read implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    synchronized (prog.global) {
-      var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
+    var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
 
-      var global = prog.global.get();
-      return global.open.lookup(str).match(
-        () -> { throw new FileNotOpenedException(str); },
-        l -> l.match(
-          () -> { throw new ReachedEOFException(str); },
-          (c, cs) -> {
-            var tc = c.type();
-            if (!tc.equals(_type))
-              throw new ReadDifferentTypeException(str, tc, _type);
+    var global = prog.global.get();
+    return global.open.lookup(str).match(
+      () -> { throw new FileNotOpenedException(str); },
+      l -> l.match(
+        () -> { throw new ReachedEOFException(str); },
+        (c, cs) -> {
+          var tc = c.type();
+          if (!tc.equals(_type))
+            throw new ReadDifferentTypeException(str, tc, _type);
 
-            prog.global.update(g -> g.withOpen(g.open.insert(str, cs)));
-            return prog.withSym(prog.sym.insert(_ident, c));
-          }));
-      }
+          prog.global.getAndUpdate(g -> g.withOpen(g.open.insert(str, cs)));
+          return prog.withSym(prog.sym.insert(_ident, c));
+        }));
   }
 }
