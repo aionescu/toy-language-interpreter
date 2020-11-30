@@ -24,3 +24,6 @@ hs_err_pid*
 
 # Cabal new-style builds
 dist-newstyle/
+
+# Rust/Cargo
+target/
