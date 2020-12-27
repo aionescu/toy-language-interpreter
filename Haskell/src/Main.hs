@@ -18,14 +18,11 @@ run (Opts Run{..} path) = do
   fs <- loadFS fsRoot
   code <- getCode path
 
-  parse code
-    >>= typeCheck
-    >>=
-      (if smallStep
-        then pure . traverseSteps_ putStrLn
-        else (putStrLn . showOut <$>) . finalState)
-      . mkProgState fs (mkGCStats (unDefValue gcThreshold) (unDefValue maxHeap))
-    & either putStrLn id
+  let state = mkEvalState fs $ mkGCStats (unDefValue gcThreshold) (unDefValue maxHeap)
+
+  case parse code >>= typeCheck of
+    Left e -> putStrLn e
+    Right e -> eval state e
 
 run (Opts DumpAst{..} path) = do
   code <- getCode path

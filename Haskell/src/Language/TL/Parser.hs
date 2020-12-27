@@ -2,7 +2,6 @@ module Language.TL.Parser where
 
 import Data.List(nub, foldl')
 import Data.Functor((<&>), ($>))
-import Control.Applicative(liftA2, liftA3)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 import Text.Parsec hiding (parse)
@@ -11,28 +10,14 @@ import Language.TL.Syntax
 
 type Parser = Parsec String ()
 
-comma :: Parser ()
+comma, colon, equals, shebang, multiLine, singleLine, comment, ws :: Parser ()
 comma = ws <* char ',' <* ws
-
-colon :: Parser ()
 colon = ws <* char ':' <* ws
-
-equals :: Parser ()
 equals = ws <* char '=' <* ws
-
-shebang :: Parser ()
 shebang = try $ string "#!" *> manyTill anyChar (endOfLine $> ()) $> ()
-
-multiLine :: Parser ()
 multiLine = try $ string "{-" *> manyTill (multiLine <|> (anyChar $> ())) (try $ string "-}") $> ()
-
-singleLine :: Parser ()
 singleLine = try $ string "--" *> manyTill anyChar (eof <|> endOfLine $> ()) $> ()
-
-comment :: Parser ()
 comment = singleLine <|> multiLine
-
-ws :: Parser ()
 ws = spaces *> skipMany (comment *> spaces)
 
 parens :: Char -> Char -> Parser a -> Parser a
@@ -54,7 +39,7 @@ record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
     withTrailing = many (term <* comma)
     noTrailing = sepBy1 term comma
     elems = try withTrailing <|> noTrailing
-    term = liftA2 (,) (idx <* ws <* sep <* ws) (rhs <* ws)
+    term = (,) <$> (idx <* ws <* sep <* ws) <*> (rhs <* ws)
 
     unique es =
       let es' = fst <$> es
@@ -96,14 +81,8 @@ intRaw = sign <*> number
   where
     sign = option id (char '-' $> negate)
 
-int :: Parser (Expr 'R)
-int = IntLit <$> intRaw
-
 boolRaw :: Parser Bool
 boolRaw = choice [string "True" $> True, string "False" $> False]
-
-bool :: Parser (Expr 'R)
-bool = BoolLit <$> boolRaw
 
 strRaw :: Parser String
 strRaw = between quote quote $ many ch
@@ -124,42 +103,54 @@ strRaw = between quote quote $ many ch
     ch = regular <|> escaped
     quote = char '"'
 
-str :: Parser (Expr 'R)
+int :: Parser Expr
+int = IntLit <$> intRaw
+
+bool :: Parser Expr
+bool = BoolLit <$> boolRaw
+
+str :: Parser Expr
 str = StrLit <$> strRaw
 
-simpleLit :: Parser (Expr 'R)
+simpleLit :: Parser Expr
 simpleLit = choice [try str, try int, bool]
 
 reserved :: [String]
-reserved = ["if", "else", "while", "and", "or", "default", "let", "nop", "open", "read", "close"]
+reserved = ["if", "and", "or", "let", "in", "open", "read", "close", "new", "from", "print"]
 
 ident :: Parser String
-ident = notReserved =<< liftA2 (:) fstChar (many sndChar)
+ident = notReserved =<< (:) <$> fstChar <*> many sndChar
   where
     fstChar = lower
     sndChar = choice [letter, digit, char '\'']
     notReserved ((`elem` reserved) -> True) = fail "Reserved identifier"
     notReserved i = pure i
 
-var :: Parser (Expr a)
+var :: Parser Expr
 var = Var <$> ident
 
-member :: Parser (Expr a) -> Parser (Expr a)
-member lhs = liftA2 (foldl' unroll) lhs (many $ char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
+member :: Parser Expr -> Parser Expr
+member lhs = foldl' unroll <$> lhs <*> many (char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
   where
     unroll lhs' (Left idx) = RecMember lhs' FTup idx
     unroll lhs' (Right ident') = RecMember lhs' FRec ident'
 
-vtup :: Parser (Expr 'R)
-vtup = tuple (RecLit FTup . tupToRec) expr
+vtup :: Parser Expr
+vtup = tuple (RecLit FTup . tupToRec) exprFull
 
-vrec :: Parser (Expr 'R)
+vrec :: Parser Expr
 vrec = RecLit FRec <$> record '{' ident equals expr
 
-lvalue :: Parser (Expr 'L)
-lvalue = try (member var) <|> var
+block :: Parser Expr
+block =
+  char '{' *> ws
+  *> exprFull
+  <* ws <* char '}' <* ws
 
-opMul :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+if' :: Parser Expr
+if' = If <$> (string "if" *> ws *> expr <* ws) <*> block <*> block
+
+opMul :: Parser (Expr -> Expr -> Expr)
 opMul =
   choice
   [ char '*' $> flip Arith Multiply
@@ -169,7 +160,7 @@ opMul =
   ]
   <* ws
 
-opAdd :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opAdd :: Parser (Expr -> Expr -> Expr)
 opAdd =
   choice
   [ char '+' $> flip Arith Add
@@ -177,7 +168,7 @@ opAdd =
   ]
   <* ws
 
-opComp :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opComp :: Parser (Expr -> Expr -> Expr)
 opComp =
   choice
   [ try $ string "<=" $> flip Comp LtEq
@@ -189,7 +180,7 @@ opComp =
   ]
   <* ws
 
-opLogic :: Parser (Expr 'R -> Expr 'R -> Expr 'R)
+opLogic :: Parser (Expr -> Expr -> Expr)
 opLogic =
   choice
   [ string "and" $> flip Logic And
@@ -197,114 +188,71 @@ opLogic =
   ]
   <* ws
 
-lam :: Parser (Expr 'R)
-lam = liftA2 mkLam (many1 param <* string "->" <* ws) expr
+lam :: Parser Expr
+lam = mkLam <$> (many1 param <* string "->" <* ws) <*> exprFull
   where
-    param = parens '(' ')' $ liftA2 (,) (ident <* colon) type'
+    param = parens '(' ')' $ (,) <$> (ident <* colon) <*> type'
     mkLam [] e = e
     mkLam ((i, t) : as) e = Lam i t $ mkLam as e
 
-default' :: Parser (Expr 'R)
-default' = string "default" *> ws *> type' <&> Default
-
-deref :: Parser (Expr 'R)
+deref :: Parser Expr
 deref = char '!' *> ws *> exprNoOps <&> Deref
 
-exprNoMember :: Parser (Expr 'R)
-exprNoMember = choice [try deref, try default', try lam, try vrec, try vtup, try simpleLit, try var] <* ws
+exprNoMember :: Parser Expr
+exprNoMember = choice (try <$> [new, read', open, close, print', if', deref, lam, vrec, vtup, simpleLit, var]) <* ws
 
-exprNoWith :: Parser (Expr 'R)
-exprNoWith = try (member exprNoMember) <|> exprNoMember
+exprNoOps :: Parser Expr
+exprNoOps = try (member exprNoMember) <|> exprNoMember
 
-withExpr :: Ord a => (Expr 'R -> Map a (Expr 'R) -> Expr 'R) -> Parser a -> Parser (Expr 'R)
-withExpr ctor index = liftA2 ctor (char '{' *> ws *> exprNoWith <* ws) (record '|' index equals expr)
-
-exprNoOps :: Parser (Expr 'R)
-exprNoOps = try withRecord <|> try withTup <|> exprNoWith
-  where
-    withRecord = withExpr (`RecWith` FRec) ident
-    withTup = withExpr (`RecWith` FTup) number
-
-termMul :: Parser (Expr 'R)
+termMul :: Parser Expr
 termMul = chainl1 exprNoOps (ws $> App)
 
-termAdd :: Parser (Expr 'R)
+termAdd :: Parser Expr
 termAdd = chainl1 termMul opMul
 
-termComp :: Parser (Expr 'R)
+termComp :: Parser Expr
 termComp = chainl1 termAdd opAdd
 
-termLogic :: Parser (Expr 'R)
+termLogic :: Parser Expr
 termLogic = chainl1 termComp opComp
 
-expr :: Parser (Expr 'R)
+expr :: Parser Expr
 expr = chainr1 termLogic opLogic
 
-print' :: Parser Stmt
+print' :: Parser Expr
 print' = Print <$> (string "print" <* ws *> expr)
 
-decl :: Parser Stmt
-decl = string "let" *> ws *> liftA2 Decl (ident <* colon) type'
-
-assign :: Parser Stmt
-assign = liftA2 Assign (lvalue <* equals) expr
-
-declAssign :: Parser Stmt
-declAssign =
-  string "let" *> ws *> liftA3 DeclAssign ident (option Nothing $ Just <$> try (colon *> type')) (equals *> expr)
-
-block :: Parser Stmt
-block =
-  char '{' *> ws
-  *> stmt
-  <* ws <* char '}' <* ws
-
-if' :: Parser Stmt
-if' = liftA3 If cond block (option Nop elseBlock)
-  where
-    cond = string "if" *> ws *> expr <* ws
-    elseBlock = string "else" *> ws *> block
-
-while :: Parser Stmt
-while = liftA2 While cond block
-  where
-    cond = string "while" *> ws *> expr <* ws
-
-open :: Parser Stmt
+open :: Parser Expr
 open = Open <$> (string "open" *> ws *> expr)
 
-read' :: Parser Stmt
-read' = liftA3 Read ident (colon *> type') (equals *> string "read" *> ws *> expr)
+read' :: Parser Expr
+read' = Read <$> (string "read" *> ws *> type' <* ws) <*> (string "from" *> ws *> expr)
 
-close :: Parser Stmt
+close :: Parser Expr
 close = string "close" *> ws *> expr <&> Close
 
-new :: Parser Stmt
-new = liftA2 New ident $ equals *> string "new" *> ws *> expr
+new :: Parser Expr
+new = string "new" *> ws *> expr <&> New
 
-writeAt :: Parser Stmt
-writeAt = liftA2 WriteAt expr (string ":=" *> ws *> expr)
+writeAt :: Parser Expr
+writeAt = WriteAt <$> expr <*> (string ":=" *> ws *> expr)
 
-stmt' :: Parser Stmt
-stmt' = option Nop $ choice
-  [ try writeAt
-  , try new
-  , try while
-  , try if'
-  , try open
-  , try read'
-  , try close
-  , try declAssign
-  , try decl
-  , try assign
-  , try print'
-  ] <* ws
+let' :: Parser Expr
+let' =
+  Let
+  <$> (string "let" *> ws *> ident)
+  <*> option Nothing (try $ colon *> type' <&> Just)
+  <*> (equals *> expr)
+  <*> (ws *> string "in" *> ws *> exprFull)
 
-stmt :: Parser Stmt
-stmt = stmt' `chainr1` (char ';' *> ws $> Compound)
+exprNoSeq :: Parser Expr
+exprNoSeq = try let' <|> try writeAt <|> expr
+
+exprFull :: Parser Expr
+exprFull = exprNoSeq `chainr1` (char ';' *> ws $> Seq)
 
 program :: Parser Program
-program = option () shebang *> ws *> stmt <* eof
+program = option () shebang *> ws *> exprFull <* eof
 
 parse :: String -> TLI Program
 parse = toTLI . runParser program () ""
