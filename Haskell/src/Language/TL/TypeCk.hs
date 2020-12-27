@@ -11,7 +11,7 @@ import Control.Monad.Reader(ReaderT, runReaderT, local, ask, MonadReader)
 import Control.Monad.State (StateT, runStateT, modify, put, get, MonadState)
 import Control.Monad.Except(throwError, MonadError)
 
-import Language.TL.AST
+import Language.TL.Syntax
 
 data VarState = Init | Uninit
   deriving Eq

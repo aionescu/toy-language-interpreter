@@ -5,7 +5,7 @@ import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 import Text.Parsec hiding (parse)
 
-import Language.TL.AST
+import Language.TL.Syntax
 import Language.TL.Parser
 import Language.TL.Eval
 import System.Exit (exitSuccess)

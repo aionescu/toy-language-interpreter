@@ -3,7 +3,7 @@ cradle:
     - path: "src/Main.hs"
       component: "tli:exe:tli"
 
-    - path: "src/Language/TL/AST.hs"
+    - path: "src/Language/TL/Syntax.hs"
       component: "tli:exe:tli"
 
     - path: "src/Language/TL/Parser.hs"

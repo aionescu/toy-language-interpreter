@@ -14,7 +14,7 @@ executable tli
   main-is: Main.hs
 
   other-modules:
-    Language.TL.AST
+    Language.TL.Syntax
     Language.TL.Parser
     Language.TL.TypeCk
     Language.TL.Eval

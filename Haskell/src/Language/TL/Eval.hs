@@ -17,7 +17,7 @@ import Control.Monad.Except(throwError, MonadError)
 import Data.Bifunctor(Bifunctor(first))
 import Control.Monad.State (runStateT, modify, get, MonadState)
 
-import Language.TL.AST
+import Language.TL.Syntax
 
 type Addr = Int
 

@@ -1,4 +1,4 @@
-module Language.TL.AST where
+module Language.TL.Syntax where
 
 import Data.List(intercalate)
 import Data.Bifunctor(first)
