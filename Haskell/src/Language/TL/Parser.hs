@@ -116,7 +116,7 @@ simpleLit :: Parser Expr
 simpleLit = choice [try str, try int, bool]
 
 reserved :: [String]
-reserved = ["if", "and", "or", "let", "in", "open", "read", "close", "new", "from", "print"]
+reserved = ["if", "and", "or", "let", "in", "open", "read", "close", "new", "from", "print", "then", "else"]
 
 ident :: Parser String
 ident = notReserved =<< (:) <$> fstChar <*> many sndChar
@@ -141,14 +141,12 @@ vtup = tuple (RecLit FTup . tupToRec) exprFull
 vrec :: Parser Expr
 vrec = RecLit FRec <$> record '{' ident equals expr
 
-block :: Parser Expr
-block =
-  char '{' *> ws
-  *> exprFull
-  <* ws <* char '}' <* ws
-
 if' :: Parser Expr
-if' = If <$> (string "if" *> ws *> expr <* ws) <*> block <*> block
+if' =
+  If
+  <$> (string "if" *> ws *> expr <* ws)
+  <*> (string "then" *> ws *> expr <* ws)
+  <*> (string "else" *> ws *> expr <* ws)
 
 opMul :: Parser (Expr -> Expr -> Expr)
 opMul =
@@ -189,7 +187,7 @@ opLogic =
   <* ws
 
 lam :: Parser Expr
-lam = mkLam <$> (many1 param <* string "->" <* ws) <*> exprFull
+lam = mkLam <$> (many1 param <* string "->" <* ws) <*> exprNoSeq
   where
     param = parens '(' ')' $ (,) <$> (ident <* colon) <*> type'
     mkLam [] e = e

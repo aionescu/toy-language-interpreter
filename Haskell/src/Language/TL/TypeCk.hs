@@ -207,4 +207,4 @@ runTC :: ReaderT TypeEnv (Either TypeError) a -> TLI ()
 runTC m = toTLI $ runReaderT m M.empty $> ()
 
 typeCheck :: Program -> TLI Program
-typeCheck prog = runTC (typeCheckExpr prog) $> prog
+typeCheck prog = runTC (typeCheckExpr prog >>= (`mustBe` unit)) $> prog
