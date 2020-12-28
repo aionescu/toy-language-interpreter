@@ -2,10 +2,10 @@ module Main where
 
 import Data.Function((&))
 
+import Language.TL.Eval(eval)
+import Language.TL.Opts(Opts(..), Cmd(..), getOpts)
 import Language.TL.Parser(parse)
-import Language.TL.TypeCk
-import Language.TL.Eval
-import Language.TL.Opts
+import Language.TL.TypeCk(typeCheck)
 
 getCode :: String -> IO String
 getCode "-" = getContents

@@ -1,7 +1,7 @@
 module Language.TL.Syntax where
 
-import Data.List(intercalate)
 import Data.Bifunctor(first)
+import Data.List(intercalate)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 

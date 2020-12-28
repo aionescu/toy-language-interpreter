@@ -1,7 +1,7 @@
 module Language.TL.Parser where
 
-import Data.List(nub, foldl')
 import Data.Functor((<&>), ($>))
+import Data.List(nub, foldl')
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 import Text.Parsec hiding (parse)

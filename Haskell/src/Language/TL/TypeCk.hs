@@ -2,12 +2,12 @@
 
 module Language.TL.TypeCk(typeCheck) where
 
-import Data.Functor(($>))
 import Control.Monad(when)
+import Control.Monad.Except(throwError, MonadError)
+import Control.Monad.Reader(ReaderT, runReaderT, local, ask, MonadReader)
+import Data.Functor(($>))
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
-import Control.Monad.Reader(ReaderT, runReaderT, local, ask, MonadReader)
-import Control.Monad.Except(throwError, MonadError)
 
 import Language.TL.Syntax
 

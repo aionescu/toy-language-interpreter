@@ -3,20 +3,19 @@
 
 module Language.TL.Eval(eval) where
 
+import Control.Monad.Except(liftEither, runExceptT, ExceptT, throwError, MonadError)
+import Control.Monad.IO.Class(MonadIO(liftIO))
+import Control.Monad.Reader(asks, MonadReader(local), ReaderT(runReaderT))
+import Control.Monad.State(MonadState, runStateT, modify, get)
+import Control.Monad.State.Lazy(StateT)
+import Data.Bifunctor(Bifunctor(first))
+import Data.IORef(writeIORef, newIORef, readIORef, IORef)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
+import Text.Parsec
 
-import Control.Monad.Except(liftEither, runExceptT, ExceptT, throwError, MonadError)
-import Control.Monad.State (MonadState, runStateT, modify, get)
-
+import Language.TL.Parser hiding (expr, parse)
 import Language.TL.Syntax
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import Control.Monad.State.Lazy (StateT)
-import Data.IORef (writeIORef, newIORef, readIORef, IORef)
-import Control.Monad.Reader (asks, MonadReader(local),  ReaderT(runReaderT))
-import Text.Parsec hiding (parse)
-import Language.TL.Parser hiding (expr)
-import Data.Bifunctor (Bifunctor(first))
 
 data Val
   = VInt Integer
