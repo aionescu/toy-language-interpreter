@@ -21,6 +21,7 @@ data Type
   | forall f. TRec (Field f) (Map f Type)
   | TFun Type Type
   | TRef Type
+  | TFile
 
 instance Eq Type where
   TInt == TInt = True
@@ -30,6 +31,7 @@ instance Eq Type where
   TRec FTup a == TRec FTup b = a == b
   TFun a b == TFun a' b' = a == a' && b == b'
   TRef a == TRef b = a == b
+  TFile == TFile = True
   _ == _ = False
 
 isOpaque :: Type -> Bool
@@ -64,6 +66,7 @@ instance Show Type where
   show (TRec f m) = showFields False f ": " m
   show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
   show (TRef t) = "&" ++ show t
+  show TFile = "File"
 
 data ArithOp
   = Add

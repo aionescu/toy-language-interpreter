@@ -1,18 +1,22 @@
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
-module Language.TL.Eval(Val(..), EvalState(..), mkEvalState, eval) where
+module Language.TL.Eval(eval) where
 
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 
-import Control.Monad.Except(runExceptT, ExceptT, throwError, MonadError)
-import Control.Monad.State (MonadState, gets, runStateT, modify, get)
+import Control.Monad.Except(liftEither, runExceptT, ExceptT, throwError, MonadError)
+import Control.Monad.State (MonadState, runStateT, modify, get)
 
 import Language.TL.Syntax
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.State.Lazy (StateT)
 import Data.IORef (writeIORef, newIORef, readIORef, IORef)
+import Control.Monad.Reader (asks, MonadReader(local),  ReaderT(runReaderT))
+import Text.Parsec hiding (parse)
+import Language.TL.Parser hiding (expr)
+import Data.Bifunctor (Bifunctor(first))
 
 data Val
   = VInt Integer
@@ -21,14 +25,14 @@ data Val
   | forall f. VRec (Field f) (Map f Val)
   | VFun Env Ident Expr
   | VRef (IORef Val)
+  | VFile String
 
 instance Show Val where
   show (VInt i) = show i
   show (VBool b) = show b
   show (VStr s) = show s
   show (VRec f m) = showFields False f " = " m
-  show VFun{} = "<λ>"
-  show VRef{}= "<🗲>"
+  show _ = error "Opaque value in show. Did you run the typechecker?"
 
 instance Ord Val where
   compare (VInt a) (VInt b) = compare a b
@@ -51,23 +55,40 @@ valType (VStr _) = TStr
 valType (VRec f m) = TRec f (valType <$> m)
 valType _ = error "Opaque value in valType. Did you run the typechecker?"
 
+vInt :: Parser Val
+vInt = VInt <$> intRaw
+
+vBool :: Parser Val
+vBool = VBool <$> boolRaw
+
+vStr :: Parser Val
+vStr = VStr <$> strRaw
+
+vRec :: Parser Val
+vRec = VRec FRec <$> record '{' ident equals val
+
+vTup :: Parser Val
+vTup = tuple (VRec FTup . tupToRec) val
+
+val :: Parser Val
+val = choice [try vRec, try vTup, try vStr, try vBool, vInt]
+
+line :: Parser Val
+line = ws *> val <* eof
+
+parseLine :: MonadError EvalError m => FilePath -> String -> m Val
+parseLine f = liftEither . first (InvalidFileFormat f . show) . runParser line () f
+
+parseFile :: MonadError EvalError m => FilePath -> String -> m [Val]
+parseFile f = traverse (parseLine f) . lines
+
+openFile :: (MonadState Files m, MonadError EvalError m, MonadIO m) => FilePath -> m Val
+openFile f = do
+  cs <- parseFile f =<< liftIO (readFile f)
+  VFile f <$ modify (M.insert f cs)
+
 type Env = Map Ident Val
 type Files = Map String [Val]
-
-data EvalState =
-  EvalState
-  { fs :: Files
-  , open :: Files
-  , env :: Env
-  }
-
-mkEvalState :: Files -> EvalState
-mkEvalState fs =
-  EvalState
-  { fs
-  , open = M.empty
-  , env = M.empty
-  }
 
 data EvalError
   = DivisionByZero
@@ -75,6 +96,7 @@ data EvalError
   | FileAlreadyOpened String
   | FileAlreadyClosed String
   | FileNotOpened String
+  | InvalidFileFormat String String
   | ReadDifferentType String Type Type
   | ReachedEOF String
 
@@ -86,6 +108,7 @@ instance Show EvalError where
       go (FileAlreadyOpened f) = "The file " ++ show f ++ " has already been opened"
       go (FileAlreadyClosed f) = "The file " ++ show f ++ " has been closed"
       go (FileNotOpened f) = "The file " ++ show f ++ " has not been opened"
+      go (InvalidFileFormat f err) = "The file " ++ show f ++ " is not a valid Toy Language input file. Parser error: \n" ++ err
 
       go (ReadDifferentType f found expected) =
         "In file " ++ show f
@@ -94,19 +117,11 @@ instance Show EvalError where
 
       go (ReachedEOF f) = "There are no more values to read in file " ++ show f
 
-withEnv :: MonadState EvalState m => Env -> m a -> m a
-withEnv newEnv m = do
-  oldEnv <- gets env
-  modify \p -> p { env = newEnv }
-  a <- m
-  modify \p -> p { env = oldEnv }
-  pure a
-
-evalExpr :: (MonadState EvalState m, MonadError EvalError m, MonadIO m) => Expr -> m Val
+evalExpr :: (MonadReader Env m, MonadState Files m, MonadError EvalError m, MonadIO m) => Expr -> m Val
 evalExpr (IntLit i) = pure $ VInt i
 evalExpr (BoolLit b) = pure $ VBool b
 evalExpr (StrLit s) = pure $ VStr s
-evalExpr (Var ident) = gets $ (M.! ident) . env
+evalExpr (Var i) = asks (M.! i)
 
 evalExpr (Arith a op b) = do
   a' <- evalExpr a
@@ -150,13 +165,15 @@ evalExpr (RecUnion a b) = do
   case (ra, rb) of
     (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union b' a'
 
-evalExpr (Lam i _ e) = gets $ (\env -> VFun env i e) . env
+evalExpr (Lam i _ e) = asks \env -> VFun env i e
 
 evalExpr (App f a) = do
   vf <- evalExpr f
   va <- evalExpr a
   case vf of
-    VFun env' i e -> withEnv (M.insert i va env') (evalExpr e)
+    VFun env' i e ->
+      local (const $ M.insert i va env') $
+        evalExpr e
 
 evalExpr (Deref e) = do
   v <- evalExpr e
@@ -171,44 +188,40 @@ evalExpr (Print expr) = do
 evalExpr (If cond then' else') = do
   c' <- evalExpr cond
   case c' of
-    VBool c -> do
-      env <- gets env
-      withEnv env (evalExpr if c then then' else else')
+    VBool c -> evalExpr if c then then' else else'
 
 evalExpr (Open expr) = do
-  EvalState{..} <- get
+  files <- get
   vf <- evalExpr expr
   case vf of
     VStr f ->
-      case M.lookup f fs of
-        Nothing -> throwError $ FileDoesNotExist f
-        Just content ->
-          case M.lookup f open of
-            Just _ -> throwError $ FileAlreadyOpened f
-            Nothing -> unit <$ modify \p -> p { open = M.insert f content open }
+      case M.lookup f files of
+        Just _ -> throwError $ FileAlreadyOpened f
+        Nothing -> openFile f
 
 evalExpr (Read t expr) = do
-  EvalState{..} <- get
+  files <- get
   vf <- evalExpr expr
   case vf of
-    VStr f ->
-      case M.lookup f open of
+    VFile f ->
+      case M.lookup f files of
         Nothing -> throwError $ FileNotOpened f
         Just [] -> throwError $ ReachedEOF f
         Just (c : cs) ->
           let tc = valType c
-          in if tc /= t
+          in
+            if tc /= t
             then throwError $ ReadDifferentType f tc t
-            else c <$ modify \p -> p { open = M.insert f cs open }
+            else c <$ modify (M.insert f cs)
 
 evalExpr (Close expr) = do
-  EvalState{..} <- get
+  files <- get
   vf <- evalExpr expr
   case vf of
-    VStr f ->
-      case M.lookup f open of
+    VFile f ->
+      case M.lookup f files of
         Nothing -> throwError $ FileAlreadyClosed f
-        Just _ -> unit <$ modify \p -> p { open = M.delete f open }
+        Just _ -> unit <$ modify (M.delete f)
 
 evalExpr (New e) = do
   v <- evalExpr e
@@ -222,15 +235,15 @@ evalExpr (WriteAt lhs rhs) = do
 
 evalExpr (Let i _ v e) = do
   v' <- evalExpr v
-  modify \p -> p { env = M.insert i v' (env p) }
-  evalExpr e
+  local (M.insert i v') $
+    evalExpr e
 
 evalExpr (Seq a b) = evalExpr a *> evalExpr b
 
-runEval :: StateT EvalState (ExceptT EvalError IO) a -> EvalState -> IO ()
-runEval m s = runExceptT (runStateT m s) >>= \case
+runEval :: ReaderT Env (StateT Files (ExceptT EvalError IO)) a -> IO ()
+runEval m = runExceptT (runStateT (runReaderT m M.empty) M.empty) >>= \case
   Left e -> print e
   Right _ -> pure ()
 
-eval :: EvalState -> Expr -> IO ()
-eval s e = runEval (evalExpr e) s
+eval :: Expr -> IO ()
+eval = runEval . evalExpr

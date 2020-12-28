@@ -18,7 +18,6 @@ executable tli
     Language.TL.Parser
     Language.TL.TypeCk
     Language.TL.Eval
-    Language.TL.FS
     Language.TL.Opts
     Paths_tli
 

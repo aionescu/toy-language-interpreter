@@ -154,20 +154,20 @@ typeCheckExpr (If cond then' else') = do
 typeCheckExpr (Open expr) = do
   tf <- typeCheckExpr expr
   tf `mustBe` TStr
-  pure unit
+  pure TFile
 
 typeCheckExpr (Read t expr) = do
   when (isOpaque t) $
     throwError $ TypeIsOpaque t
 
   tf <- typeCheckExpr expr
-  tf `mustBe` TStr
+  tf `mustBe` TFile
 
   pure t
 
 typeCheckExpr (Close expr) = do
   tf <- typeCheckExpr expr
-  tf `mustBe` TStr
+  tf `mustBe` TFile
   pure unit
 
 typeCheckExpr (New e) = do

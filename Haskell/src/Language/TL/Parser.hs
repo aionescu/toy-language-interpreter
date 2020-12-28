@@ -53,6 +53,7 @@ primType = choice
   [ string "Int" $> TInt
   , string "Bool" $> TBool
   , string "Str" $> TStr
+  , string "File" $> TFile
   ]
 
 tupToRec :: [a] -> Map Int a

@@ -3,7 +3,7 @@ module Language.TL.Opts(Cmd(..), Opts(..), getOpts) where
 import Options.Generic
 
 data Cmd
-  = Run { fsRoot :: Maybe String }
+  = Run
   | DumpAst { noTypeCheck :: Bool }
   deriving stock Generic
 

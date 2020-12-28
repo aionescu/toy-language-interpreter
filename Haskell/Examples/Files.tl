@@ -1,10 +1,9 @@
-let f = "FS/Meta.txt" in
-open f;
+let meta: File = open "FS/Path.txt" in
 
-let f = read Str from f in
+let path = read Str from meta in
+close meta;
 
-close "FS/Meta.txt";
-open f;
+let f = open path in
 
 let a = read Int from f in
 print a;
