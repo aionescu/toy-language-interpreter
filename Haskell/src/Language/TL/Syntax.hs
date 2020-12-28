@@ -1,6 +1,5 @@
 module Language.TL.Syntax where
 
-import Data.Bifunctor(first)
 import Data.List(intercalate)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
@@ -134,16 +133,3 @@ data Expr
   | Let Ident (Maybe Type) Expr Expr
 
 deriving instance Show Expr
-
-type Program = Expr
-
-type TLI a = Either String a
-
-throw :: e -> Either e a
-throw = Left
-
-toTLI :: Show e => Either e a -> TLI a
-toTLI = first show
-
-(...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
-(...) = (.) . (.)

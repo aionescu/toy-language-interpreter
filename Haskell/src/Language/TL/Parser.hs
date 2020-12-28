@@ -1,9 +1,11 @@
 module Language.TL.Parser where
 
+import Data.Bifunctor(first)
 import Data.Functor((<&>), ($>))
 import Data.List(nub, foldl')
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
+import Control.Monad.Except(liftEither, MonadError)
 import Text.Parsec hiding (parse)
 
 import Language.TL.Syntax
@@ -250,8 +252,8 @@ exprNoSeq = try let' <|> try writeAt <|> expr
 exprFull :: Parser Expr
 exprFull = exprNoSeq `chainr1` (char ';' *> ws $> Seq)
 
-program :: Parser Program
+program :: Parser Expr
 program = option () shebang *> ws *> exprFull <* eof
 
-parse :: String -> TLI Program
-parse = toTLI . runParser program () ""
+parse :: MonadError String m => String -> m Expr
+parse = liftEither . first show . runParser program () ""

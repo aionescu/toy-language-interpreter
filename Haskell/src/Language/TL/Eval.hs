@@ -8,7 +8,8 @@ import Control.Monad.IO.Class(MonadIO(liftIO))
 import Control.Monad.Reader(asks, MonadReader(local), ReaderT(runReaderT))
 import Control.Monad.State(MonadState, runStateT, modify, get)
 import Control.Monad.State.Lazy(StateT)
-import Data.Bifunctor(Bifunctor(first))
+import Data.Bifunctor(first)
+import Data.Functor(($>))
 import Data.IORef(writeIORef, newIORef, readIORef, IORef)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
@@ -84,7 +85,7 @@ parseFile f = traverse (parseLine f) . lines
 openFile :: (MonadState Files m, MonadError EvalError m, MonadIO m) => FilePath -> m Val
 openFile f = do
   cs <- parseFile f =<< liftIO (readFile f)
-  VFile f <$ modify (M.insert f cs)
+  modify (M.insert f cs) $> VFile f
 
 type Env = Map Ident Val
 type Files = Map String [Val]
@@ -211,7 +212,7 @@ evalExpr (Read t expr) = do
           in
             if tc /= t
             then throwError $ ReadDifferentType f tc t
-            else c <$ modify (M.insert f cs)
+            else modify (M.insert f cs) $> c
 
 evalExpr (Close expr) = do
   vf <- evalExpr expr
@@ -220,7 +221,7 @@ evalExpr (Close expr) = do
     VFile f ->
       case M.lookup f files of
         Nothing -> throwError $ FileAlreadyClosed f
-        Just _ -> unit <$ modify (M.delete f)
+        Just _ -> modify (M.delete f) $> unit
 
 evalExpr (New e) = do
   v <- evalExpr e
@@ -230,7 +231,7 @@ evalExpr (WriteAt lhs rhs) = do
   vl <- evalExpr lhs
   vr <- evalExpr rhs
   case vl of
-    VRef ioRef -> unit <$ liftIO (writeIORef ioRef vr)
+    VRef ioRef -> liftIO (writeIORef ioRef vr) $> unit
 
 evalExpr (Let i _ v e) = do
   v' <- evalExpr v

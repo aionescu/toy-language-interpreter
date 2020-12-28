@@ -2,8 +2,9 @@
 
 module Language.TL.TypeCk(typeCheck) where
 
+import Data.Bifunctor(first)
 import Control.Monad(when)
-import Control.Monad.Except(throwError, MonadError)
+import Control.Monad.Except(liftEither, throwError, MonadError)
 import Control.Monad.Reader(ReaderT, runReaderT, local, ask, MonadReader)
 import Data.Functor(($>))
 import Data.Map.Strict(Map)
@@ -197,8 +198,8 @@ typeCheckExpr (Let i t v e) = do
   local (M.insert i tv) $
     typeCheckExpr e
 
-runTC :: ReaderT TypeEnv (Either TypeError) a -> TLI ()
-runTC m = toTLI $ runReaderT m M.empty $> ()
+runTC :: MonadError String m => ReaderT TypeEnv (Either TypeError) a -> m ()
+runTC m = liftEither (first show $ runReaderT m M.empty) $> ()
 
-typeCheck :: Program -> TLI Program
+typeCheck :: MonadError String m => Expr -> m Expr
 typeCheck prog = runTC (typeCheckExpr prog >>= (`mustBe` unit)) $> prog
