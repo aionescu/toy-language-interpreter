@@ -1,7 +1,6 @@
 module Main where
 
 import Data.Function((&))
-import Options.Generic(unDefValue)
 
 import Language.TL.Parser(parse)
 import Language.TL.TypeCk
@@ -18,16 +17,16 @@ run (Opts Run{..} path) = do
   fs <- loadFS fsRoot
   code <- getCode path
 
-  let state = mkEvalState fs $ mkGCStats (unDefValue gcThreshold) (unDefValue maxHeap)
-
-  case parse code >>= typeCheck of
-    Left e -> putStrLn e
-    Right e -> eval state e
+  code
+    & parse
+    >>= typeCheck
+    & either putStrLn (eval $ mkEvalState fs)
 
 run (Opts DumpAst{..} path) = do
   code <- getCode path
 
-  parse code
+  code
+    & parse
     >>= (if noTypeCheck then pure else typeCheck)
     & either id show
     & putStrLn

@@ -1,14 +1,10 @@
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
-module Language.TL.Eval(Val(..), EvalState(..), mkGCStats, mkEvalState, eval) where
+module Language.TL.Eval(Val(..), EvalState(..), mkEvalState, eval) where
 
-import Numeric(showHex)
-import Control.Monad(when)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
-import Data.Set(Set)
-import qualified Data.Set as S
 
 import Control.Monad.Except(runExceptT, ExceptT, throwError, MonadError)
 import Control.Monad.State (MonadState, gets, runStateT, modify, get)
@@ -16,8 +12,7 @@ import Control.Monad.State (MonadState, gets, runStateT, modify, get)
 import Language.TL.Syntax
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.State.Lazy (StateT)
-
-type Addr = Int
+import Data.IORef (writeIORef, newIORef, readIORef, IORef)
 
 data Val
   = VInt Integer
@@ -25,10 +20,7 @@ data Val
   | VStr String
   | forall f. VRec (Field f) (Map f Val)
   | VFun Env Ident Expr
-  | VRef Addr
-
-showH :: (Integral a, Show a) => a -> String
-showH a = "0x" ++ showHex a ""
+  | VRef (IORef Val)
 
 instance Show Val where
   show (VInt i) = show i
@@ -36,7 +28,7 @@ instance Show Val where
   show (VStr s) = show s
   show (VRec f m) = showFields False f " = " m
   show VFun{} = "<λ>"
-  show (VRef a) = showH a
+  show VRef{}= "<🗲>"
 
 instance Ord Val where
   compare (VInt a) (VInt b) = compare a b
@@ -61,44 +53,20 @@ valType _ = error "Opaque value in valType. Did you run the typechecker?"
 
 type Env = Map Ident Val
 type Files = Map String [Val]
-type Heap = Map Addr Val
-
-data GCStats =
-  GCStats
-  { allocsSinceGC :: Int
-  , gcThreshold :: Int
-  , crrHeapSize :: Int
-  , maxHeapSize :: Int
-  }
-  deriving stock Show
-
-mkGCStats :: Int -> Int -> GCStats
-mkGCStats gcThreshold maxHeapSize =
-  GCStats
-  { allocsSinceGC = 0
-  , gcThreshold
-  , crrHeapSize = 0
-  , maxHeapSize
-  }
 
 data EvalState =
   EvalState
   { fs :: Files
   , open :: Files
   , env :: Env
-  , gcStats :: GCStats
-  , heap :: Heap
   }
-  deriving stock Show
 
-mkEvalState :: Files -> GCStats -> EvalState
-mkEvalState fs gcStats =
+mkEvalState :: Files -> EvalState
+mkEvalState fs =
   EvalState
   { fs
   , open = M.empty
   , env = M.empty
-  , gcStats
-  , heap = M.empty
   }
 
 data EvalError
@@ -109,7 +77,6 @@ data EvalError
   | FileNotOpened String
   | ReadDifferentType String Type Type
   | ReachedEOF String
-  | OutOfMemory Int
 
 instance Show EvalError where
   show ee = "Eval error: " ++ go ee ++ "."
@@ -126,7 +93,6 @@ instance Show EvalError where
         ++ ", but expected a value of type " ++ show expected
 
       go (ReachedEOF f) = "There are no more values to read in file " ++ show f
-      go (OutOfMemory size) = "Out of memory (heap size: " ++ show size ++ ")"
 
 withEnv :: MonadState EvalState m => Env -> m a -> m a
 withEnv newEnv m = do
@@ -195,7 +161,7 @@ evalExpr (App f a) = do
 evalExpr (Deref e) = do
   v <- evalExpr e
   case v of
-    VRef addr -> gets $ (M.! addr) . heap
+    VRef ioRef -> liftIO $ readIORef ioRef
 
 evalExpr (Print expr) = do
   v <- evalExpr expr
@@ -245,32 +211,14 @@ evalExpr (Close expr) = do
         Just _ -> unit <$ modify \p -> p { open = M.delete f open }
 
 evalExpr (New e) = do
-  modify runGC
-  EvalState { gcStats = GCStats{..}, .. } <- get
-
-  when (crrHeapSize == maxHeapSize) $
-    throwError $ OutOfMemory maxHeapSize
-
   v <- evalExpr e
-
-  modify \p ->
-    p
-    { heap = M.insert crrHeapSize v heap
-    , gcStats =
-        GCStats
-        { crrHeapSize = succ crrHeapSize
-        , allocsSinceGC = succ allocsSinceGC
-        , ..
-        }
-    }
-
-  pure $ VRef crrHeapSize
+  VRef <$> liftIO (newIORef v)
 
 evalExpr (WriteAt lhs rhs) = do
   vl <- evalExpr lhs
   vr <- evalExpr rhs
   case vl of
-    VRef addr -> unit <$ modify \p -> p { heap = M.insert addr vr $ heap p }
+    VRef ioRef -> unit <$ liftIO (writeIORef ioRef vr)
 
 evalExpr (Let i _ v e) = do
   v' <- evalExpr v
@@ -278,58 +226,6 @@ evalExpr (Let i _ v e) = do
   evalExpr e
 
 evalExpr (Seq a b) = evalExpr a *> evalExpr b
-
-compactKeys :: [Addr] -> (Addr -> Addr)
-compactKeys keys = (M.!) $ M.fromList $ zip keys [0..]
-
-runGC :: EvalState -> EvalState
-runGC es@EvalState { gcStats = gcStats@GCStats { .. }, .. } =
-  if allocsSinceGC < gcThreshold
-    then es
-    else
-      let
-        heap' = M.restrictKeys heap (getInnerAddrs heap env)
-        f = compactKeys $ M.keys heap'
-        heapCompacted = mapInnerAddrsScope f heap'
-        envCompacted = mapInnerAddrsScope f env
-      in
-        EvalState
-        { gcStats = gcStats { allocsSinceGC = 0, crrHeapSize = M.size heapCompacted }
-        , env = envCompacted
-        , heap = M.mapKeys f heapCompacted
-        , ..
-        }
-
-getInnerAddrsVal :: Val -> Set Addr
-getInnerAddrsVal (VRef a) = S.singleton a
-getInnerAddrsVal (VRec _ m) = getInnerAddrsScope m
-getInnerAddrsVal (VFun env _ _) = getInnerAddrsScope env
-getInnerAddrsVal _ = S.empty
-
-getInnerAddrsScope :: Foldable f => f Val -> Set Addr
-getInnerAddrsScope = foldMap getInnerAddrsVal
-
-getInnerAddrsDerefed :: Heap -> Set Addr -> Set Addr
-getInnerAddrsDerefed heap addrs = getInnerAddrsScope $ (heap M.!) <$> S.toList addrs
-
-getInnerAddrsAll :: Heap -> Set Addr -> Set Addr -> Set Addr
-getInnerAddrsAll heap acc set
-  | S.null set = acc
-  | otherwise = getInnerAddrsAll heap newAcc (getInnerAddrsDerefed heap set `S.difference` newAcc)
-    where
-      newAcc = acc <> set
-
-getInnerAddrs :: Foldable f => Heap -> f Val -> Set Addr
-getInnerAddrs heap = getInnerAddrsAll heap S.empty . getInnerAddrsScope
-
-mapInnerAddrsVal :: (Addr -> Addr) -> Val -> Val
-mapInnerAddrsVal f (VRef a) = VRef $ f a
-mapInnerAddrsVal f (VRec f' m) = VRec f' $ mapInnerAddrsScope f m
-mapInnerAddrsVal f (VFun env i e) = VFun (mapInnerAddrsScope f env) i e
-mapInnerAddrsVal _ v = v
-
-mapInnerAddrsScope :: Functor f => (Addr -> Addr) -> f Val -> f Val
-mapInnerAddrsScope f = (mapInnerAddrsVal f <$>)
 
 runEval :: StateT EvalState (ExceptT EvalError IO) a -> EvalState -> IO ()
 runEval m s = runExceptT (runStateT m s) >>= \case

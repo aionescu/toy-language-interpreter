@@ -4,6 +4,9 @@ let fac = new id in
 fac := (n: Int) -> if n == 0 then 1 else n * !fac (n - 1);
 
 print !fac 5;
+print !fac (!fac 5);
+
+print "Fibs";
 
 let fib = new id in
 fib := (n: Int) ->
