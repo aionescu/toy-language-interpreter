@@ -190,8 +190,8 @@ evalExpr (If cond then' else') = do
     VBool c -> evalExpr if c then then' else else'
 
 evalExpr (Open expr) = do
-  files <- get
   vf <- evalExpr expr
+  files <- get
   case vf of
     VStr f ->
       case M.lookup f files of
@@ -199,8 +199,8 @@ evalExpr (Open expr) = do
         Nothing -> openFile f
 
 evalExpr (Read t expr) = do
-  files <- get
   vf <- evalExpr expr
+  files <- get
   case vf of
     VFile f ->
       case M.lookup f files of
@@ -214,8 +214,8 @@ evalExpr (Read t expr) = do
             else c <$ modify (M.insert f cs)
 
 evalExpr (Close expr) = do
-  files <- get
   vf <- evalExpr expr
+  files <- get
   case vf of
     VFile f ->
       case M.lookup f files of

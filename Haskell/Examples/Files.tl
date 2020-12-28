@@ -1,7 +1,4 @@
-let meta: File = open "FS/Path.txt" in
-
-let path = read Str from meta in
-close meta;
+let path = read Str from open "FS/Path.txt" in
 
 let f = open path in
 
