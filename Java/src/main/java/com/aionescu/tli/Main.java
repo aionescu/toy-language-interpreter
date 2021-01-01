@@ -7,10 +7,14 @@ import com.aionescu.tli.view.TUIView;
 
 public final class Main {
   public static void main(String[] args) {
-    var repo = new SingleStateRepository();
-    var controller = new Controller(repo);
-    var view = new TUIView(controller);
+    if (args.length > 0 && args[0].equals("--gui"))
+      MainFX.main(args);
+    else {
+      var repo = new SingleStateRepository();
+      var controller = new Controller(repo);
+      var view = new TUIView(controller);
 
-    view.run();
+      view.run();
+    }
   }
 }
