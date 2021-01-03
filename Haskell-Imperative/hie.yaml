@@ -1,0 +1,22 @@
+cradle:
+  cabal:
+    - path: "src/Main.hs"
+      component: "tli:exe:tli"
+
+    - path: "src/Language/TL/Syntax.hs"
+      component: "tli:exe:tli"
+
+    - path: "src/Language/TL/Parser.hs"
+      component: "tli:exe:tli"
+
+    - path: "src/Language/TL/TypeCk.hs"
+      component: "tli:exe:tli"
+
+    - path: "src/Language/TL/Eval.hs"
+      component: "tli:exe:tli"
+
+    - path: "src/Language/TL/FS.hs"
+      component: "tli:exe:tli"
+
+    - path: "src/Language/TL/Opts.hs"
+      component: "tli:exe:tli"
