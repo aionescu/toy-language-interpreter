@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
-name: tli
+name: tli-imp
 version: 0.0.0.0
 synopsis: Toy Language Interpreter
 author: Alex Ionescu
@@ -10,7 +10,7 @@ category: Interpreter
 build-type: Simple
 extra-source-files: README.md
 
-executable tli
+executable tli-imp
   main-is: Main.hs
 
   other-modules:
@@ -20,10 +20,10 @@ executable tli
     Language.TL.Eval
     Language.TL.FS
     Language.TL.Opts
-    Paths_tli
+    Paths_tli_imp
 
   autogen-modules:
-    Paths_tli
+    Paths_tli_imp
 
   hs-source-dirs: src
 
