@@ -7,8 +7,8 @@ import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableView.TableViewSelectionModel;
 
-public final class TableViewNoSelectionModel<T> extends TableViewSelectionModel<T> {
-  public TableViewNoSelectionModel(TableView<T> tableView) {
+public final class IgnoreTableViewSelectionModel<T> extends TableViewSelectionModel<T> {
+  public IgnoreTableViewSelectionModel(TableView<T> tableView) {
     super(tableView);
   }
 
