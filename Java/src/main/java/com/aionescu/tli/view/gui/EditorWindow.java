@@ -34,8 +34,6 @@ public final class EditorWindow implements GUIWindow {
   public EditorWindow(Stage stage) {
     _stage = stage;
 
-    _stage.setTitle("Toy Language Interpreter");
-
     _open = new Button("Open");
     _open.setOnAction(e -> _open());
 
@@ -102,7 +100,9 @@ public final class EditorWindow implements GUIWindow {
   }
 
   void _showError(String type, String error) {
-    var alert = new Alert(AlertType.INFORMATION);
+    var alert = new Alert(AlertType.ERROR);
+    alert.getDialogPane().getStylesheets().add("file:modena-dark.css");
+
     alert.setTitle(type + " error");
     alert.setHeaderText(null);
     alert.setContentText(error);
@@ -125,6 +125,8 @@ public final class EditorWindow implements GUIWindow {
   }
 
   void _run() {
+    _save();
+
     var code = _editor.getText();
     _compile(code).matchDo(
       () -> { },
@@ -132,7 +134,10 @@ public final class EditorWindow implements GUIWindow {
         var stage = new Stage();
         stage.initOwner(_stage);
         stage.setTitle("Program Execution");
-        stage.setScene(new Scene(new ExecutionWindow(stage, ast).getView()));
+
+        var scene = new Scene(new ExecutionWindow(stage, ast).getView());
+        scene.getStylesheets().add("file:modena-dark.css");
+        stage.setScene(scene);
 
         _vbox.setDisable(true);
         stage.showAndWait();

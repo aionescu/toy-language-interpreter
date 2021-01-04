@@ -15,6 +15,7 @@ public final class GUIBootstrapper extends Application {
     childStage.initOwner(stage);
 
     var scene = new Scene(new EditorWindow(childStage).getView());
+    scene.getStylesheets().add("file:modena-dark.css");
 
     childStage.setTitle("TL Playground");
     childStage.setScene(scene);
