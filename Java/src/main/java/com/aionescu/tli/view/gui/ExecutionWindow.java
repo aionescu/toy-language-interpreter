@@ -53,7 +53,7 @@ public final class ExecutionWindow implements GUIWindow {
     var list = new ListView<A>();
 
     if (!enableSelection)
-    list.setSelectionModel(new NoSelectionModel<>());
+    list.setSelectionModel(new IgnoreSelectionModel<>());
 
     list.setCellFactory(p -> new ListCell<A>() {
       @Override
@@ -81,7 +81,7 @@ public final class ExecutionWindow implements GUIWindow {
   static <A, B> TableView<Pair<A, B>> _mkTableView(String fstName, String sndName) {
     var table = new TableView<Pair<A, B>>();
 
-    table.setSelectionModel(new TableViewNoSelectionModel<>(table));
+    table.setSelectionModel(new IgnoreTableViewSelectionModel<>(table));
     table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
     var fst = new TableColumn<Pair<A, B>, A>(fstName);
