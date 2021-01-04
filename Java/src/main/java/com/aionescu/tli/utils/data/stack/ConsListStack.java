@@ -15,6 +15,10 @@ public final class ConsListStack<A> implements Stack<A> {
     return new ConsListStack<>(List.nil());
   }
 
+  public static <A> ConsListStack<A> ofList(List<A> list) {
+    return new ConsListStack<>(list);
+  }
+
   @Override
   public boolean equals(Object rhs) {
     return rhs instanceof ConsListStack<?> && _list.equals(((ConsListStack<?>)rhs)._list);

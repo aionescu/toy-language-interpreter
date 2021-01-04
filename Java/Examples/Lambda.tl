@@ -17,7 +17,7 @@ print obj.getY ();
 
 -- Inferred: addPoints: { x: Int, y: Int } -> { x: Int, y: Int } -> { x: Int, y: Int };
 let addPoints =
-  (p : { x : Int, y : Int }) (p2 : { x : Int, y : Int }) ->
+  (p: { x: Int, y: Int }) (p2: { x: Int, y: Int }) ->
     { x = p.x + p2.x, y = p.y + p2.y };
 
 print addPoints { x = 1, y = 2 } { x = 3, y = 2 };

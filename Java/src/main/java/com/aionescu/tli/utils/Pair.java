@@ -47,4 +47,12 @@ public final class Pair<A, B> {
   public B snd_() {
     return snd;
   }
+
+  public static <A, B, C> Function<Pair<A, B>, Pair<C, B>> first(Function<A, C> f) {
+    return p -> Pair.of(f.apply(p.fst), p.snd);
+  }
+
+  public static <A, B, C> Function<Pair<A, B>, Pair<A, C>> second(Function<B, C> f) {
+    return p -> Pair.of(p.fst, f.apply(p.snd));
+  }
 }

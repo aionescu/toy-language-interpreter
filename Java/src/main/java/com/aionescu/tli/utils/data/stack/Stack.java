@@ -13,6 +13,10 @@ public interface Stack<A> {
     return Stack.<A>empty().push(val);
   }
 
+  static <A> Stack<A> ofList(List<A> list) {
+    return ConsListStack.ofList(list);
+  }
+
   Stack<A> push(A val);
   Maybe<Pair<A, Stack<A>>> pop();
 

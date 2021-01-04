@@ -4,6 +4,7 @@ import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.stack.Stack;
 import java.util.concurrent.atomic.AtomicReference;
+
 import com.aionescu.tli.ast.stmt.Stmt;
 import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.ast.val.Val;
@@ -55,11 +56,23 @@ public final class GlobalState {
     return out.reverse().unlines();
   }
 
-  public static AtomicReference<GlobalState> initial(Stmt stmt) {
-    var ref = new AtomicReference<GlobalState>(GlobalState.empty);
-    ref.getAndUpdate(g -> g.withThreads(List.singleton(ThreadState.initial(ref, 0).withToDo(Stack.of(stmt)))).withNextID(1));
+  static AtomicReference<GlobalState> _initial(List<Stmt> stmts) {
+    var ref = emptyRef();
+    ref.getAndUpdate(g -> g.withThreads(List.singleton(ThreadState.initial(ref, 0).withToDo(Stack.ofList(stmts)))).withNextID(1));
 
     return ref;
+  }
+
+  public static AtomicReference<GlobalState> emptyRef() {
+    return new AtomicReference<>(empty);
+  }
+
+  public static AtomicReference<GlobalState> initialExploded(Stmt stmt) {
+    return _initial(stmt.explode());
+  }
+
+  public static AtomicReference<GlobalState> initial(Stmt stmt) {
+    return _initial(List.singleton(stmt));
   }
 
   public static void eval(AtomicReference<GlobalState> global) {
