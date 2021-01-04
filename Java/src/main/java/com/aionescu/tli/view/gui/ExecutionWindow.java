@@ -47,18 +47,21 @@ public final class ExecutionWindow implements GUIWindow {
     _controller.setState(GlobalState.initialExploded(ast));
   }
 
-  void _populateThreadLocalWidgets(Integer threadID_) {
-    if (threadID_ == null) {
+  void _populateThreadLocalWidgets(Integer selectedID) {
+    if (selectedID == null) {
       _toDo.setItems(FXCollections.emptyObservableList());
       _sym.setItems(FXCollections.emptyObservableList());
+      return;
     }
 
-    int threadID = threadID_;
-
+    int threadID = selectedID;
     var maybeThread = _global().threads.find(t -> t.id == threadID);
 
     maybeThread.matchDo(
-      () -> { },
+      () -> {
+        _sym.setItems(FXCollections.emptyObservableList());
+        _toDo.setItems(FXCollections.emptyObservableList());
+      },
       thread -> {
         var toDo = thread.toDo.toList().toObservable();
         var sym = thread.sym.toList().toObservable();
@@ -91,12 +94,7 @@ public final class ExecutionWindow implements GUIWindow {
 
     var threadIDs = global.threads.map(t -> t.id).toObservable();
     _threadStateIDs.setItems(threadIDs);
-
-    var selected = _threadStateIDs.getSelectionModel().getSelectedItem();
-    if (selected == null) {
-      _sym.setItems(FXCollections.emptyObservableList());
-      _toDo.setItems(FXCollections.emptyObservableList());
-    }
+    _populateThreadLocalWidgets(_threadStateIDs.getSelectionModel().getSelectedItem());
   }
 
   GlobalState _global() {
