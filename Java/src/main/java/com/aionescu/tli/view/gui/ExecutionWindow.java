@@ -1,5 +1,7 @@
 package com.aionescu.tli.view.gui;
 
+import static com.aionescu.tli.view.gui.GUIWindow.*;
+
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.ast.prog.GCStats;
@@ -11,22 +13,17 @@ import com.aionescu.tli.repo.SingleStateRepository;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
 
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 
 public final class ExecutionWindow implements GUIWindow {
   Controller _controller;
@@ -36,6 +33,7 @@ public final class ExecutionWindow implements GUIWindow {
 
   TextField _threadStateCount;
   TableView<Pair<String, Val>> _heap;
+  Label _heapLabel;
   ListView<Val> _out;
   ListView<Pair<String, List<Val>>> _files;
   ListView<Integer> _threadStateIDs;
@@ -47,55 +45,6 @@ public final class ExecutionWindow implements GUIWindow {
   public ExecutionWindow(Stmt ast) {
     _controller = new Controller(new SingleStateRepository());
     _controller.setState(GlobalState.initialExploded(ast));
-  }
-
-  static <A> ListView<A> _mkListView(boolean enableSelection) {
-    var list = new ListView<A>();
-
-    if (!enableSelection)
-    list.setSelectionModel(new IgnoreSelectionModel<>());
-
-    list.setCellFactory(p -> new ListCell<A>() {
-      @Override
-      protected void updateItem(A item, boolean empty) {
-        super.updateItem(item, empty);
-        setFont(new Font("Fira Code Regular", 16));
-        setText(empty ? "" : item.toString());
-      }
-    });
-
-    return list;
-  }
-
-  static <T, C> Callback<TableColumn<T, C>, TableCell<T, C>> _tableViewCellFactory() {
-    return p -> new TableCell<T, C>() {
-      @Override
-      public void updateItem(C item, boolean empty) {
-        super.updateItem(item, empty);
-        setFont(new Font("Fira Code Regular", 16));
-        setText(empty ? "" : item.toString());
-      }
-    };
-  }
-
-  static <A, B> TableView<Pair<A, B>> _mkTableView(String fstName, String sndName) {
-    var table = new TableView<Pair<A, B>>();
-
-    table.setSelectionModel(new IgnoreTableViewSelectionModel<>(table));
-    table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-    var fst = new TableColumn<Pair<A, B>, A>(fstName);
-    fst.setCellValueFactory(v -> new ReadOnlyObjectWrapper<>(v.getValue().fst));
-    fst.setCellFactory(_tableViewCellFactory());
-
-    var snd = new TableColumn<Pair<A, B>, B>(sndName);
-    snd.setCellValueFactory(v -> new ReadOnlyObjectWrapper<>(v.getValue().snd));
-    snd.setCellFactory(_tableViewCellFactory());
-
-    table.getColumns().add(fst);
-    table.getColumns().add(snd);
-
-    return table;
   }
 
   void _populateThreadLocalWidgets(Integer threadID_) {
@@ -128,6 +77,8 @@ public final class ExecutionWindow implements GUIWindow {
     var global = _global();
 
     _threadStateCount.setText("ThreadState Count: " + String.valueOf(global.threads.length()));
+
+    _heapLabel.setText("Heap: " + global.gcStats);
 
     var heap = global.heap.toList().map(Pair.first(GCStats::showHex)).toObservable();
     _heap.setItems(heap);
@@ -184,39 +135,38 @@ public final class ExecutionWindow implements GUIWindow {
 
     _threadStateCount = new TextField();
     _threadStateCount.setEditable(false);
+    _threadStateCount.setPrefSize(200, 50);
+    _threadStateCount.setFont(new Font("Fira Code Regular", 14));
 
-    _heap = _mkTableView("Address", "Value");
-    _out = _mkListView(false);
-    _files = _mkListView(false);
+    _heapLabel = mkLabel("Heap:");
+    _heap = mkTableView("Address", "Value");
+    _out = mkListView(false);
+    _files = mkListView(false);
 
-    _threadStateIDs = _mkListView(true);
+    _threadStateIDs = mkListView(true);
     _threadStateIDs.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal != null)
         _populateThreadLocalWidgets(newVal);
     });
 
-    _sym = _mkTableView("Identifier", "Value");
+    _sym = mkTableView("Identifier", "Value");
+    _toDo = mkListView(false);
 
-    _toDo = _mkListView(false);
-
-    _runOneStep = new Button("Run one step");
-    _runOneStep.setOnAction(e -> _runOneStep());
-
-    _runAllSteps = new Button("Run all steps");
-    _runAllSteps.setOnAction(e -> _runAllSteps());
+    _runOneStep = mkButton("Run one step", () -> _runOneStep());
+    _runAllSteps = mkButton("Run all steps", () -> _runAllSteps());
 
     _vbox = new VBox(
       new HBox(_runOneStep, _runAllSteps, _threadStateCount),
-      new Label("Heap:"),
+      _heapLabel,
       _heap,
       new HBox(
-        new VBox(new Label("Output:"), _out),
-        new VBox(new Label("Files:"), _files),
-        new VBox(new Label("Threads:"), _threadStateIDs)
+        new VBox(mkLabel("Output:"), _out),
+        new VBox(mkLabel("Files:"), _files),
+        new VBox(mkLabel("Threads:"), _threadStateIDs)
       ),
-      new Label("Symbol table:"),
+      mkLabel("Symbol table:"),
       _sym,
-      new Label("Execution stack:"),
+      mkLabel("Execution stack:"),
       _toDo
     );
 

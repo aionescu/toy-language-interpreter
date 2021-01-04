@@ -1,5 +1,7 @@
 package com.aionescu.tli.view.gui;
 
+import static com.aionescu.tli.view.gui.GUIWindow.*;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -88,14 +90,9 @@ public final class EditorWindow implements GUIWindow {
   public void setStage(Stage stage) {
     _stage = stage;
 
-    _open = new Button("Open");
-    _open.setOnAction(e -> _open());
-
-    _save = new Button("Save");
-    _save.setOnAction(e -> _save());
-
-    _run = new Button("Run");
-    _run.setOnAction(e -> _run());
+    _open = mkButton("Open", () -> _open());
+    _save = mkButton("Save", () -> _save());
+    _run = mkButton("Run", () -> _run());
 
     _editor = new TextArea();
     _editor.setFont(new Font("Fira Code Regular", 18));
