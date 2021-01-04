@@ -1,4 +1,4 @@
-package com.aionescu.tli.view;
+package com.aionescu.tli.view.tui;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

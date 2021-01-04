@@ -6,7 +6,6 @@ import com.aionescu.tli.ast.Field;
 import com.aionescu.tli.ast.prog.GCStats;
 import com.aionescu.tli.ast.type.TRec;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.exn.eval.PanicException;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.set.Set;
 
@@ -27,12 +26,12 @@ public final class VRec extends Val {
   @Override
   public int compareTo(Val rhs) {
     if (!(rhs instanceof VRec))
-      throw new PanicException();
+      return -1;
 
     var rec = (VRec)rhs;
 
     if (isRec != rec.isRec)
-      throw new PanicException();
+      return -1;
 
     return Map.compare(fields, rec.fields);
   }

@@ -39,4 +39,9 @@ public final class ConsListStack<A> implements Stack<A> {
   public boolean isEmpty() {
     return _list.isEmpty();
   }
+
+  @Override
+  public List<A> toList() {
+    return _list;
+  }
 }

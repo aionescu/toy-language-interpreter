@@ -26,7 +26,7 @@ public final class VFun extends Val {
 
   @Override
   public int compareTo(Val arg0) {
-    throw new PanicException();
+    return -1;
   }
 
   @Override

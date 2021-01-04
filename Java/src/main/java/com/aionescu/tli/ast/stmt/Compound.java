@@ -3,6 +3,7 @@ package com.aionescu.tli.ast.stmt;
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
+import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 
 public final class Compound implements Stmt {
@@ -26,5 +27,10 @@ public final class Compound implements Stmt {
   @Override
   public ThreadState eval(ThreadState prog) {
     return prog.withToDo(prog.toDo.push(_stmt2).push(_stmt1));
+  }
+
+  @Override
+  public List<Stmt> explode() {
+    return _stmt1.explode().append(_stmt2.explode());
   }
 }

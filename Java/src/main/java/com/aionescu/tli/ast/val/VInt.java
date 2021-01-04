@@ -5,7 +5,6 @@ import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.exn.eval.PanicException;
 import com.aionescu.tli.utils.data.set.Set;
 
 public final class VInt extends Val {
@@ -22,10 +21,7 @@ public final class VInt extends Val {
 
   @Override
   public int compareTo(Val rhs) {
-    if (!(rhs instanceof VInt))
-      throw new PanicException();
-
-    return val.compareTo(((VInt)rhs).val);
+    return rhs instanceof VInt ? val.compareTo(((VInt)rhs).val) : -1;
   }
 
   @Override

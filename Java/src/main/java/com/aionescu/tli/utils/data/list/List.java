@@ -8,11 +8,15 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.Foldable;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 public abstract class List<A> implements Foldable<A> {
   private static final class Nil<A> extends List<A> {
@@ -228,6 +232,13 @@ public abstract class List<A> implements Foldable<A> {
     return match(
       () -> "",
       (h, t) -> h.toString() + t.foldL((s, a) -> s + "\n" + a, ""));
+  }
+
+  public final ObservableList<A> toObservable() {
+    return stream().collect(
+      Collectors.collectingAndThen(
+        Collectors.toList(),
+        FXCollections::observableList));
   }
 
   @Override

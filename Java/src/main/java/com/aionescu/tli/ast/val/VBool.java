@@ -4,7 +4,6 @@ import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.exn.eval.PanicException;
 import com.aionescu.tli.utils.data.set.Set;
 
 public final class VBool extends Val {
@@ -21,10 +20,7 @@ public final class VBool extends Val {
 
   @Override
   public int compareTo(Val rhs) {
-    if (!(rhs instanceof VBool))
-      throw new PanicException();
-
-    return Boolean.compare(val, ((VBool) rhs).val);
+    return rhs instanceof VBool ? Boolean.compare(val, ((VBool) rhs).val) : -1;
   }
 
   @Override

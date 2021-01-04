@@ -1,4 +1,4 @@
-package com.aionescu.tli.view;
+package com.aionescu.tli.view.tui;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -20,6 +20,7 @@ import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.uparsec.exn.UParsecException;
+import com.aionescu.tli.view.View;
 
 public final class TUIView implements View {
   private final Controller _controller;
@@ -156,7 +157,7 @@ public final class TUIView implements View {
   }
 
   @Override
-  public void run() {
+  public void run(String[] args) {
     try (var in = new Scanner(System.in)) {
       while (true) {
         try {
