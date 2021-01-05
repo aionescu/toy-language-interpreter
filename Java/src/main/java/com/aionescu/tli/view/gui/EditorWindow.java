@@ -43,8 +43,12 @@ public final class EditorWindow implements GUIWindow {
       var code = Files.readString(path);
       _editor.setText(code);
       _file = Maybe.just(path);
+
       _stage.setTitle("TL Playground - " + path.getFileName().toString());
+
       _editor.setDisable(false);
+      _save.setDisable(false);
+      _run.setDisable(false);
     } catch (IOException e) { }
   }
 
@@ -91,8 +95,12 @@ public final class EditorWindow implements GUIWindow {
     _stage = stage;
 
     _open = mkButton("Open", () -> _open());
+
     _save = mkButton("Save", () -> _save());
+    _save.setDisable(true);
+
     _run = mkButton("Run", () -> _run());
+    _run.setDisable(true);
 
     _editor = new TextArea();
     _editor.setFont(new Font("Fira Code Regular", 18));
