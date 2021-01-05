@@ -6,6 +6,7 @@ import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.ast.prog.GCStats;
 import com.aionescu.tli.ast.stmt.Stmt;
+import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.controller.Controller;
 import com.aionescu.tli.exn.eval.EvalException;
@@ -51,6 +52,10 @@ public final class ExecutionWindow implements GUIWindow {
     if (selectedID == null) {
       _toDo.setItems(FXCollections.emptyObservableList());
       _sym.setItems(FXCollections.emptyObservableList());
+
+      _sym.setDisable(true);
+      _toDo.setDisable(true);
+
       return;
     }
 
@@ -58,16 +63,16 @@ public final class ExecutionWindow implements GUIWindow {
     var maybeThread = _global().threads.find(t -> t.id == threadID);
 
     maybeThread.matchDo(
-      () -> {
-        _sym.setItems(FXCollections.emptyObservableList());
-        _toDo.setItems(FXCollections.emptyObservableList());
-      },
+      () -> { },
       thread -> {
         var toDo = thread.toDo.toList().toObservable();
         var sym = thread.sym.toList().toObservable();
 
         _toDo.setItems(toDo);
         _sym.setItems(sym);
+
+        _sym.setDisable(false);
+        _toDo.setDisable(false);
       });
   }
 
@@ -89,7 +94,7 @@ public final class ExecutionWindow implements GUIWindow {
     var out = global.out.reverse().toObservable();
     _out.setItems(out);
 
-    var files = global.open.toList().toObservable();
+    var files = global.open.toList().map(Pair.first(VStr::escapeString)).toObservable();
     _files.setItems(files);
 
     var threadIDs = global.threads.map(t -> t.id).toObservable();
