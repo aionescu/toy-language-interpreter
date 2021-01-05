@@ -9,21 +9,23 @@ import java.util.function.Predicate;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
 import com.aionescu.tli.utils.Unit;
+import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.uparsec.exn.FwdRefAlreadySetException;
+import com.aionescu.tli.utils.uparsec.exn.FwdRefNotSetException;
 import com.aionescu.tli.utils.uparsec.exn.ParserStuckException;
 import com.aionescu.tli.utils.uparsec.exn.ParsingFailedException;
 
 @FunctionalInterface
 public interface Parser<A> {
   public static final class FwdRef<A> {
-    private Parser<A> _p;
+    private Maybe<Parser<A>> _p = Maybe.nothing();
 
     public void set(Parser<A> p) {
-      if (_p != null)
-        throw new FwdRefAlreadySetException();
-
-      _p = p;
+      _p.matchDo(
+        () -> { _p = Maybe.just(p); },
+        p_ -> { throw new FwdRefAlreadySetException(); }
+      );
     }
   }
 
@@ -38,7 +40,10 @@ public interface Parser<A> {
 
   public static <A> Pair<Parser<A>, FwdRef<A>> fwdRef() {
     var fwdRef = new FwdRef<A>();
-    Parser<A> p = s -> fwdRef._p.run(s);
+    Parser<A> p = s -> fwdRef._p.match(
+      () -> { throw new FwdRefNotSetException(); },
+      p_ -> p_.run(s)
+    );
 
     return Pair.of(p, fwdRef);
   }
