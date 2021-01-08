@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.aionescu.tli.utils.TriFunction;
+import com.aionescu.tli.utils.Unit;
 
 public abstract class Maybe<A> {
   private static final class NothingUnwrappedException extends RuntimeException {
@@ -29,11 +30,6 @@ public abstract class Maybe<A> {
     public <B> B match(Supplier<B> nothing, Function<A, B> just) {
       return nothing.get();
     }
-
-    @Override
-    public void matchDo(Runnable nothing, Consumer<A> just) {
-      nothing.run();
-    }
   }
 
   private static final class Just<A> extends Maybe<A> {
@@ -52,11 +48,6 @@ public abstract class Maybe<A> {
     public <B> B match(Supplier<B> nothing, Function<A, B> just) {
       return just.apply(_val);
     }
-
-    @Override
-    public void matchDo(Runnable nothing, Consumer<A> just) {
-      just.accept(_val);
-    }
   }
 
   private Maybe() { }
@@ -65,7 +56,12 @@ public abstract class Maybe<A> {
   public abstract boolean equals(Object rhs);
 
   public abstract <B> B match(Supplier<B> nothing, Function<A, B> just);
-  public abstract void matchDo(Runnable nothing, Consumer<A> just);
+
+  public final void matchDo(Runnable nothing, Consumer<A> just) {
+    match(
+      () -> { nothing.run(); return Unit.UNIT; },
+      a -> { just.accept(a); return Unit.UNIT; });
+  }
 
   public static <A> Maybe<A> nothing() {
     return new Nothing<>();
@@ -107,7 +103,11 @@ public abstract class Maybe<A> {
     return liftA2((a, b) -> a, this, next);
   }
 
+  public final A unwrap(Supplier<? extends RuntimeException> e) {
+    return match(() -> { throw e.get(); }, a -> a);
+  }
+
   public final A unwrap() {
-    return match(() -> { throw new NothingUnwrappedException(); }, a -> a);
+    return unwrap(NothingUnwrappedException::new);
   }
 }

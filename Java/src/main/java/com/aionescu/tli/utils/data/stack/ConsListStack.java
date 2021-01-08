@@ -36,7 +36,7 @@ public final class ConsListStack<A> implements Stack<A> {
 
   @Override
   public Maybe<Pair<A, Stack<A>>> pop() {
-    return _list.uncons().map(Pair.match((a, as) -> Pair.of(a, new ConsListStack<>(as))));
+    return _list.uncons().map(Pair.second(ConsListStack::new));
   }
 
   @Override

@@ -32,9 +32,10 @@ public final class ThreadState {
   }
 
   public ThreadState eval() {
-    return toDo.pop().match(
-      () -> { throw new EvaluationFinishedException(); },
-      Pair.match((stmt, toDo) -> stmt.eval(this.withToDo(toDo))));
+    return
+      toDo.pop()
+      .map(Pair.match((stmt, toDo) -> stmt.eval(this.withToDo(toDo))))
+      .unwrap(EvaluationFinishedException::new);
   }
 
   public boolean isNotDone() {

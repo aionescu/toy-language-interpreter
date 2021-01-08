@@ -40,10 +40,7 @@ public interface Parser<A> {
 
   public static <A> Pair<Parser<A>, FwdRef<A>> fwdRef() {
     var fwdRef = new FwdRef<A>();
-    Parser<A> p = s -> fwdRef._p.match(
-      () -> { throw new FwdRefNotSetException(); },
-      p_ -> p_.run(s)
-    );
+    Parser<A> p = s -> fwdRef._p.unwrap(FwdRefNotSetException::new).run(s);
 
     return Pair.of(p, fwdRef);
   }

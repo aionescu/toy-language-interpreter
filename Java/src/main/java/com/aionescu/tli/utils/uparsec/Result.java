@@ -4,16 +4,13 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import com.aionescu.tli.utils.Unit;
+
 public abstract class Result<A> {
   private static final class Failure<A> extends Result<A> {
     @Override
     public <B> B match(Supplier<B> failure, BiFunction<A, String, B> success) {
       return failure.get();
-    }
-
-    @Override
-    public void matchDo(Runnable failure, BiConsumer<A, String> success) {
-      failure.run();
     }
   }
 
@@ -30,16 +27,15 @@ public abstract class Result<A> {
     public <B> B match(Supplier<B> failure, BiFunction<A, String, B> success) {
       return success.apply(_result, _rest);
     }
-
-    @Override
-    public void matchDo(Runnable failure, BiConsumer<A, String> success) {
-      success.accept(_result, _rest);
-    }
   }
 
   public abstract <B> B match(Supplier<B> failure, BiFunction<A, String, B> success);
 
-  public abstract void matchDo(Runnable failure, BiConsumer<A, String> success);
+  public final void matchDo(Runnable failure, BiConsumer<A, String> success) {
+    match(
+      () -> { failure.run(); return Unit.UNIT; },
+      (a, rest) -> { success.accept(a, rest); return Unit.UNIT; });
+  }
 
   public static <A> Result<A> fail() {
     return new Failure<A>();

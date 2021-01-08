@@ -11,12 +11,13 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.control.Maybe;
-import com.aionescu.tli.utils.data.Foldable;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
+import com.aionescu.tli.utils.Pair;
+import com.aionescu.tli.utils.Unit;
+import com.aionescu.tli.utils.control.Maybe;
+import com.aionescu.tli.utils.data.Foldable;
 
 public abstract class List<A> implements Foldable<A> {
   private static final class Nil<A> extends List<A> {
@@ -25,11 +26,6 @@ public abstract class List<A> implements Foldable<A> {
     @Override
     public <B> B match(Supplier<B> nil, BiFunction<A, List<A>, B> cons) {
       return nil.get();
-    }
-
-    @Override
-    public void matchDo(Runnable nil, BiConsumer<A, List<A>> cons) {
-      nil.run();
     }
   }
 
@@ -46,17 +42,17 @@ public abstract class List<A> implements Foldable<A> {
     public <B> B match(Supplier<B> nil, BiFunction<A, List<A>, B> cons) {
       return cons.apply(_head, _tail);
     }
-
-    @Override
-    public void matchDo(Runnable nil, BiConsumer<A, List<A>> cons) {
-      cons.accept(_head, _tail);
-    }
   }
 
   private List() { }
 
   public abstract <B> B match(Supplier<B> nil, BiFunction<A, List<A>, B> cons);
-  public abstract void matchDo(Runnable nil, BiConsumer<A, List<A>> cons);
+
+  public final void matchDo(Runnable nil, BiConsumer<A, List<A>> cons) {
+    match(
+      () -> { nil.run(); return Unit.UNIT; },
+      (a, as) -> { cons.accept(a, as); return Unit.UNIT; });
+  }
 
   public static <A> List<A> nil() {
     return new Nil<>();
