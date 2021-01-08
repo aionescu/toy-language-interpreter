@@ -5,35 +5,21 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-import com.aionescu.tli.ast.Ident;
-import com.aionescu.tli.ast.Field.RecField;
-import com.aionescu.tli.ast.Field.TupField;
-import com.aionescu.tli.ast.Field;
+import com.aionescu.tli.ast.*;
+import com.aionescu.tli.ast.Field.*;
 import com.aionescu.tli.ast.expr.*;
-import com.aionescu.tli.ast.expr.Expr;
 import com.aionescu.tli.ast.stmt.*;
-import com.aionescu.tli.ast.type.TBool;
-import com.aionescu.tli.ast.type.TFun;
-import com.aionescu.tli.ast.type.TInt;
-import com.aionescu.tli.ast.type.TRec;
-import com.aionescu.tli.ast.type.TRef;
-import com.aionescu.tli.ast.type.TStr;
-import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.ast.val.VBool;
-import com.aionescu.tli.ast.val.VInt;
-import com.aionescu.tli.ast.val.VRec;
-import com.aionescu.tli.ast.val.VStr;
-import com.aionescu.tli.ast.val.Val;
+import com.aionescu.tli.ast.type.*;
+import com.aionescu.tli.ast.val.*;
 import com.aionescu.tli.exn.eval.IncorrectFileFormatException;
+import com.aionescu.tli.utils.Pair;
+import com.aionescu.tli.utils.Unit;
+import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
-import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.uparsec.Parser;
 
 import static com.aionescu.tli.utils.uparsec.Parser.*;
-
-import com.aionescu.tli.utils.Pair;
-import com.aionescu.tli.utils.Unit;
 
 public final class TLParser {
   private static final Parser<Stmt> _parser;

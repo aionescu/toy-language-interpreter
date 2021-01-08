@@ -6,13 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.aionescu.tli.ast.stmt.Stmt;
-import com.aionescu.tli.exn.typeck.TypeCheckerException;
-import com.aionescu.tli.parser.TLParser;
-import com.aionescu.tli.utils.control.Maybe;
-import com.aionescu.tli.utils.data.map.Map;
-import com.aionescu.tli.utils.uparsec.exn.UParsecException;
-
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
@@ -22,6 +15,13 @@ import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser.ExtensionFilter;
+
+import com.aionescu.tli.ast.stmt.Stmt;
+import com.aionescu.tli.exn.typeck.TypeCheckerException;
+import com.aionescu.tli.parser.TLParser;
+import com.aionescu.tli.utils.control.Maybe;
+import com.aionescu.tli.utils.data.map.Map;
+import com.aionescu.tli.utils.uparsec.exn.UParsecException;
 
 public final class EditorWindow implements GUIWindow {
   Stage _stage;

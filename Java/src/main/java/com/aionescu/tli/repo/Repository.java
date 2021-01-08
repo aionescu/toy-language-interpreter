@@ -1,8 +1,9 @@
 package com.aionescu.tli.repo;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.utils.control.Maybe;
-import java.util.concurrent.atomic.AtomicReference;
 
 public interface Repository {
   AtomicReference<GlobalState> state();

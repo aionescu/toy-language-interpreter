@@ -4,10 +4,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.utils.control.Maybe;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class SingleStateRepository implements Repository {
   private AtomicReference<GlobalState> _global = new AtomicReference<>(GlobalState.empty);

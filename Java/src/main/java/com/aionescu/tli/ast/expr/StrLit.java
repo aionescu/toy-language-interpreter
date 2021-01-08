@@ -1,12 +1,12 @@
 package com.aionescu.tli.ast.expr;
 
+import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.TStr;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
-import com.aionescu.tli.ast.val.*;
+import com.aionescu.tli.ast.val.VStr;
+import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.utils.data.map.Map;
-
-import com.aionescu.tli.ast.Ident;
 
 public final class StrLit implements Expr {
   private final String _val;

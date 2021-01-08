@@ -1,9 +1,10 @@
 package com.aionescu.tli.controller;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.repo.Repository;
 import com.aionescu.tli.utils.control.Maybe;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class Controller {
   Repository _repo;

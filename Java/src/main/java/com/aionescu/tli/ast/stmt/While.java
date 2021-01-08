@@ -2,10 +2,10 @@ package com.aionescu.tli.ast.stmt;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.expr.Expr;
-import com.aionescu.tli.ast.val.VBool;
 import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
+import com.aionescu.tli.ast.val.VBool;
 import com.aionescu.tli.utils.data.map.Map;
 
 public final class While implements Stmt {

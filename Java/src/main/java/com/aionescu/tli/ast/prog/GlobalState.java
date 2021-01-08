@@ -1,13 +1,13 @@
 package com.aionescu.tli.ast.prog;
 
-import com.aionescu.tli.utils.data.list.List;
-import com.aionescu.tli.utils.data.map.Map;
-import com.aionescu.tli.utils.data.stack.Stack;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.aionescu.tli.ast.stmt.Stmt;
 import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.ast.val.Val;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.map.Map;
+import com.aionescu.tli.utils.data.stack.Stack;
 
 public final class GlobalState {
   public static final GlobalState empty = new GlobalState(Map.empty(), GCStats.empty, Map.empty(), List.nil(), List.nil(), 0);

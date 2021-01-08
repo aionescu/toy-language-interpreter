@@ -6,10 +6,10 @@ import java.util.function.Function;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
-import com.aionescu.tli.utils.data.list.List;
-import com.aionescu.tli.utils.data.set.Set;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.Foldable;
+import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.set.Set;
 
 public interface Map<K extends Comparable<K>, V> extends Foldable<V> {
   static <K extends Comparable<K>, V> Map<K, V> empty() {

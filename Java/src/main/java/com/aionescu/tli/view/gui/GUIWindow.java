@@ -1,7 +1,5 @@
 package com.aionescu.tli.view.gui;
 
-import com.aionescu.tli.utils.Pair;
-
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -17,6 +15,8 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+
+import com.aionescu.tli.utils.Pair;
 
 public interface GUIWindow {
   void setStage(Stage stage);

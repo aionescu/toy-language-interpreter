@@ -10,10 +10,10 @@ import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.function.BiConsumer;
 
+import com.aionescu.tli.ast.prog.GlobalState;
+import com.aionescu.tli.controller.Controller;
 import com.aionescu.tli.exn.eval.EvalException;
 import com.aionescu.tli.exn.typeck.TypeCheckerException;
-import com.aionescu.tli.ast.prog.GlobalState;
-import com.aionescu.tli.controller.*;
 import com.aionescu.tli.parser.TLParser;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;

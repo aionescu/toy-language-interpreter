@@ -1,5 +1,7 @@
 package com.aionescu.tli.ast.prog;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.stmt.Stmt;
 import com.aionescu.tli.ast.val.Val;
@@ -8,7 +10,6 @@ import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.stack.Stack;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class ThreadState {
   public final AtomicReference<GlobalState> global;

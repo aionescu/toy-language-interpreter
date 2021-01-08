@@ -7,9 +7,9 @@ import java.util.function.Function;
 
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.TriFunction;
+import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.set.Set;
-import com.aionescu.tli.utils.control.Maybe;
 
 public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V> {
   private final List<Pair<K, V>> _list;

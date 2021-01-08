@@ -1,7 +1,7 @@
 package com.aionescu.tli;
 
-import com.aionescu.tli.repo.SingleStateRepository;
 import com.aionescu.tli.controller.Controller;
+import com.aionescu.tli.repo.SingleStateRepository;
 import com.aionescu.tli.view.gui.GUIBootstrapper;
 import com.aionescu.tli.view.tui.TUIView;
 

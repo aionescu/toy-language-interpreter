@@ -1,6 +1,16 @@
 package com.aionescu.tli.view.gui;
 
-import static com.aionescu.tli.view.gui.GUIWindow.*;
+import javafx.collections.FXCollections;
+import javafx.scene.Parent;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.GlobalState;
@@ -14,17 +24,7 @@ import com.aionescu.tli.repo.SingleStateRepository;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
 
-import javafx.collections.FXCollections;
-import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.stage.Stage;
+import static com.aionescu.tli.view.gui.GUIWindow.*;
 
 public final class ExecutionWindow implements GUIWindow {
   Controller _controller;

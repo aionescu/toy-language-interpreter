@@ -1,13 +1,12 @@
 package com.aionescu.tli.ast.stmt;
 
-import com.aionescu.tli.utils.data.map.Map;
-
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.prog.ThreadState;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.ast.type.varinfo.VarState;
 import com.aionescu.tli.exn.typeck.VariableAlreadyDeclaredException;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Decl implements Stmt {
   private final Ident _ident;

@@ -1,14 +1,14 @@
 package com.aionescu.tli.ast.prog;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.utils.Pair;
+import com.aionescu.tli.utils.data.Foldable;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.set.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import com.aionescu.tli.utils.data.Foldable;
 
 public final class GCStats {
   public final int allocsSinceGC, gcThreshold, crrHeapSize, maxHeapSize;

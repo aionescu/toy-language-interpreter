@@ -1,14 +1,13 @@
 package com.aionescu.tli.ast.expr;
 
-import com.aionescu.tli.utils.data.map.Map;
-
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.type.Type;
 import com.aionescu.tli.ast.type.varinfo.VarInfo;
-import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.ast.type.varinfo.VarState;
+import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.exn.typeck.UndeclaredVariableException;
 import com.aionescu.tli.exn.typeck.UninitializedVariableException;
+import com.aionescu.tli.utils.data.map.Map;
 
 public final class Var implements Expr {
   public final Ident ident;
