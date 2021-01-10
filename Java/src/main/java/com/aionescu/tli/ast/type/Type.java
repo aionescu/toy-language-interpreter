@@ -7,7 +7,6 @@ import com.aionescu.tli.exn.typeck.TypeMismatchException;
 
 public interface Type {
   boolean isOpaque();
-
   Val defaultValue();
 
   default void mustBe(Type expected) {
@@ -21,9 +20,6 @@ public interface Type {
   }
 
   default Type unwrapTRef() {
-    if (this instanceof TRef)
-      return ((TRef)this).inner;
-    else
-      throw new ExpectedRefFoundException(this);
+    throw new ExpectedRefFoundException(this);
   }
 }

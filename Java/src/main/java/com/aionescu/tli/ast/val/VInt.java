@@ -1,11 +1,9 @@
 package com.aionescu.tli.ast.val;
 
 import java.math.BigInteger;
-import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.ast.type.TInt;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.utils.data.set.Set;
 
 public final class VInt extends Val {
   public final BigInteger val;
@@ -27,15 +25,5 @@ public final class VInt extends Val {
   @Override
   public Type type() {
     return TInt.t;
-  }
-
-  @Override
-  public Set<Integer> getInnerAddrs() {
-    return Set.empty();
-  }
-
-  @Override
-  public Val mapInnerAddrs(UnaryOperator<Integer> f) {
-    return this;
   }
 }

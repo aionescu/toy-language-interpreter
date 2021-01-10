@@ -13,6 +13,11 @@ public abstract class Val implements Comparable<Val> {
 
   public abstract Type type();
 
-  public abstract Set<Integer> getInnerAddrs();
-  public abstract Val mapInnerAddrs(UnaryOperator<Integer> f);
+  public Set<Integer> getInnerAddrs() {
+    return Set.empty();
+  }
+
+  public Val mapInnerAddrs(UnaryOperator<Integer> f) {
+    return this;
+  }
 }

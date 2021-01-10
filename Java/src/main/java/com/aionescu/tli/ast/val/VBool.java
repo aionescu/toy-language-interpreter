@@ -1,10 +1,7 @@
 package com.aionescu.tli.ast.val;
 
-import java.util.function.UnaryOperator;
-
 import com.aionescu.tli.ast.type.TBool;
 import com.aionescu.tli.ast.type.Type;
-import com.aionescu.tli.utils.data.set.Set;
 
 public final class VBool extends Val {
   public final boolean val;
@@ -26,15 +23,5 @@ public final class VBool extends Val {
   @Override
   public Type type() {
     return TBool.t;
-  }
-
-  @Override
-  public Set<Integer> getInnerAddrs() {
-    return Set.empty();
-  }
-
-  @Override
-  public Val mapInnerAddrs(UnaryOperator<Integer> f) {
-    return this;
   }
 }
