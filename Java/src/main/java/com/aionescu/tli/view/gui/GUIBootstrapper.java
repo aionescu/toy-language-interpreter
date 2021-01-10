@@ -10,6 +10,6 @@ public final class GUIBootstrapper extends Application {
 
   @Override
   public void start(Stage stage) {
-    new EditorWindow().run(stage);
+    GUIWindow.runChild(stage, EditorWindow::new);
   }
 }

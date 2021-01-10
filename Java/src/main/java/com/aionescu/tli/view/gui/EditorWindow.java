@@ -1,7 +1,5 @@
 package com.aionescu.tli.view.gui;
 
-import static com.aionescu.tli.view.gui.GUIWindow.*;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,12 +21,54 @@ import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.uparsec.exn.UParsecException;
 
+import static com.aionescu.tli.view.gui.GUIWindow.*;
+
 public final class EditorWindow implements GUIWindow {
-  Stage _stage;
-  Button _open, _save, _run;
-  TextArea _editor;
-  Maybe<Path> _file = Maybe.nothing();
-  VBox _vbox;
+  private final Stage _stage;
+  private final Button _open, _save, _run;
+  private final TextArea _editor;
+  private final VBox _vbox;
+
+  private Maybe<Path> _file = Maybe.nothing();
+
+  public EditorWindow(Stage stage) {
+    _stage = stage;
+    _stage.setTitle("TL Playground");
+
+    _open = mkButton("Open", () -> _open());
+
+    _save = mkButton("Save", () -> _save());
+    _save.setDisable(true);
+
+    _run = mkButton("Run", () -> _run());
+    _run.setDisable(true);
+
+    _editor = new TextArea();
+    _editor.setFont(new Font("Fira Code Regular", 18));
+    _editor.setPrefSize(800, 750);
+
+    _editor.setText("Please open a file.");
+    _editor.setDisable(true);
+
+    _editor.textProperty().addListener(e -> {
+      _file.matchDo(
+        () -> { },
+        path -> _stage.setTitle("TL Playground - " + path.getFileName().toString() + " (*)"));
+    });
+
+    var hbox = new HBox(_open, _save, _run);
+    _vbox = new VBox(hbox, _editor);
+
+    _vbox.setOnKeyPressed(e -> {
+      if (e.isControlDown())
+        switch (e.getCode()) {
+          case O -> _open();
+          case S -> _save();
+          case R -> _run();
+          default -> { }
+        }
+    });
+  }
 
   void _open() {
     var fileChooser = new FileChooser();
@@ -85,53 +125,9 @@ public final class EditorWindow implements GUIWindow {
       () -> { },
       ast -> {
         _vbox.setDisable(true);
-        new ExecutionWindow(ast).run(_stage);
+        runChild(_stage, ExecutionWindow.withAST(ast));
         _vbox.setDisable(false);
       });
-  }
-
-  @Override
-  public void setStage(Stage stage) {
-    _stage = stage;
-
-    _open = mkButton("Open", () -> _open());
-
-    _save = mkButton("Save", () -> _save());
-    _save.setDisable(true);
-
-    _run = mkButton("Run", () -> _run());
-    _run.setDisable(true);
-
-    _editor = new TextArea();
-    _editor.setFont(new Font("Fira Code Regular", 18));
-    _editor.setPrefSize(800, 750);
-
-    _editor.setText("Please open a file.");
-    _editor.setDisable(true);
-
-    _editor.textProperty().addListener(e -> {
-      _file.matchDo(
-        () -> { },
-        path -> _stage.setTitle("TL Playground - " + path.getFileName().toString() + " (*)"));
-    });
-
-    var hbox = new HBox(_open, _save, _run);
-    _vbox = new VBox(hbox, _editor);
-
-    _vbox.setOnKeyPressed(e -> {
-      if (e.isControlDown())
-        switch (e.getCode()) {
-          case O -> _open();
-          case S -> _save();
-          case R -> _run();
-          default -> { }
-        }
-    });
-  }
-
-  @Override
-  public String title() {
-    return "TL Playground";
   }
 
   @Override

@@ -1,5 +1,7 @@
 package com.aionescu.tli.view.gui;
 
+import java.util.function.Function;
+
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -19,8 +21,6 @@ import javafx.util.Callback;
 import com.aionescu.tli.utils.Pair;
 
 public interface GUIWindow {
-  void setStage(Stage stage);
-  String title();
   Parent view();
 
   static void showErrorAlert(String title, String content) {
@@ -98,15 +98,16 @@ public interface GUIWindow {
     return table;
   }
 
-  default void run(Stage parentStage) {
+  static void runChild(Stage parentStage, Function<Stage, ? extends GUIWindow> ctor) {
     var childStage = new Stage();
     childStage.initOwner(parentStage);
-    setStage(childStage);
 
-    var scene = new Scene(view());
+    var window = ctor.apply(childStage);
+    var view = window.view();
+
+    var scene = new Scene(view);
     scene.getStylesheets().add("file:modena-dark.css");
 
-    childStage.setTitle(title());
     childStage.setScene(scene);
     childStage.showAndWait();
   }

@@ -1,5 +1,7 @@
 package com.aionescu.tli.view.gui;
 
+import java.util.function.Function;
+
 import javafx.collections.FXCollections;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -27,25 +29,70 @@ import com.aionescu.tli.utils.data.list.List;
 import static com.aionescu.tli.view.gui.GUIWindow.*;
 
 public final class ExecutionWindow implements GUIWindow {
-  Controller _controller;
+  private final Controller _controller;
 
-  Stage _stage;
-  VBox _vbox;
+  private final Stage _stage;
 
-  TextField _threadStateCount;
-  TableView<Pair<String, Val>> _heap;
-  Label _heapLabel;
-  ListView<Val> _out;
-  ListView<Pair<String, List<Val>>> _files;
-  ListView<Integer> _threadStateIDs;
-  TableView<Pair<Ident, Val>> _sym;
-  ListView<Stmt> _toDo;
+  private final Button _runOneStep, _runAllSteps;
+  private final TextField _threadStateCount;
+  private final TableView<Pair<String, Val>> _heap;
+  private final Label _heapLabel;
+  private final ListView<Val> _out;
+  private final ListView<Pair<String, List<Val>>> _files;
+  private final ListView<Integer> _threadStateIDs;
+  private final TableView<Pair<Ident, Val>> _sym;
+  private final ListView<Stmt> _toDo;
+  private final VBox _vbox;
 
-  Button _runOneStep, _runAllSteps;
-
-  public ExecutionWindow(Stmt ast) {
+  public ExecutionWindow(Stmt ast, Stage stage) {
     _controller = new Controller(new SingleStateRepository());
     _controller.setState(GlobalState.initialExploded(ast));
+
+    _stage = stage;
+    _stage.setTitle("Program Execution");
+
+    _threadStateCount = new TextField();
+    _threadStateCount.setEditable(false);
+    _threadStateCount.setPrefSize(200, 50);
+    _threadStateCount.setFont(new Font("Fira Code Regular", 14));
+
+    _heapLabel = mkLabel("Heap:");
+    _heap = mkTableView("Address", "Value");
+    _out = mkListView(false);
+    _files = mkListView(false);
+
+    _threadStateIDs = mkListView(true);
+    _threadStateIDs.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal != null)
+        _populateThreadLocalWidgets(newVal);
+    });
+
+    _sym = mkTableView("Identifier", "Value");
+    _toDo = mkListView(false);
+
+    _runOneStep = mkButton("Run one step", () -> _runOneStep());
+    _runAllSteps = mkButton("Run all steps", () -> _runAllSteps());
+
+    _vbox = new VBox(
+      new HBox(_runOneStep, _runAllSteps, _threadStateCount),
+      _heapLabel,
+      _heap,
+      new HBox(
+        new VBox(mkLabel("Output:"), _out),
+        new VBox(mkLabel("Files:"), _files),
+        new VBox(mkLabel("Threads:"), _threadStateIDs)
+      ),
+      mkLabel("Symbol table:"),
+      _sym,
+      mkLabel("Execution stack:"),
+      _toDo
+    );
+
+    _populateWidgets();
+  }
+
+  public static Function<Stage, ExecutionWindow> withAST(Stmt ast) {
+    return stage -> new ExecutionWindow(ast, stage);
   }
 
   void _populateThreadLocalWidgets(Integer selectedID) {
@@ -130,55 +177,6 @@ public final class ExecutionWindow implements GUIWindow {
     }
 
     _populateWidgets();
-  }
-
-  @Override
-  public void setStage(Stage stage) {
-    _stage = stage;
-
-    _threadStateCount = new TextField();
-    _threadStateCount.setEditable(false);
-    _threadStateCount.setPrefSize(200, 50);
-    _threadStateCount.setFont(new Font("Fira Code Regular", 14));
-
-    _heapLabel = mkLabel("Heap:");
-    _heap = mkTableView("Address", "Value");
-    _out = mkListView(false);
-    _files = mkListView(false);
-
-    _threadStateIDs = mkListView(true);
-    _threadStateIDs.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-      if (newVal != null)
-        _populateThreadLocalWidgets(newVal);
-    });
-
-    _sym = mkTableView("Identifier", "Value");
-    _toDo = mkListView(false);
-
-    _runOneStep = mkButton("Run one step", () -> _runOneStep());
-    _runAllSteps = mkButton("Run all steps", () -> _runAllSteps());
-
-    _vbox = new VBox(
-      new HBox(_runOneStep, _runAllSteps, _threadStateCount),
-      _heapLabel,
-      _heap,
-      new HBox(
-        new VBox(mkLabel("Output:"), _out),
-        new VBox(mkLabel("Files:"), _files),
-        new VBox(mkLabel("Threads:"), _threadStateIDs)
-      ),
-      mkLabel("Symbol table:"),
-      _sym,
-      mkLabel("Execution stack:"),
-      _toDo
-    );
-
-    _populateWidgets();
-  }
-
-  @Override
-  public String title() {
-    return "Program execution";
   }
 
   @Override
