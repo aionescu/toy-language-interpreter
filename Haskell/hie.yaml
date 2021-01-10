@@ -15,5 +15,8 @@ cradle:
     - path: "src/Language/TL/Eval.hs"
       component: "tli:exe:tli"
 
+    - path: "src/Language/TL/FS.hs"
+      component: "tli:exe:tli"
+
     - path: "src/Language/TL/Opts.hs"
       component: "tli:exe:tli"

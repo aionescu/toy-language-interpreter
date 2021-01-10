@@ -8,10 +8,9 @@ Toy Language Interpreter, written for the Advanced Programming Methods course @ 
   * [Tuples](Java/Examples/Tuple.tl)
   * [Records](Java/Examples/Record.tl)
   * [Lambda expressions](Java/Examples/Lambda.tl)
-* [Haskell-Imperative](Haskell-Imperative): Haskell implementation of the interpreter. Has all the features of the Java version, except for multithreading.
-* [Haskell-Functional](Haskell-Functional): Haskell implementation of a functional flavor of Toy Language
-* [Rust](Rust): Just an AST definition and macro-based parser
-* [tl-vscode](tl-vscode): Very basic VS Code extension to provide syntax highlighting for Toy Language programs
+* [Haskell](Haskell): Haskell implementation of the interpreter. Has all the features of the Java version, except for multithreading.
+* [Rust](Rust): Just an AST definition and macro-based parser. Supports all AST nodes from the Java version.
+* [tl-vscode](tl-vscode): Very basic VS Code extension to provide syntax highlighting for Toy Language programs.
 
 ## Tags
 
