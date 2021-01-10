@@ -21,11 +21,13 @@ import javafx.util.Callback;
 import com.aionescu.tli.utils.Pair;
 
 public interface GUIWindow {
+  static final String _darkThemeStylesheet = "file:JavaFXResources/modena-dark.css";
+
   Parent view();
 
   static void showErrorAlert(String title, String content) {
     var alert = new Alert(AlertType.ERROR);
-    alert.getDialogPane().getStylesheets().add("file:modena-dark.css");
+    alert.getDialogPane().getStylesheets().add(_darkThemeStylesheet);
 
     alert.setTitle(title);
     alert.setHeaderText(null);
@@ -106,7 +108,7 @@ public interface GUIWindow {
     var view = window.view();
 
     var scene = new Scene(view);
-    scene.getStylesheets().add("file:modena-dark.css");
+    scene.getStylesheets().add(_darkThemeStylesheet);
 
     childStage.setScene(scene);
     childStage.showAndWait();
