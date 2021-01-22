@@ -204,8 +204,8 @@ public final class TLParser {
     Parser<Stmt> fork = string("fork")._and(_ws)._and(block).map(Fork::new);
 
     var stmt_ = choice(fork, writeAt, new_, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
-    var compound = stmt_.chainr1(ch(';').and_(_ws).map_(Compound::new));
-    stmtFwdRef.snd.set(compound);
+    var seq = stmt_.chainr1(ch(';').and_(_ws).map_(Seq::new));
+    stmtFwdRef.snd.set(seq);
 
     _parser = shebang.option(Unit.UNIT)._and(_ws)._and(stmt).and_(eof);
 

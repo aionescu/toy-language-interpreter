@@ -6,10 +6,10 @@ import com.aionescu.tli.ast.type.varinfo.VarInfo;
 import com.aionescu.tli.utils.data.list.List;
 import com.aionescu.tli.utils.data.map.Map;
 
-public final class Compound implements Stmt {
+public final class Seq implements Stmt {
   private final Stmt _stmt1, _stmt2;
 
-  public Compound(Stmt stmt1, Stmt stmt2) {
+  public Seq(Stmt stmt1, Stmt stmt2) {
     _stmt1 = stmt1;
     _stmt2 = stmt2;
   }
