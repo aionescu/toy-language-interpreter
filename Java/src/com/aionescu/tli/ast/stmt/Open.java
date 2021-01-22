@@ -38,32 +38,31 @@ public final class Open implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    var str = ((VStr)_file.eval(prog.global.get().heap, prog.sym)).val;
+    return prog.updateGlobal(g -> {
+      var str = ((VStr)_file.eval(g.heap, prog.sym)).val;
 
-    var global = prog.global.get();
+      g.open.lookup(str).matchDo(
+        () -> { },
+        a -> { throw new FileAlreadyOpenedException(str); });
 
-    global.open.lookup(str).matchDo(
-      () -> { },
-      a -> { throw new FileAlreadyOpenedException(str); });
+      String contents;
 
-    String contents;
+      try {
+        contents = Files.readString(Path.of(str));
+      } catch (NoSuchFileException e) {
+        throw new FileDoesNotExistException(str);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
 
-    try {
-      contents = Files.readString(Path.of(str));
-    } catch (NoSuchFileException e) {
-      throw new FileDoesNotExistException(str);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+      var vals =
+        List
+        .ofStream(
+          Arrays.stream(
+            contents.split("\n")))
+        .map(l -> TLParser.parseValLine(str, l));
 
-    var vals =
-      List
-      .ofStream(
-        Arrays.stream(
-          contents.split("\n")))
-      .map(l -> TLParser.parseValLine(str, l));
-
-    prog.global.getAndUpdate(g -> g.withOpen(g.open.insert(str, vals)));
-    return prog;
+      return g.withOpen(g.open.insert(str, vals));
+    });
   }
 }

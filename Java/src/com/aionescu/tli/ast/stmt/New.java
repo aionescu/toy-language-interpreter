@@ -38,22 +38,22 @@ public final class New implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    var global = prog.global.get();
+    var oldG = prog.global.getAndUpdate(g -> {
+      if (g.gcStats.crrHeapSize == g.gcStats.maxHeapSize)
+        throw new OutOfMemoryException(g.gcStats.maxHeapSize);
 
-    if (global.gcStats.crrHeapSize == global.gcStats.maxHeapSize)
-      throw new OutOfMemoryException(global.gcStats.maxHeapSize);
+      var v = _expr.eval(g.heap, prog.sym);
+      var heap = g.heap.insert(g.gcStats.crrHeapSize, v);
 
-    var v = _expr.eval(global.heap, prog.sym);
-    var sym = prog.sym.insert(_ident, new VRef(global.gcStats.crrHeapSize));
-    var heap = global.heap.insert(global.gcStats.crrHeapSize, v);
+      return
+        g
+        .withHeap(heap)
+        .withGCStats(
+          g.gcStats
+            .withAllocsSinceGC(g.gcStats.allocsSinceGC + 1)
+            .withCrrHeapSize(g.gcStats.crrHeapSize + 1));
+    });
 
-    prog.global.getAndUpdate(g ->
-      g.withGCStats(
-        g.gcStats
-          .withAllocsSinceGC(g.gcStats.allocsSinceGC + 1)
-          .withCrrHeapSize(g.gcStats.crrHeapSize + 1)));
-
-    prog.global.getAndUpdate(g -> g.withHeap(heap));
-    return prog.withSym(sym);
+    return prog.withSym(prog.sym.insert(_ident, new VRef(oldG.gcStats.crrHeapSize)));
   }
 }

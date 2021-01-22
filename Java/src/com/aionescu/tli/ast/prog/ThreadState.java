@@ -1,6 +1,7 @@
 package com.aionescu.tli.ast.prog;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
 
 import com.aionescu.tli.ast.Ident;
 import com.aionescu.tli.ast.stmt.Stmt;
@@ -41,6 +42,11 @@ public final class ThreadState {
 
   public boolean isNotDone() {
     return !toDo.isEmpty();
+  }
+
+  public ThreadState updateGlobal(UnaryOperator<GlobalState> f) {
+    global.getAndUpdate(f);
+    return this;
   }
 
   public static ThreadState initial(AtomicReference<GlobalState> global, int id) {

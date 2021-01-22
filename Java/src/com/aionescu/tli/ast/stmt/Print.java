@@ -27,7 +27,6 @@ public final class Print implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    prog.global.getAndUpdate(g -> g.withOut(List.cons(_expr.eval(g.heap, prog.sym), g.out)));
-    return prog;
+    return prog.updateGlobal(g -> g.withOut(List.cons(_expr.eval(g.heap, prog.sym), g.out)));
   }
 }

@@ -27,14 +27,9 @@ public final class Fork implements Stmt {
 
   @Override
   public ThreadState eval(ThreadState prog) {
-    var global = prog.global.get();
-
-    var newThread = ThreadState.initial(prog.global, global.nextID).withToDo(Stack.of(_stmt)).withSym(prog.sym);
-    prog.global.getAndUpdate(g ->
-      g
-      .withThreads(List.cons(newThread, g.threads))
-      .withNextID(g.nextID + 1));
-
-    return prog;
+    return prog.updateGlobal(g -> {
+      var newThread = ThreadState.initial(prog.global, g.nextID).withToDo(Stack.of(_stmt)).withSym(prog.sym);
+      return g.withThreads(List.cons(newThread, g.threads)).withNextID(g.nextID + 1);
+    });
   }
 }
