@@ -82,31 +82,31 @@ public final class GCStats {
   }
 
   public static void runGC(AtomicReference<GlobalState> global) {
-    var prog = global.get();
+    global.getAndUpdate(g -> {
+      var gcStats = g.gcStats;
+      var heap = g.heap;
+      var threads = g.threads;
 
-    var gcStats = prog.gcStats;
+      if (gcStats.allocsSinceGC < gcStats.gcThreshold && gcStats.crrHeapSize < gcStats.maxHeapSize)
+        return g;
 
-    if (gcStats.allocsSinceGC < gcStats.gcThreshold)
-      return;
+      var heapCollected = heap.restrictKeys(getInnerAddrs(heap, getInnerAddrsThreads(threads)));
+      var f = compactKeys(heapCollected.toList().map(Pair::fst_));
 
-    var heap = prog.heap.restrictKeys(getInnerAddrs(prog.heap, getInnerAddrsThreads(prog.threads)));
-    var f = compactKeys(heap.toList().map(Pair::fst_));
-    var heapCompacted = mapInnerAddrsMap(f, heap);
+      var heapCompacted = mapInnerAddrsMap(f, heapCollected);
+      var threadsCompacted = threads.map(t -> t.withSym(mapInnerAddrsMap(f, t.sym)));
 
-    var threadsCompacted = prog.threads.map(t -> t.withSym(mapInnerAddrsMap(f, t.sym)));
+      var heapMapped = Map.fromList(heapCompacted.toList().map(Pair.first(f)));
+      var heapSize = heapMapped.toList().length();
 
-    var heapMapped = Map.fromList(heapCompacted.toList().map(p -> Pair.of(f.apply(p.fst), p.snd)));
-    var heapSize = heapMapped.toList().length();
-
-    var newProg =
-      prog
-      .withThreads(threadsCompacted)
-      .withHeap(heapMapped)
-      .withGCStats(
-        gcStats
-          .withAllocsSinceGC(0)
-          .withCrrHeapSize(heapSize));
-
-    global.set(newProg);
+      return
+        g
+        .withThreads(threadsCompacted)
+        .withHeap(heapMapped)
+        .withGCStats(
+          gcStats
+            .withAllocsSinceGC(0)
+            .withCrrHeapSize(heapSize));
+    });
   }
 }
