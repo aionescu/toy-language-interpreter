@@ -1,7 +1,5 @@
 package com.aionescu.tli.view.gui;
 
-import java.util.function.Function;
-
 import javafx.collections.FXCollections;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -22,7 +20,6 @@ import com.aionescu.tli.ast.val.VStr;
 import com.aionescu.tli.ast.val.Val;
 import com.aionescu.tli.controller.Controller;
 import com.aionescu.tli.exn.eval.EvalException;
-import com.aionescu.tli.repo.SingleStateRepository;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
 
@@ -44,9 +41,8 @@ public final class ExecutionWindow implements GUIWindow {
   private final ListView<Stmt> _toDo;
   private final VBox _vbox;
 
-  public ExecutionWindow(Stmt ast, Stage stage) {
-    _controller = new Controller(new SingleStateRepository());
-    _controller.setState(GlobalState.initialExploded(ast));
+  public ExecutionWindow(Controller controller, Stage stage) {
+    _controller = controller;
 
     _stage = stage;
     _stage.setTitle("Program Execution");
@@ -89,10 +85,6 @@ public final class ExecutionWindow implements GUIWindow {
     );
 
     _populateWidgets();
-  }
-
-  public static Function<Stage, ExecutionWindow> withAST(Stmt ast) {
-    return stage -> new ExecutionWindow(ast, stage);
   }
 
   void _populateThreadLocalWidgets(Integer selectedID) {

@@ -14,9 +14,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser.ExtensionFilter;
 
+import com.aionescu.tli.ast.prog.GlobalState;
 import com.aionescu.tli.ast.stmt.Stmt;
+import com.aionescu.tli.controller.Controller;
 import com.aionescu.tli.exn.typeck.TypeCheckerException;
 import com.aionescu.tli.parser.TLParser;
+import com.aionescu.tli.repo.SingleStateRepository;
 import com.aionescu.tli.utils.control.Maybe;
 import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.uparsec.exn.UParsecException;
@@ -125,7 +128,12 @@ public final class EditorWindow implements GUIWindow {
       () -> { },
       ast -> {
         _vbox.setDisable(true);
-        runChild(_stage, ExecutionWindow.withAST(ast));
+
+        var controller = new Controller(new SingleStateRepository());
+        controller.setLogPath(Maybe.just(_file.unwrap() + ".log"));
+        controller.setState(GlobalState.initialExploded(ast));
+
+        runChild(_stage, stage -> new ExecutionWindow(controller, stage));
         _vbox.setDisable(false);
       });
   }
