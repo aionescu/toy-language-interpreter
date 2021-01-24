@@ -224,10 +224,14 @@ public abstract class List<A> implements Foldable<A> {
     return match(() -> this, (h, t) -> t.reverse().append(List.cons(h, List.nil())));
   }
 
-  public final String unlines() {
+  public final String unlines(String sep) {
     return match(
       () -> "",
-      (h, t) -> h.toString() + t.foldL((s, a) -> s + "\n" + a, ""));
+      (h, t) -> h.toString() + t.foldL((s, a) -> s + sep + a, ""));
+  }
+
+  public final String unlines() {
+    return unlines("\n");
   }
 
   public final ObservableList<A> toObservable() {
