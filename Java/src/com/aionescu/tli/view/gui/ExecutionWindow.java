@@ -53,7 +53,7 @@ public final class ExecutionWindow implements GUIWindow {
     _threadStateCount.setFont(new Font("Fira Code Regular", 14));
 
     _heapLabel = mkLabel("Heap:");
-    _heap = mkTableView("Address", "Value");
+    _heap = mkPairTableView("Address", "Value");
     _out = mkListView(false);
     _files = mkListView(false);
 
@@ -63,7 +63,7 @@ public final class ExecutionWindow implements GUIWindow {
         _populateThreadLocalWidgets(newVal);
     });
 
-    _sym = mkTableView("Identifier", "Value");
+    _sym = mkPairTableView("Identifier", "Value");
     _toDo = mkListView(false);
 
     _runOneStep = mkButton("Run one step", () -> _runOneStep());

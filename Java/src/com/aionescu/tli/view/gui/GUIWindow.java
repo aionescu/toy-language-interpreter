@@ -80,22 +80,29 @@ public interface GUIWindow {
     };
   }
 
-  static <A, B> TableView<Pair<A, B>> mkTableView(String fstName, String sndName) {
-    var table = new TableView<Pair<A, B>>();
+  static <T> TableView<T> mkTableView() {
+    var table = new TableView<T>();
 
     table.setSelectionModel(new IgnoreTableViewSelectionModel<>(table));
     table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-    var fst = new TableColumn<Pair<A, B>, A>(fstName);
-    fst.setCellValueFactory(v -> new ReadOnlyObjectWrapper<>(v.getValue().fst));
-    fst.setCellFactory(_tableViewCellFactory());
+    return table;
+  }
 
-    var snd = new TableColumn<Pair<A, B>, B>(sndName);
-    snd.setCellValueFactory(v -> new ReadOnlyObjectWrapper<>(v.getValue().snd));
-    snd.setCellFactory(_tableViewCellFactory());
+  static <T, C> void addColumn(TableView<T> table, String columnName, Function<T, C> f) {
+    var col = new TableColumn<T, C>(columnName);
 
-    table.getColumns().add(fst);
-    table.getColumns().add(snd);
+    col.setCellValueFactory(v -> new ReadOnlyObjectWrapper<>(f.apply(v.getValue())));
+    col.setCellFactory(_tableViewCellFactory());
+
+    table.getColumns().add(col);
+  }
+
+  static <A, B> TableView<Pair<A, B>> mkPairTableView(String fstName, String sndName) {
+    TableView<Pair<A, B>> table = mkTableView();
+
+    addColumn(table, fstName, Pair::fst_);
+    addColumn(table, sndName, Pair::snd_);
 
     return table;
   }
