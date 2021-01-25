@@ -23,6 +23,7 @@ public interface Map<K extends Comparable<K>, V> extends Foldable<V> {
   String toString(String begin, String end, String sep);
   String toString(Function<K, String> keyFmt);
   List<Pair<K, V>> toList();
+  int length();
 
   Map<K, V> insert(K k, V v);
   Map<K, V> delete(K k);

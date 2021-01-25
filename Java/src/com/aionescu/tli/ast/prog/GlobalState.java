@@ -10,7 +10,7 @@ import com.aionescu.tli.utils.data.map.Map;
 import com.aionescu.tli.utils.data.stack.Stack;
 
 public final class GlobalState {
-  public static final GlobalState empty = new GlobalState(Map.empty(), GCStats.empty, Map.empty(), List.nil(), List.nil(), 0);
+  public static final GlobalState empty = new GlobalState(Map.empty(), GCStats.empty, Map.empty(), List.nil(), List.nil(), 0, BarrierTableImpl.empty);
 
   public final Map<String, List<Val>> open;
   public final GCStats gcStats;
@@ -18,38 +18,44 @@ public final class GlobalState {
   public final List<Val> out;
   public final List<ThreadState> threads;
   public final int nextID;
+  public final BarrierTable barrierTable;
 
-  private GlobalState(Map<String, List<Val>> open, GCStats gcStats, Map<Integer, Val> heap, List<Val> out, List<ThreadState> threads, int nextID) {
+  private GlobalState(Map<String, List<Val>> open, GCStats gcStats, Map<Integer, Val> heap, List<Val> out, List<ThreadState> threads, int nextID, BarrierTable barrierTable) {
     this.open = open;
     this.gcStats = gcStats;
     this.heap = heap;
     this.out = out;
     this.threads = threads;
     this.nextID = nextID;
+    this.barrierTable = barrierTable;
   }
 
   public GlobalState withOpen(Map<String, List<Val>> open) {
-    return new GlobalState(open, gcStats, heap, out, threads, nextID);
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
   }
 
   public GlobalState withGCStats(GCStats gcStats) {
-    return new GlobalState(open, gcStats, heap, out, threads, nextID);
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
   }
 
   public GlobalState withHeap(Map<Integer, Val> heap) {
-    return new GlobalState(open, gcStats, heap, out, threads, nextID);
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
   }
 
   public GlobalState withOut(List<Val> out) {
-    return new GlobalState(open, gcStats, heap, out, threads, nextID);
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
   }
 
   public GlobalState withThreads(List<ThreadState> threads) {
-    return new GlobalState(open, gcStats, heap, out, threads, nextID);
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
   }
 
   public GlobalState withNextID(int nextID) {
-    return new GlobalState(open, gcStats, heap, out, threads, nextID);
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
+  }
+
+  public GlobalState withBarrierTable(BarrierTable barrierTable) {
+    return new GlobalState(open, gcStats, heap, out, threads, nextID, barrierTable);
   }
 
   public String output() {
@@ -92,7 +98,7 @@ public final class GlobalState {
 
   @Override
   public String toString() {
-    return String.format("open = %s\ngcStats = %s\nheap = %s\nout = %s\nthreads = \n%s\n",
-      open.toString(VStr::escapeString), gcStats, heap.toString(GCStats::showHex), out.reverse(), ThreadState.showThreads(threads));
+    return String.format("open = %s\ngcStats = %s\nheap = %s\nout = %s\nbarriers = %s\nthreads = \n%s\n",
+      open.toString(VStr::escapeString), gcStats, heap.toString(GCStats::showHex), out.reverse(), barrierTable, ThreadState.showThreads(threads));
   }
 }

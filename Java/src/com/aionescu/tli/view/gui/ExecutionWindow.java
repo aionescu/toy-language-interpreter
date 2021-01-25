@@ -22,6 +22,7 @@ import com.aionescu.tli.controller.Controller;
 import com.aionescu.tli.exn.eval.EvalException;
 import com.aionescu.tli.utils.Pair;
 import com.aionescu.tli.utils.data.list.List;
+import com.aionescu.tli.utils.data.set.Set;
 
 import static com.aionescu.tli.view.gui.GUIWindow.*;
 
@@ -33,6 +34,7 @@ public final class ExecutionWindow implements GUIWindow {
   private final Button _runOneStep, _runAllSteps;
   private final TextField _threadStateCount;
   private final TableView<Pair<String, Val>> _heap;
+  private final TableView<Pair<Integer, Pair<Integer, Set<Integer>>>> _barrierTable;
   private final Label _heapLabel;
   private final ListView<Val> _out;
   private final ListView<Pair<String, List<Val>>> _files;
@@ -57,6 +59,11 @@ public final class ExecutionWindow implements GUIWindow {
     _out = mkListView(false);
     _files = mkListView(false);
 
+    _barrierTable = mkTableView();
+    addColumn(_barrierTable, "Location", Pair::fst_);
+    addColumn(_barrierTable, "Count", p -> p.snd.fst);
+    addColumn(_barrierTable, "Threads", p -> p.snd.snd);
+
     _threadStateIDs = mkListView(true);
     _threadStateIDs.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal != null)
@@ -73,6 +80,8 @@ public final class ExecutionWindow implements GUIWindow {
       new HBox(_runOneStep, _runAllSteps, _threadStateCount),
       _heapLabel,
       _heap,
+      mkLabel("Barrier table:"),
+      _barrierTable,
       new HBox(
         new VBox(mkLabel("Output:"), _out),
         new VBox(mkLabel("Files:"), _files),
@@ -129,6 +138,9 @@ public final class ExecutionWindow implements GUIWindow {
 
     var heap = global.heap.toList().map(Pair.first(GCStats::showHex)).toObservable();
     _heap.setItems(heap);
+
+    var barrierTable = global.barrierTable.toMap().toList().toObservable();
+    _barrierTable.setItems(barrierTable);
 
     var out = global.out.reverse().toObservable();
     _out.setItems(out);

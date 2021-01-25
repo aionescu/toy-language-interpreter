@@ -48,6 +48,11 @@ public final class AssocListMap<K extends Comparable<K>, V> implements Map<K, V>
   }
 
   @Override
+  public int length() {
+    return _list.length();
+  }
+
+  @Override
   public Map<K, V> insert(K k, V v) {
     return new AssocListMap<>(_list.insertSorted((a, b) -> a.fst.compareTo(b.fst), Pair.of(k, v)));
   }

@@ -21,6 +21,7 @@ public interface Set<A extends Comparable<A>> {
 
   List<A> toList();
   Map<A, Unit> toMap();
+  int length();
 
   boolean isEmpty();
   Set<A> insert(A a);

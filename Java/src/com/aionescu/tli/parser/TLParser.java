@@ -76,7 +76,7 @@ public final class TLParser {
 
     var simpleLit = choice(str, int_, bool_);
 
-    var reserved = List.of("if", "else", "while", "and", "or", "default", "let", "not", "repeat", "until");
+    var reserved = List.of("if", "else", "while", "and", "or", "default", "let", "not", "repeat", "until", "barrier", "await");
     Function<Ident, Parser<Ident>> notReserved =
       i -> reserved.find(e -> e.equals(i.name)).match(() -> Parser.pure(i), a -> Parser.fail());
 
@@ -148,13 +148,14 @@ public final class TLParser {
     var lam = liftA2(TLParser::_mkLam, lamParam.many1().and_(string("->")).and_(_ws), _expr);
 
     Parser<Expr> default_ = string("default")._and(_ws)._and(type).map(Default::new);
+
     var exprNoOpsFwdRef = Parser.<Expr>fwdRef();
     var exprNoOps = exprNoOpsFwdRef.fst;
 
     Parser<Expr> deref = ch('!')._and(_ws)._and(exprNoOps).map(Deref::new);
     Parser<Expr> not = string("not")._and(_ws)._and(exprNoOps).map(Not::new);
 
-    var exprNoMember = choice(deref, default_, not, lam, vrec, vtup, simpleLit, _var).and_(_ws);
+    var exprNoMember = choice(not, deref, default_, lam, vrec, vtup, simpleLit, _var).and_(_ws);
     _exprNoWith = _member(exprNoMember).or(exprNoMember);
 
     var withRecord = _withExpr((a, b) -> new RecWith(a, true, b), _recField);
@@ -202,11 +203,13 @@ public final class TLParser {
     Parser<Stmt> close = string("close")._and(_ws)._and(_expr).map(Close::new);
 
     Parser<Stmt> new_ = Parser.liftA2(New::new, ident, _equals._and(string("new")._and(_ws)._and(_expr)));
+    Parser<Stmt> barrier = Parser.liftA2(NewBarrier::new, ident, _equals._and(string("barrier")._and(_ws)._and(_expr)));
     Parser<Stmt> writeAt = Parser.liftA2(WriteAt::new, _expr, string(":=")._and(_ws)._and(_expr));
 
     Parser<Stmt> fork = string("fork")._and(_ws)._and(block).map(Fork::new);
+    Parser<Stmt> await = string("await")._and(_ws)._and(ident).map(Await::new);
 
-    var stmt_ = choice(fork, writeAt, new_, repeatUntil, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
+    var stmt_ = choice(barrier, await, repeatUntil, fork, writeAt, new_, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
     var seq = stmt_.chainr1(ch(';').and_(_ws).map_(Seq::new));
     stmtFwdRef.snd.set(seq);
 

@@ -19,6 +19,11 @@ public final class UnitMapSet<A extends Comparable<A>> implements Set<A> {
   }
 
   @Override
+  public String toString() {
+    return toList().toString("{", "}");
+  }
+
+  @Override
   public List<A> toList() {
     return _map.toList().map(Pair::fst_);
   }
@@ -26,6 +31,11 @@ public final class UnitMapSet<A extends Comparable<A>> implements Set<A> {
   @Override
   public Map<A, Unit> toMap() {
     return _map;
+  }
+
+  @Override
+  public int length() {
+    return _map.length();
   }
 
   @Override
