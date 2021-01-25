@@ -1,5 +1,10 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 -- If we got to this point, we know typechecking succeeded, so we can use incomplete patterns
 {-# OPTIONS_GHC -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
+
+-- Unused lenses
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Language.TL.Eval(Val(..), ProgState(..), traverseSteps_, finalState, showOut, mkGCStats, mkProgState) where
 
@@ -7,6 +12,8 @@ import Numeric(showHex)
 import Data.List(intercalate)
 import Data.Functor(($>))
 import Control.Monad(when)
+import Control.Lens((.~), (%~), (.=), (%=), view, over, toListOf, Traversal')
+import Control.Lens.TH(makeLenses)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
 import Data.Set(Set)
@@ -18,6 +25,7 @@ import Data.Bifunctor(Bifunctor(first))
 import Control.Monad.State (runStateT, modify, get, MonadState)
 
 import Language.TL.Syntax
+import Data.Function ((&))
 
 type Addr = Int
 
@@ -73,76 +81,78 @@ type Heap = Map Addr Val
 
 data GCStats =
   GCStats
-  { allocsSinceGC :: Int
-  , gcThreshold :: Int
-  , crrHeapSize :: Int
-  , maxHeapSize :: Int
+  { _allocsSinceGC :: Int
+  , _gcThreshold :: Int
+  , _crrHeapSize :: Int
+  , _maxHeapSize :: Int
   }
+
+makeLenses ''GCStats
 
 instance Show GCStats where
   show GCStats{..} =
     "{ allocs = "
-    ++ show allocsSinceGC ++ " / " ++ show gcThreshold
-    ++ ", heapSize = " ++ show crrHeapSize ++ " / " ++ show maxHeapSize
+    ++ show _allocsSinceGC ++ " / " ++ show _gcThreshold
+    ++ ", heapSize = " ++ show _crrHeapSize ++ " / " ++ show _maxHeapSize
     ++ " }"
 
 mkGCStats :: Int -> Int -> GCStats
-mkGCStats gcThreshold maxHeapSize =
+mkGCStats gcThreshold' maxHeapSize' =
   GCStats
-  { allocsSinceGC = 0
-  , gcThreshold
-  , crrHeapSize = 0
-  , maxHeapSize
+  { _allocsSinceGC = 0
+  , _gcThreshold = gcThreshold'
+  , _crrHeapSize = 0
+  , _maxHeapSize = maxHeapSize'
   }
 
 data ProgState =
   ProgState
-  { fs :: FileTable
-  , open :: FileTable
-  , toDo :: ToDo
-  , sym :: SymValTable
-  , gcStats :: GCStats
-  , heap :: Heap
-  , out :: Out
+  { _fs :: FileTable
+  , _open :: FileTable
+  , _toDo :: ToDo
+  , _sym :: SymValTable
+  , _gcStats :: GCStats
+  , _heap :: Heap
+  , _out :: Out
   }
 
-showL :: (a -> String) -> [a] -> String
-showL fmt l = "[" ++ intercalate ", " (fmt <$> l) ++ "]"
+makeLenses ''ProgState
 
 instance Show ProgState where
   show ProgState{..} =
     unlines
-      [ "fs = " ++ showM show (showL show) fs
-      , "open = " ++ showM show (showL show) open
-      , "toDo = " ++ showL show toDo
-      , "sym = " ++ showM id show sym
-      , "gcStats = " ++ show gcStats
-      , "heap = " ++ showM showH show heap
-      , "out = " ++ showL show (reverse out)
+      [ "fs = " ++ showM show (showL show) _fs
+      , "open = " ++ showM show (showL show) _open
+      , "toDo = " ++ showL show _toDo
+      , "sym = " ++ showM id show _sym
+      , "gcStats = " ++ show _gcStats
+      , "heap = " ++ showM showH show _heap
+      , "out = " ++ showL show (reverse _out)
       ]
     where
+      showL fmt l = "[" ++ intercalate ", " (fmt <$> l) ++ "]"
       showM fmt fmtL m = withParens "{ " " }" (showVar fmt fmtL <$> M.toList m)
       showVar fmt fmtL (ident, var) = fmt ident ++ " = " ++ fmtL var
 
 showOut :: ProgState -> String
-showOut = unlines . reverse . (show <$>) . out
+showOut = unlines . reverse . (show <$>) . view out
 
 mkProgState :: FileTable -> GCStats -> Stmt -> ProgState
-mkProgState fs gcStats stmt =
+mkProgState fs' gcStats' stmt =
   ProgState
-  { fs
-  , open = M.empty
-  , toDo = [stmt]
-  , sym = M.empty
-  , out = []
-  , gcStats
-  , heap = M.empty
+  { _fs = fs'
+  , _open = M.empty
+  , _toDo = [stmt]
+  , _sym = M.empty
+  , _out = []
+  , _gcStats = gcStats'
+  , _heap = M.empty
   }
 
 type EvalEnv = (SymValTable, Heap)
 
 evalEnv :: ProgState -> EvalEnv
-evalEnv ProgState{sym, heap} = (sym, heap)
+evalEnv ProgState{_sym, _heap} = (_sym, _heap)
 
 data EvalError
   = DivisionByZero
@@ -220,10 +230,10 @@ evalExpr (RecWith lhs f us) = do
   v <- evalExpr lhs
   vals <- traverse evalExpr us
   case (v, f) of
-    (VRec FRec fs, FRec) ->
-      pure $ VRec FRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
-    (VRec FTup fs, FTup) ->
-      pure $ VRec FTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs vals
+    (VRec FRec fs', FRec) ->
+      pure $ VRec FRec $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs' vals
+    (VRec FTup fs', FTup) ->
+      pure $ VRec FTup $ M.foldlWithKey' (\m k v' -> M.insert k v' m) fs' vals
 
 evalExpr (RecUnion a b) = do
   ra <- evalExpr a
@@ -232,8 +242,8 @@ evalExpr (RecUnion a b) = do
     (VRec FRec a', VRec FRec b') -> pure $ VRec FRec $ M.union a' b'
 
 evalExpr (Lam i _ e) = do
-  (sym, _) <- ask
-  pure $ VFun sym i e
+  (sym', _) <- ask
+  pure $ VFun sym' i e
 
 evalExpr (App f a) = do
   vf <- evalExpr f
@@ -255,146 +265,144 @@ evalStmt (Decl _ _) = pure ()
 
 evalStmt (Assign (Var ident) expr) = do
   v <- evalExpr' expr
-  modify \p -> p { sym = M.insert ident v $ sym p }
+  sym %= M.insert ident v
 
 evalStmt (Assign (RecMember lhs f i) expr) =
   evalStmt (Assign lhs (RecWith lhs f $ M.singleton i expr))
 
 evalStmt (DeclAssign ident (Just type') expr) =
-  modify \p -> p { toDo = Decl ident type' : Assign (Var ident) expr : toDo p }
+  toDo %= ([Decl ident type', Assign (Var ident) expr] ++)
 
 evalStmt (DeclAssign ident Nothing expr) =
-  modify \p -> p { toDo = Assign (Var ident) expr : toDo p }
+  toDo %= (Assign (Var ident) expr :)
 
 evalStmt (Print expr) = do
   v <- evalExpr' expr
-  modify \p -> p { out = v : out p }
+  out %= (v :)
 
 evalStmt (If cond then' else') = do
   c' <- evalExpr' cond
   case c' of
-    VBool c -> modify \p -> p { toDo = (if c then then' else else') : toDo p }
+    VBool c -> toDo %= ((if c then then' else else') :)
 
 evalStmt w@(While cond body) = do
   c' <- evalExpr' cond
   case c' of
-    VBool c -> modify \p -> p { toDo = if c then body : w : toDo p else toDo p }
+    VBool c -> toDo %= ((if c then [body, w] else []) ++)
 
-evalStmt (Compound a b) =
-  modify \p -> p { toDo = a : b : toDo p }
+evalStmt (Compound a b) = toDo %= ([a, b] ++)
 
 evalStmt (Open expr) = do
   ProgState{..} <- get
   vf <- evalExpr' expr
   case vf of
     VStr f ->
-      case M.lookup f fs of
+      case M.lookup f _fs of
         Nothing -> throwError $ FileDoesNotExist f
         Just content ->
-          case M.lookup f open of
+          case M.lookup f _open of
             Just _ -> throwError $ FileAlreadyOpened f
-            Nothing -> modify \p -> p { open = M.insert f content open }
+            Nothing -> open %= M.insert f content
 
 evalStmt (Read ident t expr) = do
   ProgState{..} <- get
   vf <- evalExpr' expr
   case vf of
     VStr f ->
-      case M.lookup f open of
+      case M.lookup f _open of
         Nothing -> throwError $ FileNotOpened f
         Just [] -> throwError $ ReachedEOF f
         Just (c : cs) ->
           let tc = valType c
           in if tc /= t
             then throwError $ ReadDifferentType f tc t
-            else modify \p -> p { sym = M.insert ident c sym, open = M.insert f cs open }
+            else do
+              sym %= M.insert ident c
+              open %= M.insert f cs
 
 evalStmt (Close expr) = do
   ProgState{..} <- get
   vf <- evalExpr' expr
   case vf of
     VStr f ->
-      case M.lookup f open of
+      case M.lookup f _open of
         Nothing -> throwError $ FileAlreadyClosed f
-        Just _ -> modify \p -> p { open = M.delete f open }
+        Just _ -> open %= M.delete f
 
 evalStmt (New i e) = do
-  ProgState { gcStats = GCStats{..}, .. } <- get
+  ProgState { _gcStats = GCStats{..}, .. } <- get
 
-  when (crrHeapSize == maxHeapSize)
-    $ throwError $ OutOfMemory maxHeapSize
+  when (_crrHeapSize == _maxHeapSize)
+    $ throwError $ OutOfMemory _maxHeapSize
 
   v <- evalExpr' e
-  let sym' = M.insert i (VRef crrHeapSize) sym
-  let heap' = M.insert crrHeapSize v heap
+  let sym' = M.insert i (VRef _crrHeapSize) _sym
+  let heap' = M.insert _crrHeapSize v _heap
 
-  -- This looks evil, it actually parses as `runGC $ p { .. }` :P
-  modify \p -> runGC p { sym = sym', heap = heap' }
+  sym .= sym'
+  heap .= heap'
+  modify runGC
 
 evalStmt (WriteAt lhs rhs) = do
   vl <- evalExpr' lhs
   vr <- evalExpr' rhs
   case vl of
-    VRef addr -> modify \p -> p { heap = M.insert addr vr $ heap p }
+    VRef addr -> heap %= M.insert addr vr
 
 compactKeys :: [Addr] -> (Addr -> Addr)
 compactKeys keys = (M.!) $ M.fromList $ zip keys [0..]
 
 runGC :: ProgState -> ProgState
-runGC ProgState { gcStats = gcStats@GCStats { .. }, .. } =
-  if allocsSinceGC < gcThreshold
-    then ProgState { gcStats = gcStats { allocsSinceGC = succ allocsSinceGC, crrHeapSize = succ crrHeapSize }, .. }
-    else
-      let
-        heap' = M.restrictKeys heap (getInnerAddrs heap sym)
-        f = compactKeys $ M.keys heap'
-        heapCompacted = mapInnerAddrsScope f heap'
-        symCompacted = mapInnerAddrsScope f sym
-      in
-        ProgState
-        { gcStats = gcStats { allocsSinceGC = 0, crrHeapSize = M.size heapCompacted }
-        , sym = symCompacted
-        , heap = M.mapKeys f heapCompacted
-        , ..
-        }
+runGC p@ProgState { _gcStats = GCStats{..}, .. } =
+  if _allocsSinceGC < _gcThreshold
+  then
+    p
+    & gcStats.allocsSinceGC %~ succ
+    & gcStats.crrHeapSize %~ succ
+  else
+    let
+      heap' = M.restrictKeys _heap $ innerAddrsAll _heap _sym
+      f = compactKeys $ M.keys heap'
+      heapCompacted = over innerAddrs f <$> heap'
+      symCompacted = over innerAddrs f <$> _sym
+    in
+      p
+      & sym .~ symCompacted
+      & heap .~ M.mapKeys f heapCompacted
+      & gcStats.allocsSinceGC .~ 0
+      & gcStats.crrHeapSize .~ M.size heapCompacted
 
-getInnerAddrsVal :: Val -> Set Addr
-getInnerAddrsVal (VRef a) = S.singleton a
-getInnerAddrsVal (VRec _ m) = getInnerAddrsScope m
-getInnerAddrsVal (VFun sym _ _) = getInnerAddrsScope sym
-getInnerAddrsVal _ = S.empty
+innerAddrs :: Traversal' Val Addr
+innerAddrs f (VRef a) = VRef <$> f a
+innerAddrs f (VRec r m) = VRec r <$> traverse (innerAddrs f) m
+innerAddrs f (VFun sym' i e) = (\sym'' -> VFun sym'' i e) <$> traverse (innerAddrs f) sym'
+innerAddrs _ v = pure v
 
-getInnerAddrsScope :: Foldable f => f Val -> Set Addr
-getInnerAddrsScope = foldMap getInnerAddrsVal
+innerAddrsVal :: Val -> Set Addr
+innerAddrsVal = S.fromList . toListOf innerAddrs
 
-getInnerAddrsDerefed :: Heap -> Set Addr -> Set Addr
-getInnerAddrsDerefed heap addrs = getInnerAddrsScope $ (heap M.!) <$> S.toList addrs
+innerAddrsScope :: Foldable f => f Val -> Set Addr
+innerAddrsScope = foldMap innerAddrsVal
 
-getInnerAddrsAll :: Heap -> Set Addr -> Set Addr -> Set Addr
-getInnerAddrsAll heap acc set
+innerAddrsDerefed :: Heap -> Set Addr -> Set Addr
+innerAddrsDerefed heap' addrs = innerAddrsScope $ (heap' M.!) <$> S.toList addrs
+
+innerAddrsAll' :: Heap -> Set Addr -> Set Addr -> Set Addr
+innerAddrsAll' heap' acc set
   | S.null set = acc
-  | otherwise = getInnerAddrsAll heap newAcc (getInnerAddrsDerefed heap set `S.difference` newAcc)
+  | otherwise = innerAddrsAll' heap' newAcc (innerAddrsDerefed heap' set `S.difference` newAcc)
     where
       newAcc = acc <> set
 
-getInnerAddrs :: Foldable f => Heap -> f Val -> Set Addr
-getInnerAddrs heap = getInnerAddrsAll heap S.empty . getInnerAddrsScope
-
-mapInnerAddrsVal :: (Addr -> Addr) -> Val -> Val
-mapInnerAddrsVal f (VRef a) = VRef $ f a
-mapInnerAddrsVal f (VRec f' m) = VRec f' $ mapInnerAddrsScope f m
-mapInnerAddrsVal f (VFun sym i e) = VFun (mapInnerAddrsScope f sym) i e
-mapInnerAddrsVal _ v = v
-
-mapInnerAddrsScope :: Functor f => (Addr -> Addr) -> f Val -> f Val
-mapInnerAddrsScope f = (mapInnerAddrsVal f <$>)
+innerAddrsAll :: Foldable f => Heap -> f Val -> Set Addr
+innerAddrsAll heap' = innerAddrsAll' heap' S.empty . innerAddrsScope
 
 smallStep :: (MonadState ProgState m, MonadError EvalError m) => m Bool
 smallStep = go =<< get
   where
-    go ProgState { toDo = [] } = pure True
-    go ProgState { toDo = stmt : toDo } = do
-      modify \p -> p { toDo }
+    go ProgState { _toDo = [] } = pure True
+    go ProgState { _toDo = stmt : toDo' } = do
+      toDo .= toDo'
       evalStmt stmt
       pure False
 
