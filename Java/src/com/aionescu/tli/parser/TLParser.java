@@ -76,7 +76,7 @@ public final class TLParser {
 
     var simpleLit = choice(str, int_, bool_);
 
-    var reserved = List.of("if", "else", "while", "and", "or", "default", "let", "nop");
+    var reserved = List.of("if", "else", "while", "and", "or", "default", "let", "not", "repeat", "until");
     Function<Ident, Parser<Ident>> notReserved =
       i -> reserved.find(e -> e.equals(i.name)).match(() -> Parser.pure(i), a -> Parser.fail());
 
@@ -148,13 +148,13 @@ public final class TLParser {
     var lam = liftA2(TLParser::_mkLam, lamParam.many1().and_(string("->")).and_(_ws), _expr);
 
     Parser<Expr> default_ = string("default")._and(_ws)._and(type).map(Default::new);
-
     var exprNoOpsFwdRef = Parser.<Expr>fwdRef();
     var exprNoOps = exprNoOpsFwdRef.fst;
 
     Parser<Expr> deref = ch('!')._and(_ws)._and(exprNoOps).map(Deref::new);
+    Parser<Expr> not = string("not")._and(_ws)._and(exprNoOps).map(Not::new);
 
-    var exprNoMember = choice(deref, default_, lam, vrec, vtup, simpleLit, _var).and_(_ws);
+    var exprNoMember = choice(deref, default_, not, lam, vrec, vtup, simpleLit, _var).and_(_ws);
     _exprNoWith = _member(exprNoMember).or(exprNoMember);
 
     var withRecord = _withExpr((a, b) -> new RecWith(a, true, b), _recField);
@@ -194,6 +194,9 @@ public final class TLParser {
     var whileCond = string("while")._and(_ws)._and(_expr).and_(_ws);
     Parser<Stmt> while_ = liftA2(While::new, whileCond, block);
 
+    var repeatHeader = string("repeat")._and(_ws)._and(block).and_(string("until")._and(_ws));
+    Parser<Stmt> repeatUntil = Parser.liftA2(RepeatUntil::new, repeatHeader, _expr);
+
     Parser<Stmt> open = string("open")._and(_ws)._and(_expr).map(Open::new);
     Parser<Stmt> read = Parser.liftA3(Read::new, ident, _colon._and(type), _equals._and(string("read")._and(_ws)._and(_expr)));
     Parser<Stmt> close = string("close")._and(_ws)._and(_expr).map(Close::new);
@@ -203,7 +206,7 @@ public final class TLParser {
 
     Parser<Stmt> fork = string("fork")._and(_ws)._and(block).map(Fork::new);
 
-    var stmt_ = choice(fork, writeAt, new_, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
+    var stmt_ = choice(fork, writeAt, new_, repeatUntil, while_, if_, open, read, close, declAssign, decl, assign, print).and_(_ws).option(Nop.nop);
     var seq = stmt_.chainr1(ch(';').and_(_ws).map_(Seq::new));
     stmtFwdRef.snd.set(seq);
 
