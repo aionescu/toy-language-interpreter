@@ -20,7 +20,7 @@ public final class UnitMapSet<A extends Comparable<A>> implements Set<A> {
 
   @Override
   public String toString() {
-    return toList().toString("{", "}");
+    return toList().toString("{ ", " }");
   }
 
   @Override
