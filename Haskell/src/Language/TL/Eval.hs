@@ -12,7 +12,7 @@ import Numeric(showHex)
 import Data.List(intercalate)
 import Data.Functor(($>))
 import Control.Monad(when)
-import Control.Lens((.~), (%~), (.=), (%=), view, over, toListOf, Traversal')
+import Control.Lens((.~), (+~), (.=), (%=), view, over, toListOf, Traversal')
 import Control.Lens.TH(makeLenses)
 import Data.Map.Strict(Map)
 import qualified Data.Map.Strict as M
@@ -357,8 +357,8 @@ runGC p@ProgState { _gcStats = GCStats{..}, .. } =
   if _allocsSinceGC < _gcThreshold
   then
     p
-    & gcStats.allocsSinceGC %~ succ
-    & gcStats.crrHeapSize %~ succ
+    & gcStats.allocsSinceGC +~ 1
+    & gcStats.crrHeapSize +~ 1
   else
     let
       heap' = M.restrictKeys _heap $ innerAddrsAll _heap _sym
