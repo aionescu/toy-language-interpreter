@@ -51,15 +51,16 @@ public interface GUIWindow {
     return button;
   }
 
+  @SuppressWarnings("unchecked")
   static <A> ListView<A> mkListView(boolean enableSelection) {
     var list = new ListView<A>();
 
     if (!enableSelection)
-    list.setSelectionModel(new IgnoreSelectionModel<>());
+      list.setSelectionModel(new IgnoreSelectionModel<>());
 
-    list.setCellFactory(p -> new ListCell<A>() {
+    list.setCellFactory(p -> (ListCell<A>)new ListCell<Object>() {
       @Override
-      protected void updateItem(A item, boolean empty) {
+      protected void updateItem(Object item, boolean empty) {
         super.updateItem(item, empty);
         setFont(new Font("Fira Code Regular", 16));
         setText(empty ? "" : item.toString());
@@ -69,10 +70,11 @@ public interface GUIWindow {
     return list;
   }
 
+  @SuppressWarnings("unchecked")
   private static <T, C> Callback<TableColumn<T, C>, TableCell<T, C>> _tableViewCellFactory() {
-    return p -> new TableCell<T, C>() {
+    return p -> (TableCell<T, C>)new TableCell<Object, Object>() {
       @Override
-      public void updateItem(C item, boolean empty) {
+      public void updateItem(Object item, boolean empty) {
         super.updateItem(item, empty);
         setFont(new Font("Fira Code Regular", 16));
         setText(empty ? "" : item.toString());
