@@ -38,7 +38,7 @@ fn main() {
     if (true and false) {
       // You can write chained operator calls,
       // but they associate to the right
-      // (cause that's the only to do it with macros)
+      // (cause that's the only way to do it with macros)
       print true and true or false + 2 - a / true * b % c
     } else {
       print false
