@@ -1,6 +1,6 @@
-#!/home/oldpug/.cabal/bin/tli run
+#!/usr/bin/env tli
 
-let not = (a: Bool) ->
+let not (a: Bool) =
   if a
   then False
   else True
@@ -10,8 +10,8 @@ let a = True in
 
 if a
 then print "a is True"
-else print ();
+else ();
 
 if not a
 then print "a is False"
-else print ()
+else ()

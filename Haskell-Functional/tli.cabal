@@ -16,9 +16,8 @@ executable tli
   other-modules:
     Language.TL.Syntax
     Language.TL.Parser
-    Language.TL.TypeCk
+    Language.TL.TypeChecker
     Language.TL.Eval
-    Language.TL.Opts
     Paths_tli
 
   autogen-modules:
@@ -73,6 +72,7 @@ executable tli
     PatternSynonyms
     RankNTypes
     RecordWildCards
+    RecursiveDo
     ScopedTypeVariables
     StandaloneDeriving
     TupleSections

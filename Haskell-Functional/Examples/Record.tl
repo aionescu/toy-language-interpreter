@@ -1,8 +1,10 @@
+#!/usr/bin/env tli
+
 let a = { x = 2, y = 3 } in
 let b = { a = True, } in
 
 -- Record union (right-biased)
--- Inferred: c: { a: Bool, x: Int, y: Int }
+-- Inferred: c: { a: Bool, x: Num, y: Num }
 let c = a & b in
 print c;
 
@@ -10,7 +12,7 @@ print c;
 print c & { a = 2 };
 
 -- Mixed record/tuple member access
-let d: ({ a: ({ b: Bool }, Int) }, Int) = ({ a = ({ b = False }, 1) }, 0) in
+let d: ({ a: ({ b: Bool }, Num) }, Num) = ({ a = ({ b = False }, 1) }, 0) in
 print d.0.a.0.b;
 print d;
 
@@ -19,8 +21,8 @@ print c & { e = "Abc" };
 
 -- Field order doesn't matter
 -- Fields get sorted lexicographically
-let e: { a: Int, b: Bool } = { a = 0, b = False } in
-let f: { b: Bool, a: Int } = e in
+let e: { a: Num, b: Bool } = { a = 0, b = False } in
+let f: { b: Bool, a: Num } = e in
 print e;
 print f;
 

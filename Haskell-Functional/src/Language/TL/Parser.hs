@@ -3,14 +3,16 @@ module Language.TL.Parser where
 import Data.Bifunctor(first)
 import Data.Functor((<&>), ($>))
 import Data.List(nub, foldl')
-import Data.Map.Strict(Map)
-import qualified Data.Map.Strict as M
 import Control.Monad.Except(liftEither, MonadError)
 import Text.Parsec hiding (parse)
 
 import Language.TL.Syntax
 
+type Expr' = Expr TyExpr
 type Parser = Parsec String ()
+
+reserved :: [String]
+reserved = ["type", "let", "in", "as", "if", "then", "else", "and", "or", "show", "open", "close", "read", "from", "ref", "print"]
 
 comma, colon, equals, shebang, multiLine, singleLine, comment, ws :: Parser ()
 comma = ws <* char ',' <* ws
@@ -35,13 +37,13 @@ tuple ctor term = parens '(' ')' $ uncurry mkTup <$> elems
     mkTup [a] False = a
     mkTup l _ = ctor l
 
-record :: Ord f => Char -> Parser f -> Parser sep -> Parser a -> Parser (Map f a)
-record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
+record :: Parser a -> Parser [(Ident, a)]
+record rhs = unique =<< parens '{' '}' elems
   where
     withTrailing = many (term <* comma)
     noTrailing = sepBy1 term comma
     elems = try withTrailing <|> noTrailing
-    term = (,) <$> (idx <* ws <* sep <* ws) <*> (rhs <* ws)
+    term = (,) <$> (ident <* ws) <*> (rhs <* ws)
 
     unique es =
       let es' = fst <$> es
@@ -50,31 +52,26 @@ record begin idx sep rhs = M.fromList <$> (unique =<< parens begin '}' elems)
           then pure es
           else fail "Fields in a record must be unique"
 
-primType :: Parser Type
-primType = choice
-  [ string "Int" $> TInt
-  , string "Bool" $> TBool
-  , string "Str" $> TStr
-  , string "File" $> TFile
-  ]
+tyVar :: Parser TyExpr
+tyVar = TyVar <$> tyIdent
 
-tupToRec :: [a] -> Map Int a
-tupToRec = M.fromList . zip [0..]
+tyTup :: Parser TyExpr
+tyTup = tuple TyTup tyExpr
 
-ttup :: Parser Type
-ttup = tuple (TRec FTup . tupToRec) type'
+tyRec :: Parser TyExpr
+tyRec = TyRec <$> record (colon *> ws *> tyExpr)
 
-trec :: Parser Type
-trec = TRec FRec <$> record '{' ident colon type'
+tyRef :: Parser TyExpr
+tyRef = char '&' *> ws *> tyNoIntersect <&> TyRef
 
-tref :: Parser Type
-tref = char '&' *> ws *> typeNoFun <&> TRef
+tyNoIntersect :: Parser TyExpr
+tyNoIntersect = choice [try tyRef, try tyRec, try tyTup, tyVar]
 
-typeNoFun :: Parser Type
-typeNoFun = choice [try tref, try trec, try ttup, primType]
+tyNoFn :: Parser TyExpr
+tyNoFn = chainr1 tyNoIntersect $ try $ ws *> char '&' *> ws $> TyIntersect
 
-type' :: Parser Type
-type' = chainr1 typeNoFun $ try (ws *> string "->" *> ws $> TFun)
+tyExpr :: Parser TyExpr
+tyExpr = chainr1 tyNoFn $ try $ ws *> string "->" *> ws $> TyFn
 
 number :: (Read a, Num a) => Parser a
 number = read <$> many1 digit
@@ -106,20 +103,17 @@ strRaw = between quote quote $ many ch
     ch = regular <|> escaped
     quote = char '"'
 
-int :: Parser Expr
-int = IntLit <$> intRaw
+num :: Parser Expr'
+num = NumLit <$> intRaw
 
-bool :: Parser Expr
+bool :: Parser Expr'
 bool = BoolLit <$> boolRaw
 
-str :: Parser Expr
+str :: Parser Expr'
 str = StrLit <$> strRaw
 
-simpleLit :: Parser Expr
-simpleLit = choice [try str, try int, bool]
-
-reserved :: [String]
-reserved = ["if", "and", "or", "let", "in", "open", "read", "close", "new", "from", "print", "then", "else"]
+simpleLit :: Parser Expr'
+simpleLit = choice [try str, try num, bool]
 
 ident :: Parser String
 ident = notReserved =<< (:) <$> fstChar <*> many sndChar
@@ -129,47 +123,59 @@ ident = notReserved =<< (:) <$> fstChar <*> many sndChar
     notReserved ((`elem` reserved) -> True) = fail "Reserved identifier"
     notReserved i = pure i
 
-var :: Parser Expr
+tyIdent :: Parser String
+tyIdent = (:) <$> fstChar <*> many sndChar
+  where
+    fstChar = upper
+    sndChar = choice [letter, digit, char '\'']
+
+var :: Parser Expr'
 var = Var <$> ident
 
-member :: Parser Expr -> Parser Expr
+member :: Parser Expr' -> Parser Expr'
 member lhs = foldl' unroll <$> lhs <*> many (char '.' *> (Left <$> number <|> Right <$> ident) <* ws)
   where
-    unroll lhs' (Left idx) = RecMember lhs' FTup idx
-    unroll lhs' (Right ident') = RecMember lhs' FRec ident'
+    unroll lhs' (Left idx) = TupMember lhs' idx
+    unroll lhs' (Right ident') = RecMember lhs' ident'
 
-vtup :: Parser Expr
-vtup = tuple (RecLit FTup . tupToRec) exprFull
+tup :: Parser Expr'
+tup = tuple TupLit exprFull
 
-vrec :: Parser Expr
-vrec = RecLit FRec <$> record '{' ident equals expr
+recField :: Parser (Maybe Expr')
+recField = optionMaybe $ unrollLam <$> (args <* ws) <*> (equals *> ws *> exprFull)
 
-if' :: Parser Expr
+rec' :: Parser Expr'
+rec' = RecLit . (punField <$>) <$> record recField
+  where
+    punField (i, Nothing) = (i, Var i)
+    punField (i, Just e) = (i, e)
+
+if' :: Parser Expr'
 if' =
   If
   <$> (string "if" *> ws *> expr <* ws)
   <*> (string "then" *> ws *> expr <* ws)
   <*> (string "else" *> ws *> expr <* ws)
 
-opMul :: Parser (Expr -> Expr -> Expr)
+opMul :: Parser (Expr' -> Expr' -> Expr')
 opMul =
   choice
   [ char '*' $> flip Arith Multiply
   , char '/' $> flip Arith Divide
   , char '%' $> flip Arith Remainder
-  , char '&' $> RecUnion
   ]
   <* ws
 
-opAdd :: Parser (Expr -> Expr -> Expr)
+opAdd :: Parser (Expr' -> Expr' -> Expr')
 opAdd =
   choice
   [ char '+' $> flip Arith Add
   , char '-' $> flip Arith Subtract
+  , char '&' $> Intersect
   ]
   <* ws
 
-opComp :: Parser (Expr -> Expr -> Expr)
+opComp :: Parser (Expr' -> Expr' -> Expr')
 opComp =
   choice
   [ try $ string "<=" $> flip Comp LtEq
@@ -181,7 +187,7 @@ opComp =
   ]
   <* ws
 
-opLogic :: Parser (Expr -> Expr -> Expr)
+opLogic :: Parser (Expr' -> Expr' -> Expr')
 opLogic =
   choice
   [ string "and" $> flip Logic And
@@ -189,71 +195,105 @@ opLogic =
   ]
   <* ws
 
-lam :: Parser Expr
-lam = mkLam <$> (many1 param <* string "->" <* ws) <*> exprNoSeq
-  where
-    param = parens '(' ')' $ (,) <$> (ident <* colon) <*> type'
-    mkLam [] e = e
-    mkLam ((i, t) : as) e = Lam i t $ mkLam as e
+type Arg = Maybe (Ident, TyExpr)
 
-deref :: Parser Expr
+arg :: Parser Arg
+arg = try $ parens '(' ')' $ optionMaybe $ (,) <$> (ident <* colon) <*> tyExpr
+
+args :: Parser [Arg]
+args = many $ arg <* ws
+
+unrollLam :: [Arg] -> Expr' -> Expr'
+unrollLam [] e = e
+unrollLam (Nothing : as) e = Lam "_" tyUnit $ unrollLam as e
+unrollLam (Just (i, t) : as) e = Lam i t $ unrollLam as e
+
+lam :: Parser Expr'
+lam = unrollLam <$> (many1 arg <* string "->" <* ws) <*> exprNoSeq
+
+deref :: Parser Expr'
 deref = char '!' *> ws *> exprNoOps <&> Deref
 
-exprNoMember :: Parser Expr
-exprNoMember = choice (try <$> [new, read', open, close, print', if', deref, lam, vrec, vtup, simpleLit, var]) <* ws
+exprNoMember :: Parser Expr'
+exprNoMember = choice (try <$> [ref, read', show', open, close, print', if', deref, lam, rec', tup, simpleLit, var]) <* ws
 
-exprNoOps :: Parser Expr
+exprNoOps :: Parser Expr'
 exprNoOps = try (member exprNoMember) <|> exprNoMember
 
-termMul :: Parser Expr
-termMul = chainl1 exprNoOps (ws $> App)
+exprApp :: Parser Expr'
+exprApp = chainl1 exprNoOps (ws $> App)
 
-termAdd :: Parser Expr
-termAdd = chainl1 termMul opMul
+as' :: Parser Expr'
+as' = As <$> (exprApp <* ws <* string "as") <*> (ws *> tyNoIntersect)
 
-termComp :: Parser Expr
-termComp = chainl1 termAdd opAdd
+exprAs :: Parser Expr'
+exprAs = try as' <|> exprApp
 
-termLogic :: Parser Expr
-termLogic = chainl1 termComp opComp
+exprMul :: Parser Expr'
+exprMul = chainl1 exprAs opMul
 
-expr :: Parser Expr
-expr = chainr1 termLogic opLogic
+exprAdd :: Parser Expr'
+exprAdd = chainl1 exprMul opAdd
 
-print' :: Parser Expr
+exprComp :: Parser Expr'
+exprComp = chainl1 exprAdd opComp
+
+exprLogic :: Parser Expr'
+exprLogic = chainr1 exprComp opLogic
+
+expr :: Parser Expr'
+expr = exprLogic
+
+print' :: Parser Expr'
 print' = Print <$> (string "print" <* ws *> expr)
 
-open :: Parser Expr
+ref :: Parser Expr'
+ref = string "ref" *> ws *> exprNoOps <&> NewRef
+
+assign :: Parser Expr'
+assign = RefAssign <$> expr <*> (string ":=" *> ws *> expr)
+
+open :: Parser Expr'
 open = Open <$> (string "open" *> ws *> expr)
 
-read' :: Parser Expr
-read' = Read <$> (string "read" *> ws *> type' <* ws) <*> (string "from" *> ws *> expr)
+read' :: Parser Expr'
+read' = Read <$> (string "read" *> ws *> tyExpr <* ws) <*> (string "from" *> ws *> expr)
 
-close :: Parser Expr
+close :: Parser Expr'
 close = string "close" *> ws *> expr <&> Close
 
-new :: Parser Expr
-new = string "new" *> ws *> expr <&> New
+show' :: Parser Expr'
+show' = string "show" *> ws *> expr <&> Show
 
-writeAt :: Parser Expr
-writeAt = WriteAt <$> expr <*> (string ":=" *> ws *> expr)
+unrollTypes :: [Arg] -> TyExpr -> TyExpr
+unrollTypes [] t = t
+unrollTypes (Nothing : ts) t = TyFn tyUnit $ unrollTypes ts t
+unrollTypes (Just (_, a) : ts) t = TyFn a $ unrollTypes ts t
 
-let' :: Parser Expr
+unrollLet :: Bool -> Ident -> [Arg] -> Maybe TyExpr -> Expr' -> Expr' -> Expr'
+unrollLet r i as t v = Let r i (unrollTypes as <$> t) (unrollLam as v)
+
+let' :: Parser Expr'
 let' =
-  Let
-  <$> (string "let" *> ws *> ident)
-  <*> option Nothing (try $ colon *> type' <&> Just)
-  <*> (equals *> expr)
+  unrollLet
+  <$> (string "let" *> ws *> option False (try $ string "rec" $> True))
+  <*> (ws *> ident)
+  <*> (ws *> args)
+  <*> optionMaybe (try $ colon *> tyExpr)
+  <*> (equals *> exprFull)
   <*> (ws *> string "in" *> ws *> exprFull)
 
-exprNoSeq :: Parser Expr
-exprNoSeq = try let' <|> try writeAt <|> expr
+letTy :: Parser Expr'
+letTy = LetTy <$> (string "type" *> ws *> tyIdent) <*> (equals *> tyExpr) <*> (ws *> string "in" *> ws *> exprFull)
 
-exprFull :: Parser Expr
+exprNoSeq :: Parser Expr'
+exprNoSeq = choice [try letTy, try let', try assign, expr]
+
+exprFull :: Parser Expr'
 exprFull = exprNoSeq `chainr1` (char ';' *> ws $> Seq)
 
-program :: Parser Expr
+program :: Parser Expr'
 program = option () shebang *> ws *> exprFull <* eof
 
-parse :: MonadError String m => String -> m Expr
+parse :: MonadError String m => String -> m Expr'
 parse = liftEither . first show . runParser program () ""

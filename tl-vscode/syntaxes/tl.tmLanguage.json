@@ -14,7 +14,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.tl",
-				"match": "\\b(if|then|else|while|print|default|and|or|let|in|open|read|close|new|fork|from|not|repeat|until|barrier|await)\\b"
+				"match": "\\b(type|let|in|as|if|then|else|and|or|show|open|close|read|from|ref|print|default|new|not|while|repeat|until|fork|barrier|await)\\b"
 			}]
     },
     "numbers": {
@@ -32,7 +32,7 @@
     "types": {
       "patterns": [{
         "name": "entity.name.type",
-        "match": "\\b(Int|Bool|_)\\b"
+        "match": "\\b[A-Z][a-zA-Z0-9'_]*\\b"
       }]
     },
     "logicOps": {

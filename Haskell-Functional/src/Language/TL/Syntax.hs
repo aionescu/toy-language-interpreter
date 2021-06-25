@@ -6,66 +6,57 @@ import qualified Data.Map.Strict as M
 
 type Ident = String
 
-data Field :: * -> * where
-  FRec :: Field Ident
-  FTup :: Field Int
-
-deriving instance Eq (Field f)
-deriving instance Show (Field f)
-
 data Type
-  = TInt
-  | TBool
-  | TStr
-  | forall f. TRec (Field f) (Map f Type)
-  | TFun Type Type
-  | TRef Type
-  | TFile
+  = Num
+  | Bool
+  | Str
+  | File
+  | Rec (Map Ident Type)
+  | Tup [Type]
+  | Type :-> Type
+  | Ref Type
+  deriving stock Eq
 
-instance Eq Type where
-  TInt == TInt = True
-  TBool == TBool = True
-  TStr == TStr = True
-  TRec FRec a == TRec FRec b = a == b
-  TRec FTup a == TRec FTup b = a == b
-  TFun a b == TFun a' b' = a == a' && b == b'
-  TRef a == TRef b = a == b
-  TFile == TFile = True
-  _ == _ = False
+unit :: Type
+unit = Tup []
 
-isOpaque :: Type -> Bool
-isOpaque (TRef _) = True
-isOpaque (TFun _ _) = True
-isOpaque (TRec _ m) = any isOpaque m
-isOpaque _ = False
+intrinsicTypes :: Map Ident Type
+intrinsicTypes =
+  M.fromList
+  [ ("Num", Num)
+  , ("Bool", Bool)
+  , ("Str", Str)
+  , ("File", File)
+  ]
 
-withParens :: String -> String -> [String] -> String
-withParens begin end l = begin ++ intercalate ", " l ++ end
-
-showF :: Field f -> f -> String
-showF FRec ident = ident
-showF FTup idx = show idx
-
-showField :: Field f -> String -> (f, String) -> String
-showField f sep (i, s) = showF f i ++ sep ++ s
-
-showFields :: Show v => Bool -> Field f -> String -> Map f v -> String
-showFields False FRec sep m = withParens "{ " " }" (showField FRec sep <$> M.toList (show <$> m))
-showFields True FRec sep m = withParens " | " " }" (showField FRec sep <$> M.toList (show <$> m))
-showFields True FTup sep m = withParens " | " " }" (showField FTup sep <$> M.toList (show <$> m))
-showFields False FTup _ m =
-  case snd <$> M.toList m of
-    [a] -> "(" ++ show a ++ ",)"
-    l -> withParens "(" ")" (show <$> l)
+showField :: Show a => String -> String -> a -> String
+showField sep i a = i ++ sep ++ show a
 
 instance Show Type where
-  show TInt = "Int"
-  show TBool = "Bool"
-  show TStr = "Str"
-  show (TRec f m) = showFields False f ": " m
-  show (TFun a b) = "(" ++ show a ++ " -> " ++ show b ++ ")"
-  show (TRef t) = "&" ++ show t
-  show TFile = "File"
+  show Num = "Num"
+  show Bool = "Bool"
+  show Str = "Str"
+  show File = "File"
+  show (Rec m) | M.null m = "{ }"
+  show (Rec m) = "{ " ++ intercalate ", " (uncurry (showField ": ") <$> M.toList m) ++ " }"
+  show (Tup [t]) = "(" ++ show t ++ ",)"
+  show (Tup ts) = "(" ++ intercalate ", " (show <$> ts) ++ ")"
+  show (a@(_ :-> _) :-> b) = "(" ++ show a ++ ") -> " ++ show b
+  show (a :-> b) = show a ++ " -> " ++ show b
+  show (Ref t@(_ :-> _)) = "&(" ++ show t ++ ")"
+  show (Ref t) = "&" ++ show t
+
+data TyExpr
+  = TyVar Ident
+  | TyIntersect TyExpr TyExpr
+  | TyFn TyExpr TyExpr
+  | TyRec [(Ident, TyExpr)]
+  | TyTup [TyExpr]
+  | TyRef TyExpr
+  deriving stock Show
+
+tyUnit :: TyExpr
+tyUnit = TyTup []
 
 data ArithOp
   = Add
@@ -108,28 +99,32 @@ compOp LtEq = (<=)
 compOp Eq = (==)
 compOp NEq = (/=)
 
-data Expr
-  = IntLit Integer
+data Expr t
+  = NumLit Integer
   | BoolLit Bool
   | StrLit String
   | Var Ident
-  | Arith Expr ArithOp Expr
-  | Logic Expr LogicOp Expr
-  | Comp Expr CompOp Expr
-  | forall f. Show f => RecLit (Field f) (Map f Expr)
-  | forall f. Show f => RecMember Expr (Field f) f
-  | RecUnion Expr Expr
-  | Lam Ident Type Expr
-  | App Expr Expr
-  | Deref Expr
-  | Print Expr
-  | If Expr Expr Expr
-  | Open Expr
-  | Read Type Expr
-  | Close Expr
-  | New Expr
-  | WriteAt Expr Expr
-  | Seq Expr Expr
-  | Let Ident (Maybe Type) Expr Expr
-
-deriving instance Show Expr
+  | Arith (Expr t) ArithOp (Expr t)
+  | Logic (Expr t) LogicOp (Expr t)
+  | Comp (Expr t) CompOp (Expr t)
+  | RecLit [(Ident, Expr t)]
+  | TupLit [Expr t]
+  | RecMember (Expr t) Ident
+  | TupMember (Expr t) Int
+  | Intersect (Expr t) (Expr t)
+  | Lam Ident t (Expr t)
+  | App (Expr t) (Expr t)
+  | Deref (Expr t)
+  | Print (Expr t)
+  | If (Expr t) (Expr t) (Expr t)
+  | Show (Expr t)
+  | Open (Expr t)
+  | Read t (Expr t)
+  | Close (Expr t)
+  | NewRef (Expr t)
+  | RefAssign (Expr t) (Expr t)
+  | Seq (Expr t) (Expr t)
+  | Let Bool Ident (Maybe t) (Expr t) (Expr t)
+  | LetTy Ident t (Expr t)
+  | As (Expr t) t
+  deriving stock Show

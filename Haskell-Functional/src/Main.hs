@@ -1,33 +1,19 @@
 module Main where
 
-import Data.Function((&))
+import Control.Category((>>>))
+import Control.Monad((>=>))
+import System.Environment(getArgs)
 
 import Language.TL.Eval(eval)
-import Language.TL.Opts(Opts(..), Cmd(..), getOpts)
 import Language.TL.Parser(parse)
-import Language.TL.TypeCk(typeCheck)
+import Language.TL.TypeChecker(typeCheck)
 
-getCode :: String -> IO String
-getCode "-" = getContents
-getCode path = readFile path
-
-run :: Opts -> IO ()
-run (Opts Run path) = do
-  code <- getCode path
-
-  code
-    & parse
-    >>= typeCheck
-    & either putStrLn eval
-
-run (Opts DumpAst{..} path) = do
-  code <- getCode path
-
-  code
-    & parse
-    >>= (if noTypeCheck then pure else typeCheck)
-    & either id show
-    & putStrLn
+getCode :: IO String
+getCode = do
+  [path] <- getArgs
+  case path of
+    "-" -> getContents
+    _ -> readFile path
 
 main :: IO ()
-main = getOpts >>= run
+main = getCode >>= ((parse >=> typeCheck) >>> either putStrLn eval)
