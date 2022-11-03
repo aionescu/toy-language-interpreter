@@ -13,6 +13,14 @@ Toy Language Interpreter, written for the Advanced Programming Methods course @ 
 * [Rust](Rust): Just an AST definition and macro-based parser.
 * [tl-vscode](tl-vscode): Very basic VS Code extension to provide syntax highlighting for Toy Language programs.
 
-## Tags
+## Assignments & Tags
 
-The commits that were presented during the lab are tagged with the assignment that was presented.
+The assignment statements can be found in the [Assignments](Assignments) folder.
+
+The commits that were presented during the labs are tagged with their corresponding assignment.
+
+## License
+
+This repository is licensed under the GNU General Public License v3.
+
+For more details, see [the license file](LICENSE.txt).
